@@ -15,9 +15,10 @@ import {
   Layers,
   DollarSign,
   Tag,
-  ArrowDownLeft,
-  History
+  History,
+  Truck
 } from 'lucide-react'
+import { StockInModal } from '../components/StockInModal.jsx'
 
 export function Inventory() {
   const [articles, setArticles] = useState([])
@@ -29,6 +30,7 @@ export function Inventory() {
   const [filterLowStock, setFilterLowStock] = useState(false)
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isStockInOpen, setIsStockInOpen] = useState(false)
   const [editingArticle, setEditingArticle] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -266,6 +268,14 @@ export function Inventory() {
               <span>{lowStockCount} Low Stock Alert{lowStockCount > 1 ? 's' : ''}</span>
             </button>
           )}
+
+          <button
+            onClick={() => setIsStockInOpen(true)}
+            className="px-5 py-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-medium flex items-center justify-center gap-2 shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+          >
+            <Truck className="w-5 h-5 text-emerald-400" />
+            <span>Receive Shipment</span>
+          </button>
 
           <button
             onClick={() => handleOpenDrawer()}
@@ -729,6 +739,16 @@ export function Inventory() {
           </div>
         </div>
       )}
+
+      {/* Stock IN Shipment Modal */}
+      <StockInModal
+        isOpen={isStockInOpen}
+        onClose={() => setIsStockInOpen(false)}
+        onSuccess={() => {
+          showToast('success', 'Stock IN shipment manifest processed successfully!')
+          fetchArticles()
+        }}
+      />
     </div>
   )
 }

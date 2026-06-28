@@ -43,7 +43,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Add visual badges/highlights for rows where `quantity <= reorder_level` (Low Stock Alert).
   - Add "New Article" button opening a comprehensive drawer form.
 
-- [ ] **Task 2.6: Stock IN Shipment Receiving UI (`StockInModal.jsx`)**
+- [x] **Task 2.6: Stock IN Shipment Receiving UI (`StockInModal.jsx`)**
   - Build shipment receiving interface allowing user to select a supplier, append multiple articles to an incoming shipment manifest, specify received quantities, and submit in one atomic action.
 
 - [ ] **Task 2.7: Stock Movement Ledger Viewer (`StockMovementsModal.jsx`)**
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.5 Completed. Ready for Task 2.6.
-- Waiting for user command ("implementation call") to begin **Task 2.6: Stock IN Shipment Receiving UI (`StockInModal.jsx`)**.
+- **Current Status:** Task 2.6 Completed. Ready for Task 2.7.
+- Waiting for user command ("implementation call") to begin **Task 2.7: Stock Movement Ledger Viewer (`StockMovementsModal.jsx`)**.
