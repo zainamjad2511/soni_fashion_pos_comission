@@ -38,7 +38,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement `articles:getStockMovements`: retrieve historical inventory ledger for a selected article.
 
 ### Phase 2.3: Inventory Management UI (Renderer)
-- [ ] **Task 2.5: Articles Inventory Catalog UI (`src/renderer/src/pages/Inventory.jsx`)**
+- [x] **Task 2.5: Articles Inventory Catalog UI (`src/renderer/src/pages/Inventory.jsx`)**
   - Build searchable, filterable data table displaying SKU, Supplier Code, Article Code, Name, Category, Retail Price, and In Stock count.
   - Add visual badges/highlights for rows where `quantity <= reorder_level` (Low Stock Alert).
   - Add "New Article" button opening a comprehensive drawer form.
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.4 Completed. Ready for Task 2.5.
-- Waiting for user command ("implementation call") to begin **Task 2.5: Articles Inventory Catalog UI (`src/renderer/src/pages/Inventory.jsx`)**.
+- **Current Status:** Task 2.5 Completed. Ready for Task 2.6.
+- Waiting for user command ("implementation call") to begin **Task 2.6: Stock IN Shipment Receiving UI (`StockInModal.jsx`)**.

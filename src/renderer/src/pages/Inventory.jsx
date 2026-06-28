@@ -623,7 +623,7 @@ export function Inventory() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">Wholesale Cost (> 0)</label>
+                    <label className="text-xs font-medium text-slate-400">Wholesale Cost (Min 1)</label>
                     <input
                       type="number"
                       name="wholesale_price"
