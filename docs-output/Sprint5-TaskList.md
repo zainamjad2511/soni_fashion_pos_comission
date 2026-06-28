@@ -12,7 +12,7 @@
   - Log all expense creations, modifications, and deletions to `audit_log`.
   - Register channel handlers in `src/main/index.js` and expose methods via `window.electronAPI.expenses`.
 
-- [ ] **Task 5.2: Implement Reports & Audit Log IPC (`reports.ipc.js`)**
+- [x] **Task 5.2: Implement Reports & Audit Log IPC (`reports.ipc.js`)**
   - Implement aggregation query handlers:
     - `reports:salesSummary(startDate, endDate, salespersonId)`: Sales list with item counts and aggregated totals.
     - `reports:profitSummary(startDate, endDate)`: Single-row net profit calculation (`Revenue - COGS - Expenses`).
@@ -55,8 +55,6 @@
   - Verify Commission exclusions: Confirm returned/reversed items deduct from salesperson payouts.
   - Verify inventory valuation totals against stock quantities.
 
----
-
 ## 🚦 Execution Control
-- **Current Status:** Task 5.1 Completed. Ready for Task 5.2.
-- Waiting for user command ("implementation call") to begin **Task 5.2: Implement Reports & Audit Log IPC (`reports.ipc.js`)**.
+- **Current Status:** Task 5.2 Completed. Ready for Phase 5.2 (Task 5.3).
+- Waiting for user command ("implementation call") to begin **Task 5.3: Build Expenses Management UI (`src/renderer/src/pages/Expenses.jsx`)**.

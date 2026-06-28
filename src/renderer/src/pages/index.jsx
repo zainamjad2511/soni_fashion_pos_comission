@@ -7,6 +7,7 @@ import { Dashboard as DashboardComponent } from './Dashboard.jsx'
 import { Salespersons as SalespersonsComponent } from './Salespersons.jsx'
 import { POSSale as POSSaleComponent } from './POSSale.jsx'
 import { Returns as ReturnsComponent } from './Returns.jsx'
+import { Expenses as ExpensesComponent } from './Expenses.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -40,14 +41,7 @@ export function ReturnsPage() {
 }
 
 export function ExpensesPage() {
-  return (
-    <PlaceholderPage
-      title="Store Expense Management"
-      sprint="Sprint 5"
-      description="Categorized daily overhead logging, staff advance deduction tracking, and net shop profit reporting."
-      icon={Receipt}
-    />
-  )
+  return <ExpensesComponent />
 }
 
 export function ReportsPage() {
