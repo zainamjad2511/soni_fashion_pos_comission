@@ -31,7 +31,7 @@
   - Add summary KPI card showing selected period's total expenditure.
   - Register navigation route and sidebar link.
 
-- [ ] **Task 5.4: Enhance Commission Report UI (`src/renderer/src/pages/Commissions.jsx`)**
+- [x] **Task 5.4: Enhance Commission Report UI (`src/renderer/src/pages/Commissions.jsx`)**
   - Upgrade commission view to display monthly aggregated earnings per salesperson.
   - Add expandable drill-down rows showing individual sale item attributions.
   - Implement interactive "Mark as Paid" action updating database status and refreshing UI.
@@ -56,5 +56,5 @@
   - Verify inventory valuation totals against stock quantities.
 
 ## 🚦 Execution Control
-- **Current Status:** Task 5.3 Completed. Ready for Task 5.4.
-- Waiting for user command ("implementation call") to begin **Task 5.4: Enhance Commission Report UI (`src/renderer/src/pages/Commissions.jsx`)**.
+- **Current Status:** Task 5.4 Completed. Ready for Task 5.5.
+- Waiting for user command ("implementation call") to begin **Task 5.5: Build Comprehensive Reports Hub (`src/renderer/src/pages/Reports.jsx`)**.

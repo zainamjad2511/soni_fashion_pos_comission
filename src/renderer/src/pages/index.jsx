@@ -8,6 +8,7 @@ import { Salespersons as SalespersonsComponent } from './Salespersons.jsx'
 import { POSSale as POSSaleComponent } from './POSSale.jsx'
 import { Returns as ReturnsComponent } from './Returns.jsx'
 import { Expenses as ExpensesComponent } from './Expenses.jsx'
+import { Reports as ReportsComponent } from './Reports.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -45,14 +46,7 @@ export function ExpensesPage() {
 }
 
 export function ReportsPage() {
-  return (
-    <PlaceholderPage
-      title="Reports & Analytics"
-      sprint="Sprint 5"
-      description="Daily sales registers, monthly profit/loss statements, stock valuation audits, and exportable Excel sheets."
-      icon={BarChart3}
-    />
-  )
+  return <ReportsComponent />
 }
 
 export function SalespersonsPage() {
