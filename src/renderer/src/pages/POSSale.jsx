@@ -159,6 +159,14 @@ export function POSSale() {
           setLastCompletedSale(newSale)
           showToast('success', `Sale Completed! Invoice #${newSale.invoice_number} generated successfully.`)
           clearCart()
+          // Automatically trigger silent thermal receipt printing
+          if (window.electronAPI?.print?.receipt) {
+            window.electronAPI.print.receipt(newSale).then((printRes) => {
+              if (printRes?.success) {
+                console.log('[POS] Silent receipt printed successfully.')
+              }
+            }).catch((err) => console.warn('[POS] Auto print error:', err))
+          }
           // Re-fetch staff if needed or re-default
           if (salespersons.length > 0) {
             setSalesperson(salespersons.find((s) => s.id === selectedSalesperson.id) || salespersons[0])
@@ -264,12 +272,26 @@ export function POSSale() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setLastCompletedSale(null)}
-            className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-semibold transition-all border border-emerald-500/40 flex items-center gap-1.5"
-          >
-            <span>Dismiss</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (window.electronAPI?.print?.receipt) {
+                  window.electronAPI.print.receipt(lastCompletedSale)
+                  showToast('success', 'Sending receipt to thermal printer...')
+                }
+              }}
+              className="px-4 py-2 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-light text-xs font-semibold transition-all border border-brand/40 flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Receipt</span>
+            </button>
+            <button
+              onClick={() => setLastCompletedSale(null)}
+              className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-semibold transition-all border border-emerald-500/40 flex items-center gap-1.5"
+            >
+              <span>Dismiss</span>
+            </button>
+          </div>
         </div>
       )}
 

@@ -20,6 +20,7 @@ export function Settings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+  const [availablePrinters, setAvailablePrinters] = useState([])
   const [formData, setFormData] = useState({
     shop_name: '',
     shop_address: '',
@@ -48,6 +49,13 @@ export function Settings() {
           setFormData((prev) => ({ ...prev, ...res.data }))
         } else {
           showToast('error', res.error || 'Failed to load store settings.')
+        }
+
+        if (window.electronAPI.print && window.electronAPI.print.getPrinters) {
+          const pRes = await window.electronAPI.print.getPrinters()
+          if (pRes.success && Array.isArray(pRes.data)) {
+            setAvailablePrinters(pRes.data)
+          }
         }
       } else {
         showToast('error', 'Electron IPC bridge not found.')
@@ -81,6 +89,9 @@ export function Settings() {
         last_return_number,
         ...updatePayload
       } = formData
+
+      // Ensure both key variations are saved for printer engine compatibility
+      updatePayload.thermal_printer_name = formData.receipt_printer_name || ''
 
       if (window.electronAPI && window.electronAPI.settings) {
         const res = await window.electronAPI.settings.updateBatch(updatePayload)
@@ -256,20 +267,52 @@ export function Settings() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <Printer className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Target Receipt Printer Name (Silent Print)</span>
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Printer className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Target Receipt Printer Name (Silent Print)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.electronAPI?.print?.getPrinters) {
+                        const pRes = await window.electronAPI.print.getPrinters()
+                        if (pRes.success && Array.isArray(pRes.data)) {
+                          setAvailablePrinters(pRes.data)
+                          showToast('success', 'Printers list refreshed!')
+                        }
+                      }
+                    }}
+                    className="text-[10px] text-brand-light hover:underline flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Refresh Printers</span>
+                  </button>
                 </label>
-                <input
-                  type="text"
+                <select
                   name="receipt_printer_name"
-                  value={formData.receipt_printer_name}
+                  value={formData.receipt_printer_name || ''}
                   onChange={handleChange}
-                  placeholder="Leave blank for OS default printer (e.g. EPSON TM-T82)"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-mono"
-                />
+                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-mono cursor-pointer"
+                >
+                  <option value="" className="bg-slate-900 text-slate-400">
+                    -- OS Default Printer --
+                  </option>
+                  {availablePrinters.map((p) => (
+                    <option key={p.name} value={p.name} className="bg-slate-900 text-white">
+                      {p.displayName || p.name} {p.isDefault ? '(System Default)' : ''}
+                    </option>
+                  ))}
+                  {/* If stored printer is not in detected list, show it as an option */}
+                  {formData.receipt_printer_name &&
+                    !availablePrinters.some((p) => p.name === formData.receipt_printer_name) && (
+                      <option value={formData.receipt_printer_name} className="bg-slate-900 text-white">
+                        {formData.receipt_printer_name} (Saved / Offline)
+                      </option>
+                    )}
+                </select>
                 <p className="text-[11px] text-slate-500">
-                  Must match the exact Windows/Linux system printer share name for silent background receipt output.
+                  Select your thermal receipt printer (e.g. EPSON TM-T82 / Xprinter) for silent background receipt output.
                 </p>
               </div>
             </div>

@@ -41,7 +41,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 - [x] **Task 3.7: POS Terminal UI (`src/renderer/src/pages/POSSale.jsx`)**
   - Build fast, responsive point-of-sale terminal: mandatory salesperson dropdown, instant debounced SKU/barcode search bar, interactive cart table with real-time totals panel, and one-click "Complete Sale" action.
 
-- [ ] **Task 3.8: Silent Thermal Receipt Printing Engine (`src/main/ipc/print.ipc.js` & `receipt.html`)**
+- [x] **Task 3.8: Silent Thermal Receipt Printing Engine (`src/main/ipc/print.ipc.js` & `receipt.html`)**
   - Create dedicated hidden BrowserWindow for receipt rendering (`src/main/receipt/receipt.html` & preload).
   - Implement `print:receipt` and `print:getPrinters` IPC handlers allowing silent background printing (`webContents.print({ silent: true, deviceName: ... })`) without OS print dialogs.
   - Add thermal printer selection dropdown in `Settings.jsx`.
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.7 Completed. Ready for Task 3.8.
-- Waiting for user command ("implementation call") to begin **Task 3.8: Silent Thermal Receipt Printing Engine (`src/main/ipc/print.ipc.js` & `receipt.html`)**.
+- **Current Status:** Task 3.8 Completed. Ready for Task 3.9.
+- Waiting for user command ("implementation call") to begin **Task 3.9: Reprint Receipt Modal & Dashboard Integration**.
