@@ -3,10 +3,6 @@ import { handleIpc } from './envelope.js'
 export function registerStubHandlers() {
   const stubMessage = (channel) => `Stub handler for ${channel}: not implemented yet.`
 
-  // Articles Stubs
-  const articleChannels = ['articles:list', 'articles:get', 'articles:getBySku', 'articles:search', 'articles:create', 'articles:update', 'articles:toggleActive', 'articles:adjustStock']
-  articleChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
-
 
   // Sales Stubs
   const saleChannels = ['sales:list', 'sales:get', 'sales:create', 'sales:void', 'sales:reprint']

@@ -19,13 +19,13 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Ensure every write operation records a tamper-evident entry via `auditLog()`.
   - Replace stub registrations in `src/main/index.js`.
 
-- [ ] **Task 2.2: Suppliers Management UI (`src/renderer/src/pages/Suppliers.jsx`)**
+- [x] **Task 2.2: Suppliers Management UI (`src/renderer/src/pages/Suppliers.jsx`)**
   - Create a new route `/suppliers` (or integrate into Inventory tabs/sidebar).
   - Build a responsive, rich glassmorphic data table listing active suppliers (Name, Code, Contact, Address).
   - Build slide-over drawer / modal form for registering and editing suppliers with validation.
 
 ### Phase 2.2: Article & Stock Backend (Main Process)
-- [ ] **Task 2.3: Article IPC Handlers (`src/main/ipc/articles.ipc.js`)**
+- [x] **Task 2.3: Article IPC Handlers (`src/main/ipc/articles.ipc.js`)**
   - Implement `articles:create`: validate `wholesale_price > 0` and `retail_price >= wholesale_price`. Auto-increment `last_sku_number` inside a SQLite transaction to generate formatted SKUs (e.g., `SF-00001`).
   - Implement `articles:list`: paginated query supporting filters (`supplier_id`, `category`, `low_stock`, `search`).
   - Implement `articles:update`: snapshot old values to `audit_log` on edits.
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.1 Completed. Ready for Task 2.2.
-- Waiting for user command ("implementation call") to begin **Task 2.2: Suppliers Management UI (`src/renderer/src/pages/Suppliers.jsx`)**.
+- **Current Status:** Task 2.3 Completed. Ready for Task 2.4.
+- Waiting for user command ("implementation call") to begin **Task 2.4: Stock IN & Ledger Handlers (`src/main/ipc/articles.ipc.js`)**.

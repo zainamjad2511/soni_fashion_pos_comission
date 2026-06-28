@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { getDb, closeDb } from './db/database.js'
 import { registerSettingsHandlers } from './ipc/settings.ipc.js'
 import { registerSuppliersHandlers } from './ipc/suppliers.ipc.js'
+import { registerArticlesHandlers } from './ipc/articles.ipc.js'
 import { registerStubHandlers } from './ipc/stubs.ipc.js'
 
 if (process.platform === 'linux') {
@@ -66,6 +67,7 @@ app.whenReady().then(() => {
   // Register IPC Handlers
   registerSettingsHandlers()
   registerSuppliersHandlers()
+  registerArticlesHandlers()
   registerStubHandlers()
 
   createWindow()
