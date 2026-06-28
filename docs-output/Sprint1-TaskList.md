@@ -49,7 +49,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 - [x] **Task 1.8: Context Bridge & Preload (`preload.js`)**
   - Expose safe, typed `window.electronAPI` channels for all domains (`articles`, `suppliers`, `sales`, `returns`, `reports`, `salespersons`, `commissions`, `expenses`, `settings`, `print`).
 
-- [ ] **Task 1.9: IPC Handler Stubs & Settings Handlers (`main.js` & `ipc/*.ipc.js`)**
+- [x] **Task 1.9: IPC Handler Stubs & Settings Handlers (`main.js` & `ipc/*.ipc.js`)**
   - Register IPC envelope structure `{ success: boolean, data?: any, error?: string }`.
   - Implement functional `settings.ipc.js` (get/update settings).
   - Register stubs for remaining domain channels.
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.8 Completed. Ready for Task 1.9.
-- Waiting for user command ("implementation call") to begin **Task 1.9: IPC Handler Stubs & Settings Handlers (`main.js` & `ipc/*.ipc.js`)**.
+- **Current Status:** Task 1.9 Completed. Ready for Task 1.10.
+- Waiting for user command ("implementation call") to begin **Task 1.10: Router & Layout (`App.jsx`, `Layout.jsx`, `Sidebar.jsx`, `TopBar.jsx`)**.
