@@ -1,1 +1,8 @@
-node_modules/
+node_modules
+dist
+out
+dist-installer
+.DS_Store
+.eslintcache
+*.log*
+docs-output/*.tmp
