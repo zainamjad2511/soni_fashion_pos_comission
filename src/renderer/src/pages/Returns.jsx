@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Printer,
   CreditCard,
-  Banknote
+  Banknote,
+  AlertTriangle
 } from 'lucide-react'
 
 export function Returns() {
@@ -53,6 +54,14 @@ export function Returns() {
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [processingReturn, setProcessingReturn] = useState(false)
   const [processResult, setProcessResult] = useState(null)
+
+  // Task 4.6: Manual Returns State
+  const [manualSearchQuery, setManualSearchQuery] = useState('')
+  const [manualSearchResults, setManualSearchResults] = useState([])
+  const [manualCart, setManualCart] = useState([])
+  const [manualNotes, setManualNotes] = useState('')
+  const [processingManual, setProcessingManual] = useState(false)
+  const [manualResult, setManualResult] = useState(null)
 
   useEffect(() => {
     async function loadSalespersons() {
@@ -213,7 +222,7 @@ export function Returns() {
   const replacementTotal = calculateReplacementTotal()
   const netSettlement = replacementTotal - refundCredit
 
-  // Execute transaction
+  // Execute standard transaction
   const handleProcessTransaction = async () => {
     const selectedReturnedCount = Object.values(returnQuantities).reduce((a, b) => a + b, 0)
     if (selectedReturnedCount === 0 && returnType === 'refund') {
@@ -254,6 +263,113 @@ export function Returns() {
       alert(`Transaction Failed: ${err.message}`)
     } finally {
       setProcessingReturn(false)
+    }
+  }
+
+  // Task 4.6: Manual return handlers
+  const handleManualSearch = async (query) => {
+    setManualSearchQuery(query)
+    if (!query.trim() || query.trim().length < 2) {
+      setManualSearchResults([])
+      return
+    }
+    try {
+      const res = await window.electronAPI.articles.list({ search: query.trim() })
+      setManualSearchResults(res || [])
+    } catch (e) {
+      console.error('Manual article search failed:', e)
+    }
+  }
+
+  const addManualItem = (article) => {
+    const existing = manualCart.find((item) => item.article_id === article.id)
+    if (existing) {
+      setManualCart(manualCart.map((item) =>
+        item.article_id === article.id
+          ? { ...item, quantity: item.quantity + 1, line_total: (item.quantity + 1) * item.refund_per_unit }
+          : item
+      ))
+    } else {
+      setManualCart([
+        ...manualCart,
+        {
+          article_id: article.id,
+          name: article.name,
+          sku: article.sku,
+          quantity: 1,
+          refund_per_unit: article.selling_price,
+          line_total: article.selling_price
+        }
+      ])
+    }
+    setManualSearchQuery('')
+    setManualSearchResults([])
+  }
+
+  const updateManualQty = (articleId, delta) => {
+    setManualCart(manualCart.map((item) => {
+      if (item.article_id === articleId) {
+        const nextQty = Math.max(1, item.quantity + delta)
+        return { ...item, quantity: nextQty, line_total: nextQty * item.refund_per_unit }
+      }
+      return item
+    }))
+  }
+
+  const updateManualPrice = (articleId, priceStr) => {
+    const p = parseFloat(priceStr) || 0
+    setManualCart(manualCart.map((item) => {
+      if (item.article_id === articleId) {
+        return { ...item, refund_per_unit: p, line_total: item.quantity * p }
+      }
+      return item
+    }))
+  }
+
+  const removeManualItem = (articleId) => {
+    setManualCart(manualCart.filter((item) => item.article_id !== articleId))
+  }
+
+  const calculateManualTotal = () => {
+    return manualCart.reduce((sum, item) => sum + item.line_total, 0)
+  }
+  const manualTotal = calculateManualTotal()
+
+  const handleProcessManualReturn = async () => {
+    if (manualCart.length === 0) {
+      alert('Please add at least one article to process a manual return.')
+      return
+    }
+    if (!manualNotes || !manualNotes.trim()) {
+      alert('A mandatory reason note is required for manual returns.')
+      return
+    }
+
+    const itemsPayload = manualCart.map((item) => ({
+      article_id: item.article_id,
+      quantity_returned: item.quantity,
+      refund_per_unit: item.refund_per_unit
+    }))
+
+    setProcessingManual(true)
+    try {
+      const payload = {
+        original_sale_id: null,
+        return_type: 'manual',
+        processed_by: selectedStaff || 1,
+        items: itemsPayload,
+        notes: manualNotes.trim()
+      }
+
+      const res = await window.electronAPI.returns.create(payload)
+      setManualResult(res)
+      setManualCart([])
+      setManualNotes('')
+    } catch (err) {
+      console.error('Manual return processing error:', err)
+      alert(`Transaction Failed: ${err.message}`)
+    } finally {
+      setProcessingManual(false)
     }
   }
 
@@ -810,17 +926,235 @@ export function Returns() {
         </div>
       )}
 
-      {/* Tab 3 & 4 Placeholders for upcoming tasks */}
+      {/* Tab 3 Content: Manual Returns Interface */}
       {activeTab === 'manual' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
-          <PlusCircle className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-semibold text-slate-300">Manual Return Processing</h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Direct inventory selection for returns without original customer receipt. Scheduled for implementation in Task 4.6.
-          </p>
+        <div className="space-y-6 animate-fadeIn">
+          {/* Confirmation Modal / Banner for Manual Return */}
+          {manualResult && (
+            <div className="bg-gradient-to-r from-amber-950/90 via-slate-900 to-emerald-950/90 border-2 border-amber-500/50 rounded-2xl p-8 shadow-2xl space-y-6 animate-scaleUp">
+              <div className="flex items-center justify-between border-b border-amber-500/20 pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white uppercase tracking-wider">Manual Return Processed &amp; Stock Restored</h2>
+                    <p className="text-xs text-amber-300 font-mono mt-0.5">Return Reference: {manualResult.returnNumber}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setManualResult(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Process Another Manual Return
+                </button>
+              </div>
+
+              <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs text-slate-400">Total Manual Credit Slip Issued</div>
+                  <div className="text-2xl font-bold text-amber-400 font-mono mt-1">{formatCurrency(manualResult.refundCredit)}</div>
+                </div>
+                <button
+                  onClick={() => alert(`Thermal receipt printing scheduled for Task 4.7 for ${manualResult.returnNumber}`)}
+                  className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Print Credit Voucher
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!manualResult && (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <PlusCircle className="w-5 h-5 text-amber-400" /> Manual Return Processing (No Original Receipt)
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Direct inventory selection for customer returns when original invoice is missing. Automatically restores inventory stock.
+                  </p>
+                </div>
+                <div className="bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 rounded-xl flex items-center gap-2 text-amber-400 text-xs shrink-0">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>Mandatory Reason Note Required</span>
+                </div>
+              </div>
+
+              {/* Search Article Bar */}
+              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs font-medium text-slate-300 flex items-center gap-2 w-full sm:w-auto">
+                  <Search className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Search &amp; Add Article to Return Cart:</span>
+                </div>
+                <div className="relative w-full sm:w-96">
+                  <input
+                    type="text"
+                    value={manualSearchQuery}
+                    onChange={(e) => handleManualSearch(e.target.value)}
+                    placeholder="Type article SKU barcode or name..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                  />
+                  {manualSearchResults.length > 0 && (
+                    <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
+                      {manualSearchResults.map((art) => (
+                        <button
+                          key={art.id}
+                          type="button"
+                          onClick={() => addManualItem(art)}
+                          className="w-full p-3 text-left hover:bg-slate-800/80 transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="text-xs font-medium text-white">{art.name}</div>
+                            <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Current Stock: {art.quantity}</div>
+                          </div>
+                          <div className="text-xs font-bold text-amber-400 font-mono">{formatCurrency(art.selling_price)}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Return Cart Table */}
+              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
+                      <th className="p-3.5 font-medium">Article &amp; SKU</th>
+                      <th className="p-3.5 font-medium text-center">Return Quantity</th>
+                      <th className="p-3.5 font-medium text-right">Agreed Refund Price</th>
+                      <th className="p-3.5 font-medium text-right">Line Credit Total</th>
+                      <th className="p-3.5 font-medium text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {manualCart.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="p-8 text-center text-xs text-slate-500 italic">
+                          No items in manual return cart. Search articles above to select inventory being returned.
+                        </td>
+                      </tr>
+                    ) : (
+                      manualCart.map((item) => (
+                        <tr key={item.article_id} className="hover:bg-slate-900/40 transition-colors">
+                          <td className="p-3.5">
+                            <div className="font-medium text-white">{item.name}</div>
+                            <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                          </td>
+                          <td className="p-3.5 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateManualQty(item.article_id, -1)}
+                                className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="w-8 text-center font-mono font-bold text-white">{item.quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => updateManualQty(item.article_id, 1)}
+                                className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="p-3.5 text-right font-mono">
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.refund_per_unit}
+                              onChange={(e) => updateManualPrice(item.article_id, e.target.value)}
+                              className="w-28 text-right bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white focus:outline-none focus:border-amber-400 font-mono text-xs"
+                            />
+                          </td>
+                          <td className="p-3.5 text-right font-mono font-bold text-amber-400">{formatCurrency(item.line_total)}</td>
+                          <td className="p-3.5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => removeManualItem(item.article_id)}
+                              className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Processing Footer */}
+              <div className="border-t border-slate-800 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Processing Staff Member</label>
+                    <select
+                      value={selectedStaff || ''}
+                      onChange={(e) => setSelectedStaff(Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                    >
+                      {salespersons.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-amber-400 mb-1.5 flex items-center gap-1.5">
+                      <span>Mandatory Reason Note *</span>
+                      {!manualNotes.trim() && <span className="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded font-normal">Required for Audit</span>}
+                    </label>
+                    <input
+                      type="text"
+                      value={manualNotes}
+                      onChange={(e) => setManualNotes(e.target.value)}
+                      placeholder="Specify mandatory reason (e.g., Customer receipt lost, Manager approved refund)..."
+                      className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
+                        !manualNotes.trim() ? 'border-amber-500/50 focus:border-amber-400' : 'border-slate-800 focus:border-emerald-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold text-slate-300 uppercase tracking-wider">Total Manual Credit Slip:</span>
+                    <span className="text-2xl font-bold font-mono text-amber-400">{formatCurrency(manualTotal)}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={processingManual || manualCart.length === 0 || !manualNotes.trim()}
+                    onClick={handleProcessManualReturn}
+                    className="w-full py-4 rounded-xl font-bold bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 text-sm shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    {processingManual ? (
+                      <div className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>Confirm &amp; Issue Manual Credit Voucher</span>
+                      </>
+                    )}
+                  </button>
+                  {(!manualNotes.trim() || manualCart.length === 0) && (
+                    <p className="text-[11px] text-center text-slate-500 italic">
+                      {manualCart.length === 0 ? 'Add return items' : 'Fill mandatory reason note'} to enable confirmation.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Tab 4 Placeholder for upcoming task */}
       {activeTab === 'history' && (
         <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
           <History className="w-12 h-12 text-slate-600 mx-auto" />
