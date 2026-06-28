@@ -5,6 +5,7 @@ import fs from 'fs'
 import { runMigrations } from './migrations.js'
 import { runSeed } from './seed.js'
 import { runAutoBackup } from '../services/backup.service.js'
+import { auditLog } from '../services/audit.service.js'
 
 let dbInstance = null
 
@@ -35,6 +36,9 @@ export function getDb() {
 
   // Run daily auto-backup asynchronously
   runAutoBackup(db)
+
+  // Log startup audit entry
+  auditLog(db, 'SYSTEM_STARTUP', 'settings', null, 'Application started and database initialized.')
 
   dbInstance = db
   return dbInstance
