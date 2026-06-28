@@ -22,7 +22,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Build modern glassmorphic dashboard to register store staff, manage contact numbers, and toggle active status.
   - Register route and view component in `src/renderer/src/pages/index.jsx`.
 
-- [ ] **Task 3.3: Commissions IPC Handlers (`src/main/ipc/commissions.ipc.js`)**
+- [x] **Task 3.3: Commissions IPC Handlers (`src/main/ipc/commissions.ipc.js`)**
   - Implement `commissions:setRate` (upserts monthly percentage rates into `commission_rates` table for given salesperson and month).
   - Implement `commissions:getSummary` & `commissions:list` to fetch configured rates and calculated commission earnings.
 
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.2 Completed. Ready for Task 3.3.
-- Waiting for user command ("implementation call") to begin **Task 3.3: Commissions IPC Handlers (`src/main/ipc/commissions.ipc.js`)**.
+- **Current Status:** Task 3.3 Completed. Ready for Task 3.4.
+- Waiting for user command ("implementation call") to begin **Task 3.4: Commission Configuration UI (`src/renderer/src/pages/Commissions.jsx`)**.

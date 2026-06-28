@@ -13,14 +13,17 @@ import {
   RefreshCw,
   X,
   Filter,
-  UserCheck
+  UserCheck,
+  Percent
 } from 'lucide-react'
+import { Commissions } from './Commissions.jsx'
 
 export function Salespersons() {
   const [salespersons, setSalespersons] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
+  const [activeTab, setActiveTab] = useState('registry')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [editingSalesperson, setEditingSalesperson] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -184,14 +187,45 @@ export function Salespersons() {
           </p>
         </div>
 
+        {activeTab === 'registry' && (
+          <button
+            onClick={() => handleOpenDrawer()}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Register Salesperson</span>
+          </button>
+        )}
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-2">
         <button
-          onClick={() => handleOpenDrawer()}
-          className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+          onClick={() => setActiveTab('registry')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
+            activeTab === 'registry'
+              ? 'bg-brand text-white shadow-lg shadow-brand/30'
+              : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
         >
-          <Plus className="w-5 h-5" />
-          <span>Register Salesperson</span>
+          <Users className="w-4 h-4" />
+          <span>Staff Registry</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('commissions')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
+            activeTab === 'commissions'
+              ? 'bg-brand text-white shadow-lg shadow-brand/30'
+              : 'bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Percent className="w-4 h-4" />
+          <span>Monthly Commission Configurator & Earnings</span>
         </button>
       </div>
+
+      {activeTab === 'registry' ? (
+        <div className="space-y-6">
 
       {/* Filter & Search Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-md">
@@ -353,6 +387,10 @@ export function Salespersons() {
           </div>
         )}
       </div>
+      </div>
+      ) : (
+        <Commissions />
+      )}
 
       {/* Slide-Over Drawer Modal */}
       {isDrawerOpen && (
