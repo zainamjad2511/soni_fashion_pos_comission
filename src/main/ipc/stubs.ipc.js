@@ -18,9 +18,6 @@ export function registerStubHandlers() {
   const expenseChannels = ['expenses:list', 'expenses:create', 'expenses:update', 'expenses:delete']
   expenseChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
-  // Print Stubs
-  const printChannels = ['print:receipt', 'print:report', 'print:getPrinters']
-  printChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
   console.log('[IPC] Registered all domain IPC handler stubs.')
 }

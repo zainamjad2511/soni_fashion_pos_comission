@@ -38,7 +38,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement `sales:list` (paginated historical sales ledger) and `sales:get` (invoice lookup).
 
 ### Phase 3.3: POS Terminal Interface & Silent Printing
-- [ ] **Task 3.7: POS Terminal UI (`src/renderer/src/pages/POSSale.jsx`)**
+- [x] **Task 3.7: POS Terminal UI (`src/renderer/src/pages/POSSale.jsx`)**
   - Build fast, responsive point-of-sale terminal: mandatory salesperson dropdown, instant debounced SKU/barcode search bar, interactive cart table with real-time totals panel, and one-click "Complete Sale" action.
 
 - [ ] **Task 3.8: Silent Thermal Receipt Printing Engine (`src/main/ipc/print.ipc.js` & `receipt.html`)**
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.6 Completed. Phase 3.2 finished! Ready for Phase 3.3 (Task 3.7).
-- Waiting for user command ("implementation call") to begin **Task 3.7: POS Terminal UI (`src/renderer/src/pages/POSSale.jsx`)**.
+- **Current Status:** Task 3.7 Completed. Ready for Task 3.8.
+- Waiting for user command ("implementation call") to begin **Task 3.8: Silent Thermal Receipt Printing Engine (`src/main/ipc/print.ipc.js` & `receipt.html`)**.
