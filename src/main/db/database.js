@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import fs from 'fs'
 import { runMigrations } from './migrations.js'
 import { runSeed } from './seed.js'
+import { runAutoBackup } from '../services/backup.service.js'
 
 let dbInstance = null
 
@@ -31,6 +32,9 @@ export function getDb() {
 
   // Run initial settings seeder
   runSeed(db)
+
+  // Run daily auto-backup asynchronously
+  runAutoBackup(db)
 
   dbInstance = db
   return dbInstance

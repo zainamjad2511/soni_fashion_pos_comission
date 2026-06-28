@@ -34,10 +34,10 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement versioned migration runner checking `settings.schema_version`.
   - Write **V1 Migration** creating all 13 tables (`suppliers`, `articles`, `stock_movements`, `salespersons`, `commission_rates`, `sales`, `sale_items`, `commissions`, `returns`, `return_items`, `expenses`, `audit_log`, `settings`) and all 12 indexes.
 
-- [ ] **Task 1.5: Initial Settings Seeder (`db/seed.js`)**
+- [x] **Task 1.5: Initial Settings Seeder (`db/seed.js`)**
   - Seed initial configuration values (`shop_name`, `shop_address`, `sku_prefix`, counters, default commission, etc.) using `INSERT OR IGNORE`.
 
-- [ ] **Task 1.6: Auto-Backup Service (`services/backup.service.js`)**
+- [x] **Task 1.6: Auto-Backup Service (`services/backup.service.js`)**
   - Implement daily backup logic on app startup copying `.db` file to `AppData/backups/`.
   - Add pruning logic for backups older than 30 days.
 
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.4 Completed. Ready for Task 1.5.
-- Waiting for user command ("implementation call") to begin **Task 1.5: Initial Settings Seeder (`db/seed.js`)**.
+- **Current Status:** Task 1.6 Completed. Ready for Task 1.7.
+- Waiting for user command ("implementation call") to begin **Task 1.7: Audit Log Service (`services/audit.service.js`)**.
