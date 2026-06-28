@@ -36,7 +36,7 @@
   - Add expandable drill-down rows showing individual sale item attributions.
   - Implement interactive "Mark as Paid" action updating database status and refreshing UI.
 
-- [ ] **Task 5.5: Build Comprehensive Reports Hub (`src/renderer/src/pages/Reports.jsx`)**
+- [x] **Task 5.5: Build Comprehensive Reports Hub (`src/renderer/src/pages/Reports.jsx`)**
   - Construct a tabbed reporting suite covering Sales Summary, Profit & Loss, Stock Valuation, Top Articles, and Expense Breakdown.
   - Integrate global date range selectors.
   - Implement clean `@media print` styling and a prominent "Print Report" action button for physical document output.
@@ -56,5 +56,5 @@
   - Verify inventory valuation totals against stock quantities.
 
 ## 🚦 Execution Control
-- **Current Status:** Task 5.4 Completed. Ready for Task 5.5.
-- Waiting for user command ("implementation call") to begin **Task 5.5: Build Comprehensive Reports Hub (`src/renderer/src/pages/Reports.jsx`)**.
+- **Current Status:** Task 5.5 Completed. Ready for Task 5.6.
+- Waiting for user command ("implementation call") to begin **Task 5.6: Upgrade Live Dashboard KPIs & Cash Flow Widget (`src/renderer/src/pages/Dashboard.jsx`)**.
