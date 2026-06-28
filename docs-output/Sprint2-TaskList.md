@@ -53,7 +53,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 - [x] **Task 2.8: Inventory Valuation Dashboard Widget (`src/renderer/src/pages/Dashboard.jsx`)**
   - Update Dashboard page to pull real-time inventory metrics: Total Active Articles, Low Stock Alert Count, and Total Stock Valuation (`SUM(quantity * wholesale_price)`).
 
-- [ ] **Task 2.9: Sprint 2 End-to-End Verification & Acceptance Testing**
+- [x] **Task 2.9: Sprint 2 End-to-End Verification & Acceptance Testing**
   - Test Case 1: Add supplier "suidhaga" (verify code uniqueness block on duplicate).
   - Test Case 2: Add 5 articles (`art101` to `art105`) verifying sequential SKU auto-generation (`SF-00001` to `SF-00005`).
   - Test Case 3: Execute Stock IN shipment receiving 10 units of `SF-00001` (verify `quantity = 10` and movement log entry).
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.8 Completed. Ready for Task 2.9.
-- Waiting for user command ("implementation call") to begin **Task 2.9: Sprint 2 End-to-End Verification & Acceptance Testing**.
+- **Current Status:** Sprint 2 (100% Completed). All 9 tasks completed and verified E2E!
+- Ready for Phase/Sprint 3 planning and implementation.

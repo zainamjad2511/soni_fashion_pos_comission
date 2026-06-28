@@ -6,6 +6,7 @@ import { getDb, closeDb } from './db/database.js'
 import { registerSettingsHandlers } from './ipc/settings.ipc.js'
 import { registerSuppliersHandlers } from './ipc/suppliers.ipc.js'
 import { registerArticlesHandlers } from './ipc/articles.ipc.js'
+import { registerSalespersonsHandlers } from './ipc/salespersons.ipc.js'
 import { registerStubHandlers } from './ipc/stubs.ipc.js'
 
 if (process.platform === 'linux') {
@@ -68,6 +69,7 @@ app.whenReady().then(() => {
   registerSettingsHandlers()
   registerSuppliersHandlers()
   registerArticlesHandlers()
+  registerSalespersonsHandlers()
   registerStubHandlers()
 
   createWindow()
