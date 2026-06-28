@@ -1,5 +1,6 @@
 import React from 'react'
 import { PlaceholderPage } from './PlaceholderPage.jsx'
+import { Settings as SettingsComponent } from './Settings.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -16,7 +17,7 @@ export function DashboardPage() {
   return (
     <PlaceholderPage
       title="Dashboard Overview"
-      sprint="Sprint 1 (Task 1.11)"
+      sprint="Sprint 1 (Task 1.12)"
       description="Executive KPIs, daily revenue summaries, alert tickers, and low-stock indicators will be rendered here."
       icon={LayoutDashboard}
     />
@@ -90,14 +91,7 @@ export function SalespersonsPage() {
 }
 
 export function SettingsPage() {
-  return (
-    <PlaceholderPage
-      title="Store Configuration & Settings"
-      sprint="Sprint 1 (Task 1.12)"
-      description="Store profile management, receipt footer customization, thermal printer selection, and invoice prefix counters."
-      icon={Settings}
-    />
-  )
+  return <SettingsComponent />
 }
 
 export function AuditLogPage() {
