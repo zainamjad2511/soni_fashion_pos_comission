@@ -5,6 +5,7 @@ import { Suppliers as SuppliersComponent } from './Suppliers.jsx'
 import { Inventory as InventoryComponent } from './Inventory.jsx'
 import { Dashboard as DashboardComponent } from './Dashboard.jsx'
 import { Salespersons as SalespersonsComponent } from './Salespersons.jsx'
+import { POSSale as POSSaleComponent } from './POSSale.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -22,14 +23,7 @@ export function DashboardPage() {
 }
 
 export function POSSalePage() {
-  return (
-    <PlaceholderPage
-      title="Point of Sale (POS) Terminal"
-      sprint="Sprint 2"
-      description="Barcode scanner support, fast sku lookups, instant cart calculations, discount toggles, and thermal receipt printing."
-      icon={ShoppingCart}
-    />
-  )
+  return <POSSaleComponent />
 }
 
 export function InventoryPage() {

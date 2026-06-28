@@ -30,10 +30,10 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Build interactive monthly commission rate configurator table allowing managers to assign commission percentages across staff members.
 
 ### Phase 3.2: POS Core Sales Engine & State Management
-- [ ] **Task 3.5: POS Cart Store (`src/renderer/src/store/cartStore.js`)**
+- [x] **Task 3.5: POS Cart Store (`src/renderer/src/store/cartStore.js`)**
   - Build Zustand cart store managing active sale state: selected salesperson, cart line items (SKU, name, wholesale/retail snapshot, editable qty, inline discount), subtotal, total discount, grand total, and payment method.
 
-- [ ] **Task 3.6: Sales IPC Handlers (`src/main/ipc/sales.ipc.js`)**
+- [x] **Task 3.6: Sales IPC Handlers (`src/main/ipc/sales.ipc.js`)**
   - Implement atomic `sales:create` database transaction: validates stock availability, decrements article quantities, logs `OUT` stock movements, calculates salesperson commission based on monthly rate, inserts `sales` and `sale_items` records, and generates sequential invoice numbers (`INV-YYYYMMDD-XXXX`).
   - Implement `sales:list` (paginated historical sales ledger) and `sales:get` (invoice lookup).
 
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.4 Completed. Phase 3.1 finished! Ready for Phase 3.2 (Task 3.5).
-- Waiting for user command ("implementation call") to begin **Task 3.5: POS Cart Store (`src/renderer/src/store/cartStore.js`)**.
+- **Current Status:** Task 3.6 Completed. Phase 3.2 finished! Ready for Phase 3.3 (Task 3.7).
+- Waiting for user command ("implementation call") to begin **Task 3.7: POS Terminal UI (`src/renderer/src/pages/POSSale.jsx`)**.
