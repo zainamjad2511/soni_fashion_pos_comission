@@ -41,7 +41,7 @@
   - Integrate global date range selectors.
   - Implement clean `@media print` styling and a prominent "Print Report" action button for physical document output.
 
-- [ ] **Task 5.6: Upgrade Live Dashboard KPIs & Cash Flow Widget (`src/renderer/src/pages/Dashboard.jsx`)**
+- [x] **Task 5.6: Upgrade Live Dashboard KPIs & Cash Flow Widget (`src/renderer/src/pages/Dashboard.jsx`)**
   - Connect real-time database queries to populate KPI cards: Today's Revenue, Today's Profit, Total Inventory Value, Outstanding Commissions, and Low Stock alerts.
   - Embed Daily Cash Flow breakdown widget showing net cash position.
 
@@ -56,5 +56,5 @@
   - Verify inventory valuation totals against stock quantities.
 
 ## 🚦 Execution Control
-- **Current Status:** Task 5.5 Completed. Ready for Task 5.6.
-- Waiting for user command ("implementation call") to begin **Task 5.6: Upgrade Live Dashboard KPIs & Cash Flow Widget (`src/renderer/src/pages/Dashboard.jsx`)**.
+- **Current Status:** Task 5.6 Completed. Ready for Task 5.7.
+- Waiting for user command ("implementation call") to begin **Task 5.7: Build Audit Log Viewer (`src/renderer/src/pages/AuditLog.jsx`)**.

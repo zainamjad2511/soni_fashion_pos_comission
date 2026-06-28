@@ -9,6 +9,7 @@ import { POSSale as POSSaleComponent } from './POSSale.jsx'
 import { Returns as ReturnsComponent } from './Returns.jsx'
 import { Expenses as ExpensesComponent } from './Expenses.jsx'
 import { Reports as ReportsComponent } from './Reports.jsx'
+import { AuditLog as AuditLogComponent } from './AuditLog.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -58,12 +59,5 @@ export function SettingsPage() {
 }
 
 export function AuditLogPage() {
-  return (
-    <PlaceholderPage
-      title="System Security & Audit Log"
-      sprint="Sprint 1 (Task 1.13)"
-      description="Tamper-evident chronological activity ledger recording price edits, stock overrides, and voided transactions."
-      icon={ShieldAlert}
-    />
-  )
+  return <AuditLogComponent />
 }
