@@ -7,7 +7,7 @@
 ## 📋 Task Breakdown & Progress
 
 ### Phase 4.1: Returns IPC & Database Transactions
-- [ ] **Task 4.1: Implement Returns Lookup IPC Handlers (`returns:lookupSale`, `returns:lookupBySku`)**
+- [x] **Task 4.1: Implement Returns Lookup IPC Handlers (`returns:lookupSale`, `returns:lookupBySku`)**
   - Implement `returns:lookupSale` taking an invoice number, returning the sale header and all `sale_items` joined with article details and already-returned quantities.
   - Implement `returns:lookupBySku` taking an article SKU or supplier code, returning a list of matching completed sales sorted by date.
 
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Sprint 4 Task List Generated. Ready for execution.
-- Waiting for user command ("implementation call" / "start 4.1") to begin **Task 4.1: Implement Returns Lookup IPC Handlers**.
+- **Current Status:** Task 4.1 Completed. Ready for Task 4.2.
+- Waiting for user command ("implementation call") to begin **Task 4.2: Implement Returns Creation IPC Handler (`returns:create`)**.
