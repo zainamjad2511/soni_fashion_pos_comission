@@ -275,9 +275,114 @@ export function registerArticlesHandlers() {
     return true
   })
 
-  // Stub for adjustStock until Task 2.4 implementation
-  handleIpc('articles:adjustStock', () => {
-    throw new Error('Stock adjustment handler scheduled for Task 2.4.')
+  handleIpc('articles:adjustStock', (_, payload) => {
+    const db = getDb()
+    if (!payload) {
+      throw new Error('Stock adjustment payload is required.')
+    }
+
+    const items = Array.isArray(payload.items)
+      ? payload.items
+      : [{ article_id: payload.article_id, quantity: payload.quantity, note: payload.note }]
+
+    if (items.length === 0) {
+      throw new Error('No items specified for stock adjustment.')
+    }
+
+    const movementType = payload.movement_type || 'IN'
+    const referenceType = payload.reference_type || 'MANUAL_ADJUSTMENT'
+    const referenceId = payload.reference_id || null
+    const performedBy = payload.performed_by || 'Admin'
+    const batchNote = payload.note || `Stock ${movementType} batch processing`
+
+    const selectStmt = db.prepare('SELECT * FROM articles WHERE id = ?')
+    const updateStmt = db.prepare('UPDATE articles SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+    const insertMovementStmt = db.prepare(`
+      INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, performed_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
+
+    const adjustTransaction = db.transaction(() => {
+      const results = []
+
+      for (const item of items) {
+        const articleId = Number(item.article_id)
+        const qty = Number(item.quantity)
+
+        if (!articleId || isNaN(qty) || qty === 0) {
+          throw new Error(`Invalid quantity (${qty}) specified for article ID ${articleId}.`)
+        }
+
+        const oldRow = selectStmt.get(articleId)
+        if (!oldRow) {
+          throw new Error(`Article ID ${articleId} not found during stock processing.`)
+        }
+
+        let newQty = oldRow.quantity
+        const absQty = Math.abs(qty)
+
+        if (movementType === 'IN' || movementType === 'RETURN_IN') {
+          newQty = oldRow.quantity + absQty
+        } else if (movementType === 'OUT') {
+          newQty = oldRow.quantity - absQty
+          if (newQty < 0) {
+            throw new Error(`Insufficient stock for article "${oldRow.sku}" (${oldRow.name}). Current stock: ${oldRow.quantity}, requested out: ${absQty}.`)
+          }
+        } else if (movementType === 'ADJUSTMENT') {
+          newQty = oldRow.quantity + qty
+          if (newQty < 0) {
+            throw new Error(`Negative stock resulting from adjustment on article "${oldRow.sku}".`)
+          }
+        }
+
+        updateStmt.run(newQty, articleId)
+        insertMovementStmt.run(articleId, movementType, absQty, referenceType, referenceId, item.note || batchNote, performedBy)
+
+        auditLog(
+          db,
+          `STOCK_${movementType}`,
+          'articles',
+          articleId,
+          `Processed stock ${movementType} (${qty > 0 ? '+' : ''}${qty}) for SKU "${oldRow.sku}"`,
+          oldRow.quantity,
+          newQty
+        )
+
+        results.push({
+          article_id: articleId,
+          sku: oldRow.sku,
+          old_quantity: oldRow.quantity,
+          new_quantity: newQty
+        })
+      }
+
+      return { processed_items: results.length, results }
+    })
+
+    return adjustTransaction()
+  })
+
+  handleIpc('articles:getStockMovements', (_, articleId) => {
+    const db = getDb()
+    if (!articleId) {
+      const stmt = db.prepare(`
+        SELECT sm.*, a.sku, a.name as article_name
+        FROM stock_movements sm
+        JOIN articles a ON sm.article_id = a.id
+        ORDER BY sm.id DESC
+        LIMIT 100
+      `)
+      return stmt.all()
+    }
+    const stmt = db.prepare(`
+      SELECT sm.*, a.sku, a.name as article_name
+      FROM stock_movements sm
+      JOIN articles a ON sm.article_id = a.id
+      WHERE sm.article_id = ?
+      ORDER BY sm.id DESC
+      LIMIT 100
+    `)
+    return stmt.all(Number(articleId))
   })
 
   console.log('[IPC] Registered Articles handlers.')
