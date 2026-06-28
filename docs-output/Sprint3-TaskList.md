@@ -46,7 +46,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement `print:receipt` and `print:getPrinters` IPC handlers allowing silent background printing (`webContents.print({ silent: true, deviceName: ... })`) without OS print dialogs.
   - Add thermal printer selection dropdown in `Settings.jsx`.
 
-- [ ] **Task 3.9: Reprint Receipt Modal & Dashboard Integration**
+- [x] **Task 3.9: Reprint Receipt Modal & Dashboard Integration**
   - Build invoice reprint lookup modal allowing staff to search past invoices and re-trigger thermal receipts.
   - Update `Dashboard.jsx` to display today's live sales count and today's total revenue.
 
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.8 Completed. Ready for Task 3.9.
-- Waiting for user command ("implementation call") to begin **Task 3.9: Reprint Receipt Modal & Dashboard Integration**.
+- **Current Status:** Task 3.9 Completed. Ready for Task 3.10.
+- Waiting for user command ("implementation call") to begin **Task 3.10: Sprint 3 End-to-End Verification & Acceptance Testing**.

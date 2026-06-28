@@ -97,7 +97,7 @@ export function registerSalesHandlers() {
       `)
       const updateStockStmt = db.prepare('UPDATE articles SET quantity = quantity - ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, notes)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
         VALUES (?, 'OUT', ?, 'SALE', ?, ?)
       `)
 
@@ -218,7 +218,7 @@ export function registerSalesHandlers() {
       const items = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(saleId)
       const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, notes)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
         VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?)
       `)
 
