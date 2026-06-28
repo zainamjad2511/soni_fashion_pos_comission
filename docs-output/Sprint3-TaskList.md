@@ -26,7 +26,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement `commissions:setRate` (upserts monthly percentage rates into `commission_rates` table for given salesperson and month).
   - Implement `commissions:getSummary` & `commissions:list` to fetch configured rates and calculated commission earnings.
 
-- [ ] **Task 3.4: Commission Configuration UI (`src/renderer/src/pages/Commissions.jsx`)**
+- [x] **Task 3.4: Commission Configuration UI (`src/renderer/src/pages/Commissions.jsx`)**
   - Build interactive monthly commission rate configurator table allowing managers to assign commission percentages across staff members.
 
 ### Phase 3.2: POS Core Sales Engine & State Management
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.3 Completed. Ready for Task 3.4.
-- Waiting for user command ("implementation call") to begin **Task 3.4: Commission Configuration UI (`src/renderer/src/pages/Commissions.jsx`)**.
+- **Current Status:** Task 3.4 Completed. Phase 3.1 finished! Ready for Phase 3.2 (Task 3.5).
+- Waiting for user command ("implementation call") to begin **Task 3.5: POS Cart Store (`src/renderer/src/store/cartStore.js`)**.
