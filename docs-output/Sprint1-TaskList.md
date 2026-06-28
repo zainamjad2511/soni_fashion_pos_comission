@@ -30,7 +30,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Set up SQLite connection at `app.getPath('userData')/sonifashion.db`.
   - Enforce required runtime PRAGMAs (`WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, `busy_timeout = 5000`).
 
-- [ ] **Task 1.4: Schema Migrations Engine (`db/migrations.js`)**
+- [x] **Task 1.4: Schema Migrations Engine (`db/migrations.js`)**
   - Implement versioned migration runner checking `settings.schema_version`.
   - Write **V1 Migration** creating all 13 tables (`suppliers`, `articles`, `stock_movements`, `salespersons`, `commission_rates`, `sales`, `sale_items`, `commissions`, `returns`, `return_items`, `expenses`, `audit_log`, `settings`) and all 12 indexes.
 
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.3 Completed. Ready for Task 1.4.
-- Waiting for user command ("implementation call") to begin **Task 1.4: Schema Migrations Engine (`db/migrations.js`)**.
+- **Current Status:** Task 1.4 Completed. Ready for Task 1.5.
+- Waiting for user command ("implementation call") to begin **Task 1.5: Initial Settings Seeder (`db/seed.js`)**.

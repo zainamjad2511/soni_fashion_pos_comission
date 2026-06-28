@@ -3,6 +3,7 @@ import path from 'path'
 import Database from 'better-sqlite3'
 import fs from 'fs'
 import { runMigrations } from './migrations.js'
+import { runSeed } from './seed.js'
 
 let dbInstance = null
 
@@ -27,6 +28,9 @@ export function getDb() {
 
   // Run schema migrations
   runMigrations(db)
+
+  // Run initial settings seeder
+  runSeed(db)
 
   dbInstance = db
   return dbInstance
