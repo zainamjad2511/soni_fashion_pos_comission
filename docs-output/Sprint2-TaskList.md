@@ -13,7 +13,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ## 🛠️ Step-by-Step Task Breakdown
 
 ### Phase 2.1: Supplier Management
-- [ ] **Task 2.1: Supplier IPC Handlers (`src/main/ipc/suppliers.ipc.js`)**
+- [x] **Task 2.1: Supplier IPC Handlers (`src/main/ipc/suppliers.ipc.js`)**
   - Implement `suppliers:create` (enforcing unique supplier code validation before insert).
   - Implement `suppliers:update`, `suppliers:list` (with active/inactive filters), and `suppliers:toggleActive`.
   - Ensure every write operation records a tamper-evident entry via `auditLog()`.
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Ready to begin Sprint 2.
-- Waiting for user command ("implementation call") to begin **Task 2.1: Supplier IPC Handlers (`src/main/ipc/suppliers.ipc.js`)**.
+- **Current Status:** Task 2.1 Completed. Ready for Task 2.2.
+- Waiting for user command ("implementation call") to begin **Task 2.2: Suppliers Management UI (`src/renderer/src/pages/Suppliers.jsx`)**.

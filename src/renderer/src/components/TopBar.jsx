@@ -7,6 +7,7 @@ const routeTitles = {
   '/': 'Dashboard Overview',
   '/sale': 'New POS Sale Terminal',
   '/inventory': 'Article & Stock Inventory',
+  '/suppliers': 'Wholesale Suppliers Catalog',
   '/returns': 'Returns & Exchanges Processing',
   '/expenses': 'Store Expense Management',
   '/reports': 'Reports & Financial Analytics',

@@ -10,13 +10,15 @@ import {
   Users,
   Settings,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Truck
 } from 'lucide-react'
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
   { name: 'New Sale (POS)', path: '/sale', icon: ShoppingCart, highlight: true },
   { name: 'Inventory & Stock', path: '/inventory', icon: Package },
+  { name: 'Wholesale Suppliers', path: '/suppliers', icon: Truck },
   { name: 'Returns & Exchanges', path: '/returns', icon: RotateCcw },
   { name: 'Expenses', path: '/expenses', icon: Receipt },
   { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },

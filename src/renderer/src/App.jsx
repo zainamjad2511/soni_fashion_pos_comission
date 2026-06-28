@@ -5,6 +5,7 @@ import {
   DashboardPage,
   POSSalePage,
   InventoryPage,
+  SuppliersPage,
   ReturnsPage,
   ExpensesPage,
   ReportsPage,
@@ -21,6 +22,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="sale" element={<POSSalePage />} />
           <Route path="inventory" element={<InventoryPage />} />
+          <Route path="suppliers" element={<SuppliersPage />} />
           <Route path="returns" element={<ReturnsPage />} />
           <Route path="expenses" element={<ExpensesPage />} />
           <Route path="reports" element={<ReportsPage />} />

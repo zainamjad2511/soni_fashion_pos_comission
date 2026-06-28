@@ -1,6 +1,7 @@
 import React from 'react'
 import { PlaceholderPage } from './PlaceholderPage.jsx'
 import { Settings as SettingsComponent } from './Settings.jsx'
+import { Suppliers as SuppliersComponent } from './Suppliers.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -44,6 +45,10 @@ export function InventoryPage() {
       icon={Package}
     />
   )
+}
+
+export function SuppliersPage() {
+  return <SuppliersComponent />
 }
 
 export function ReturnsPage() {
