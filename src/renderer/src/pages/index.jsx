@@ -3,6 +3,7 @@ import { PlaceholderPage } from './PlaceholderPage.jsx'
 import { Settings as SettingsComponent } from './Settings.jsx'
 import { Suppliers as SuppliersComponent } from './Suppliers.jsx'
 import { Inventory as InventoryComponent } from './Inventory.jsx'
+import { Dashboard as DashboardComponent } from './Dashboard.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -16,14 +17,7 @@ import {
 } from 'lucide-react'
 
 export function DashboardPage() {
-  return (
-    <PlaceholderPage
-      title="Dashboard Overview"
-      sprint="Sprint 1 (Task 1.12)"
-      description="Executive KPIs, daily revenue summaries, alert tickers, and low-stock indicators will be rendered here."
-      icon={LayoutDashboard}
-    />
-  )
+  return <DashboardComponent />
 }
 
 export function POSSalePage() {

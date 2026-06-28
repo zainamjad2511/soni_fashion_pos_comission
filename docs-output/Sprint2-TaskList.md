@@ -50,7 +50,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Build historical inspection modal displaying chronological entries (`IN`, `OUT`, `ADJUST`, `RETURN`, timestamp, reference note) for any clicked article.
 
 ### Phase 2.4: Dashboard Integration & QA
-- [ ] **Task 2.8: Inventory Valuation Dashboard Widget (`src/renderer/src/pages/Dashboard.jsx`)**
+- [x] **Task 2.8: Inventory Valuation Dashboard Widget (`src/renderer/src/pages/Dashboard.jsx`)**
   - Update Dashboard page to pull real-time inventory metrics: Total Active Articles, Low Stock Alert Count, and Total Stock Valuation (`SUM(quantity * wholesale_price)`).
 
 - [ ] **Task 2.9: Sprint 2 End-to-End Verification & Acceptance Testing**
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.7 Completed. Ready for Task 2.8.
-- Waiting for user command ("implementation call") to begin **Task 2.8: Inventory Valuation Dashboard Widget (`src/renderer/src/pages/Dashboard.jsx`)**.
+- **Current Status:** Task 2.8 Completed. Ready for Task 2.9.
+- Waiting for user command ("implementation call") to begin **Task 2.9: Sprint 2 End-to-End Verification & Acceptance Testing**.
