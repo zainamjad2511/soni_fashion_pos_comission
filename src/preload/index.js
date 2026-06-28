@@ -34,6 +34,8 @@ const customElectronAPI = {
   },
 
   returns: {
+    lookupSale: (invoiceNo) => ipcRenderer.invoke('returns:lookupSale', invoiceNo),
+    lookupBySku: (term) => ipcRenderer.invoke('returns:lookupBySku', term),
     list: (filters) => ipcRenderer.invoke('returns:list', filters),
     get: (idOrNumber) => ipcRenderer.invoke('returns:get', idOrNumber),
     create: (payload) => ipcRenderer.invoke('returns:create', payload)

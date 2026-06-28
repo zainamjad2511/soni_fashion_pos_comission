@@ -5,9 +5,6 @@ export function registerStubHandlers() {
 
 
 
-  // Returns Stubs
-  const returnChannels = ['returns:list', 'returns:get', 'returns:create']
-  returnChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
   // Reports Stubs
   const reportChannels = ['reports:dailySales', 'reports:monthlyProfit', 'reports:stockValuation', 'reports:salespersonPerformance', 'reports:expensesSummary']
