@@ -42,6 +42,15 @@ const customElectronAPI = {
   },
 
   reports: {
+    salesSummary: (filters) => ipcRenderer.invoke('reports:salesSummary', filters),
+    profitSummary: (filters) => ipcRenderer.invoke('reports:profitSummary', filters),
+    commissionSummary: (filters) => ipcRenderer.invoke('reports:commissionSummary', filters),
+    markCommissionPaid: (filters) => ipcRenderer.invoke('reports:markCommissionPaid', filters),
+    inventoryValuation: () => ipcRenderer.invoke('reports:inventoryValuation'),
+    topArticles: (filters) => ipcRenderer.invoke('reports:topArticles', filters),
+    expenseSummary: (filters) => ipcRenderer.invoke('reports:expenseSummary', filters),
+    dailyCashFlow: (filters) => ipcRenderer.invoke('reports:dailyCashFlow', filters),
+    // Legacy aliases
     dailySales: (date) => ipcRenderer.invoke('reports:dailySales', date),
     monthlyProfit: (month) => ipcRenderer.invoke('reports:monthlyProfit', month),
     stockValuation: () => ipcRenderer.invoke('reports:stockValuation'),
@@ -82,6 +91,10 @@ const customElectronAPI = {
     receipt: (receiptData) => ipcRenderer.invoke('print:receipt', receiptData),
     report: (reportData) => ipcRenderer.invoke('print:report', reportData),
     getPrinters: () => ipcRenderer.invoke('print:getPrinters')
+  },
+
+  audit: {
+    list: (filters) => ipcRenderer.invoke('audit:list', filters)
   }
 }
 

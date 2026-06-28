@@ -1,0 +1,279 @@
+import { handleIpc } from './envelope.js'
+import { getDb } from '../db/database.js'
+import { auditLog } from '../services/audit.service.js'
+
+export function registerReportsHandlers() {
+  // Helper to unpack date filters whether passed as object or individual arguments
+  const unpackDates = (arg1, arg2) => {
+    if (arg1 && typeof arg1 === 'object') {
+      return {
+        startDate: arg1.startDate || arg1.start || '2000-01-01',
+        endDate: arg1.endDate || arg1.end || '2100-12-31',
+        salespersonId: arg1.salespersonId || null,
+        limit: arg1.limit || 10,
+        month: arg1.month || new Date().toISOString().slice(0, 7),
+        date: arg1.date || new Date().toISOString().slice(0, 10)
+      }
+    }
+    return {
+      startDate: typeof arg1 === 'string' ? arg1 : '2000-01-01',
+      endDate: typeof arg2 === 'string' ? arg2 : '2100-12-31',
+      salespersonId: null,
+      limit: 10,
+      month: typeof arg1 === 'string' && arg1.length === 7 ? arg1 : new Date().toISOString().slice(0, 7),
+      date: typeof arg1 === 'string' && arg1.length === 10 ? arg1 : new Date().toISOString().slice(0, 10)
+    }
+  }
+
+  // 1. Sales Summary Report
+  const handleSalesSummary = (_, arg1, arg2, arg3) => {
+    const db = getDb()
+    const { startDate, endDate } = unpackDates(arg1, arg2)
+    const salespersonId = (arg1 && typeof arg1 === 'object') ? arg1.salespersonId : arg3
+
+    let query = `
+      SELECT
+        s.id, s.invoice_number, s.sale_date, s.subtotal, s.total_discount, s.grand_total, s.payment_method, s.status,
+        sp.name AS salesperson_name,
+        COALESCE(SUM(si.quantity), 0) AS total_items
+      FROM sales s
+      LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
+      LEFT JOIN sale_items si ON s.id = si.sale_id
+      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
+    `
+    const params = [startDate, endDate]
+
+    if (salespersonId && salespersonId !== 'All') {
+      query += ' AND s.salesperson_id = ?'
+      params.push(Number(salespersonId))
+    }
+
+    query += ' GROUP BY s.id ORDER BY s.sale_date DESC'
+    const rows = db.prepare(query).all(...params)
+
+    const total_sales = rows.length
+    const total_items = rows.reduce((acc, r) => acc + Number(r.total_items), 0)
+    const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total), 0)
+
+    return { sales: rows, summary: { total_sales, total_items, total_revenue } }
+  }
+  handleIpc('reports:salesSummary', handleSalesSummary)
+  handleIpc('reports:dailySales', handleSalesSummary) // Backward compatibility alias
+
+  // 2. Profit Summary Report
+  const handleProfitSummary = (_, arg1, arg2) => {
+    const db = getDb()
+    const { startDate, endDate } = unpackDates(arg1, arg2)
+
+    const salesRes = db.prepare(`
+      SELECT
+        COALESCE(SUM(si.line_total), 0) AS revenue,
+        COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS cogs
+      FROM sale_items si
+      JOIN sales s ON s.id = si.sale_id
+      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
+    `).get(startDate, endDate)
+
+    const expRes = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total_expenses
+      FROM expenses
+      WHERE expense_date >= ? AND expense_date <= ?
+    `).get(startDate, endDate)
+
+    const revenue = Number(salesRes?.revenue || 0)
+    const cogs = Number(salesRes?.cogs || 0)
+    const gross_profit = revenue - cogs
+    const total_expenses = Number(expRes?.total_expenses || 0)
+    const net_profit = gross_profit - total_expenses
+
+    return { revenue, cogs, gross_profit, total_expenses, net_profit }
+  }
+  handleIpc('reports:profitSummary', handleProfitSummary)
+  handleIpc('reports:monthlyProfit', handleProfitSummary) // Backward compatibility alias
+
+  // 3. Commission Summary Report
+  const handleCommissionSummary = (_, arg1, arg2) => {
+    const db = getDb()
+    const { month } = unpackDates(arg1)
+    const salespersonId = (arg1 && typeof arg1 === 'object') ? arg1.salespersonId : arg2
+
+    let query = `
+      SELECT c.*, sp.name AS salesperson_name, s.invoice_number
+      FROM commissions c
+      JOIN salespersons sp ON c.salesperson_id = sp.id
+      LEFT JOIN sales s ON c.sale_id = s.id
+      WHERE c.month = ?
+    `
+    const params = [month]
+
+    if (salespersonId && salespersonId !== 'All') {
+      query += ' AND c.salesperson_id = ?'
+      params.push(Number(salespersonId))
+    }
+
+    query += ' ORDER BY c.id DESC'
+    const rows = db.prepare(query).all(...params)
+
+    let total_pending = 0
+    let total_paid = 0
+    let total_reversed = 0
+
+    for (const r of rows) {
+      const amt = Number(r.commission_amount || 0)
+      if (r.status === 'pending') total_pending += amt
+      else if (r.status === 'paid') total_paid += amt
+      else if (r.status === 'reversed') total_reversed += amt
+    }
+
+    // Payable excludes reversed commissions
+    const total_payable = total_pending
+
+    return { commissions: rows, summary: { total_pending, total_paid, total_reversed, total_payable } }
+  }
+  handleIpc('reports:commissionSummary', handleCommissionSummary)
+  handleIpc('reports:salespersonPerformance', handleCommissionSummary) // Backward compatibility alias
+
+  // 4. Mark Commission Paid
+  handleIpc('reports:markCommissionPaid', (_, arg1, arg2) => {
+    const db = getDb()
+    const { month } = unpackDates(arg1)
+    const salespersonId = Number((arg1 && typeof arg1 === 'object') ? arg1.salespersonId : arg2)
+
+    if (!salespersonId) {
+      throw new Error('Salesperson ID is required to mark commission paid.')
+    }
+
+    const res = db.prepare(`
+      UPDATE commissions
+      SET status = 'paid'
+      WHERE month = ? AND salesperson_id = ? AND status = 'pending'
+    `).run(month, salespersonId)
+
+    auditLog(
+      db,
+      'COMMISSION_PAID',
+      'commissions',
+      salespersonId,
+      `Marked ${res.changes} commission records paid for Staff #${salespersonId} for month ${month}`
+    )
+
+    return { success: true, updatedCount: res.changes }
+  })
+
+  // 5. Inventory Valuation Report
+  const handleStockValuation = () => {
+    const db = getDb()
+    const rows = db.prepare(`
+      SELECT id, sku, name, category, quantity, wholesale_price, retail_price,
+             (quantity * wholesale_price) AS total_cost_value,
+             (quantity * retail_price) AS total_retail_value
+      FROM articles
+      WHERE is_active = 1
+      ORDER BY name ASC
+    `).all()
+
+    const total_articles = rows.length
+    const total_units = rows.reduce((acc, r) => acc + Number(r.quantity), 0)
+    const grand_total_cost = rows.reduce((acc, r) => acc + Number(r.total_cost_value), 0)
+    const grand_total_retail = rows.reduce((acc, r) => acc + Number(r.total_retail_value), 0)
+
+    return { articles: rows, summary: { total_articles, total_units, grand_total_cost, grand_total_retail } }
+  }
+  handleIpc('reports:inventoryValuation', handleStockValuation)
+  handleIpc('reports:stockValuation', handleStockValuation) // Backward compatibility alias
+
+  // 6. Top Articles Report
+  handleIpc('reports:topArticles', (_, arg1, arg2, arg3) => {
+    const db = getDb()
+    const { startDate, endDate } = unpackDates(arg1, arg2)
+    const limit = (arg1 && typeof arg1 === 'object' && arg1.limit) ? arg1.limit : (Number(arg3) || 10)
+
+    const rows = db.prepare(`
+      SELECT a.id, a.sku, a.name, a.category,
+             COALESCE(SUM(si.quantity), 0) AS total_quantity_sold,
+             COALESCE(SUM(si.line_total), 0) AS total_revenue
+      FROM sale_items si
+      JOIN sales s ON si.sale_id = s.id
+      JOIN articles a ON si.article_id = a.id
+      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
+      GROUP BY a.id
+      ORDER BY total_quantity_sold DESC
+      LIMIT ?
+    `).all(startDate, endDate, limit)
+
+    return { articles: rows }
+  })
+
+  // 7. Expense Summary Report
+  const handleExpensesSummary = (_, arg1, arg2) => {
+    const db = getDb()
+    const { startDate, endDate } = unpackDates(arg1, arg2)
+
+    const rows = db.prepare(`
+      SELECT category, COUNT(*) AS expense_count, COALESCE(SUM(amount), 0) AS total_amount
+      FROM expenses
+      WHERE expense_date >= ? AND expense_date <= ?
+      GROUP BY category
+      ORDER BY total_amount DESC
+    `).all(startDate, endDate)
+
+    const grand_total = rows.reduce((acc, r) => acc + Number(r.total_amount), 0)
+
+    return { categories: rows, summary: { grand_total } }
+  }
+  handleIpc('reports:expenseSummary', handleExpensesSummary)
+  handleIpc('reports:expensesSummary', handleExpensesSummary) // Backward compatibility alias
+
+  // 8. Daily Cash Flow Report
+  handleIpc('reports:dailyCashFlow', (_, arg1) => {
+    const db = getDb()
+    const { date } = unpackDates(arg1)
+
+    const salesRes = db.prepare(`
+      SELECT COALESCE(SUM(grand_total), 0) AS cash_in
+      FROM sales WHERE status = 'completed' AND DATE(sale_date) = ?
+    `).get(date)
+
+    const returnsRes = db.prepare(`
+      SELECT COALESCE(SUM(refund_amount), 0) AS cash_out
+      FROM returns WHERE DATE(return_date) = ? AND return_type IN ('refund', 'exchange', 'manual')
+    `).get(date)
+
+    const cash_in = Number(salesRes?.cash_in || 0)
+    const cash_out = Number(returnsRes?.cash_out || 0)
+    const net_cash = cash_in - cash_out
+
+    return { date, cash_in, cash_out, net_cash }
+  })
+
+  // 9. Audit Log Viewer
+  handleIpc('audit:list', (_, filters) => {
+    const db = getDb()
+    let query = 'SELECT * FROM audit_log WHERE 1=1'
+    const params = []
+
+    if (filters) {
+      if (filters.startDate) {
+        query += ' AND DATE(performed_at) >= ?'
+        params.push(filters.startDate)
+      }
+      if (filters.endDate) {
+        query += ' AND DATE(performed_at) <= ?'
+        params.push(filters.endDate)
+      }
+      if (filters.actionType && filters.actionType !== 'All') {
+        query += ' AND action_type = ?'
+        params.push(filters.actionType)
+      }
+      if (filters.search && filters.search.trim() !== '') {
+        query += ' AND (description LIKE ? OR entity_type LIKE ? OR action_type LIKE ?)'
+        const term = `%${filters.search.trim()}%`
+        params.push(term, term, term)
+      }
+    }
+
+    query += ' ORDER BY performed_at DESC, id DESC LIMIT 500'
+    const stmt = db.prepare(query)
+    return { logs: stmt.all(...params) }
+  })
+}

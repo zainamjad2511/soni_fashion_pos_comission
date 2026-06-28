@@ -12,6 +12,7 @@ import { registerSalesHandlers } from './ipc/sales.ipc.js'
 import { registerPrintHandlers } from './ipc/print.ipc.js'
 import { registerReturnsHandlers } from './ipc/returns.ipc.js'
 import { registerExpensesHandlers } from './ipc/expenses.ipc.js'
+import { registerReportsHandlers } from './ipc/reports.ipc.js'
 import { registerStubHandlers } from './ipc/stubs.ipc.js'
 
 if (process.platform === 'linux') {
@@ -80,6 +81,7 @@ app.whenReady().then(() => {
   registerPrintHandlers()
   registerReturnsHandlers()
   registerExpensesHandlers()
+  registerReportsHandlers()
   registerStubHandlers()
 
   createWindow()

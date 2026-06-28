@@ -7,7 +7,7 @@
 ## 📋 Task Breakdown
 
 ### Phase 5.1: Backend IPC Handlers & Data Layer
-- [ ] **Task 5.1: Implement Expenses IPC (`expenses.ipc.js`) & Preload Bridge**
+- [x] **Task 5.1: Implement Expenses IPC (`expenses.ipc.js`) & Preload Bridge**
   - Create database handlers for `expenses:create`, `expenses:list` (with date range & category filtering), `expenses:update`, and `expenses:delete`.
   - Log all expense creations, modifications, and deletions to `audit_log`.
   - Register channel handlers in `src/main/index.js` and expose methods via `window.electronAPI.expenses`.
@@ -58,5 +58,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Sprint 5 Task List initialized. Ready to begin Phase 5.1.
-- Waiting for user command ("implementation call") to begin **Task 5.1: Implement Expenses IPC (`expenses.ipc.js`) & Preload Bridge**.
+- **Current Status:** Task 5.1 Completed. Ready for Task 5.2.
+- Waiting for user command ("implementation call") to begin **Task 5.2: Implement Reports & Audit Log IPC (`reports.ipc.js`)**.
