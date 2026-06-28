@@ -13,7 +13,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ## 🛠️ Step-by-Step Task Breakdown
 
 ### Phase 1.1: Project Setup & Shell Architecture
-- [ ] **Task 1.1: Bootstrap Project**
+- [x] **Task 1.1: Bootstrap Project**
   - Run `@quick-start/electron` template (`react`).
   - Install core dependencies (`better-sqlite3`, `zustand`, `react-hook-form`, `zod`, `react-router-dom`, `date-fns`, `lucide-react`).
   - Install dev dependencies (`tailwindcss`, `postcss`, `autoprefixer`, `electron-builder`, `@electron/rebuild`).
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Ready for Task 1.1
-- Waiting for user command ("implementation call") to begin **Task 1.1: Bootstrap Project**.
+- **Current Status:** Task 1.1 Completed. Ready for Task 1.2.
+- Waiting for user command ("implementation call") to begin **Task 1.2: Configure Tailwind CSS & Brand Theme**.

@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #c23352;
+    --color-primary-dark: #a2223e;
+    --color-accent: #f43f5e;
+    --bg-main: #0f1015;
+    --bg-card: rgba(27, 28, 36, 0.75);
+    --border-glass: rgba(255, 255, 255, 0.08);
+  }
+
+  * {
+    @apply border-gray-800/60;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-maroon-600 selection:text-white min-h-screen overflow-x-hidden;
+    background: radial-gradient(circle at 15% 15%, rgba(162, 34, 62, 0.15) 0%, rgba(15, 16, 21, 1) 50%),
+                radial-gradient(circle at 85% 85%, rgba(244, 63, 94, 0.08) 0%, rgba(15, 16, 21, 1) 60%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans tracking-tight font-semibold text-white;
+  }
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 16, 21, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(194, 51, 82, 0.4);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(194, 51, 82, 0.8);
+}
+
+/* Glassmorphism & Premium Utilities */
+@layer utilities {
+  .glass-panel {
+    background: rgba(24, 25, 34, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  }
+
+  .glass-card {
+    background: linear-gradient(135deg, rgba(35, 37, 50, 0.6) 0%, rgba(24, 25, 34, 0.4) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: rgba(194, 51, 82, 0.4);
+    box-shadow: 0 12px 28px -6px rgba(194, 51, 82, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #fff 0%, #f8d2d9 50%, #e88095 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* Micro-animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Report Print Styles — applied only when printing a report page (Doc 2 Section 3.5) */
+@media print {
+  body * { visibility: hidden; }
+  #report-root, #report-root * { visibility: visible; }
+  #report-root { position: fixed; top: 0; left: 0; width: 100%; background: white !important; color: black !important; }
+  @page { margin: 0.5cm; }
+}
