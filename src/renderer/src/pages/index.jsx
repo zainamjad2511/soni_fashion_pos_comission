@@ -4,6 +4,7 @@ import { Settings as SettingsComponent } from './Settings.jsx'
 import { Suppliers as SuppliersComponent } from './Suppliers.jsx'
 import { Inventory as InventoryComponent } from './Inventory.jsx'
 import { Dashboard as DashboardComponent } from './Dashboard.jsx'
+import { Salespersons as SalespersonsComponent } from './Salespersons.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -73,14 +74,7 @@ export function ReportsPage() {
 }
 
 export function SalespersonsPage() {
-  return (
-    <PlaceholderPage
-      title="Salespersons & Commission Tracking"
-      sprint="Sprint 6"
-      description="Staff profiles, tiered monthly commission rate assignments, payout ledgers, and sales performance ranking."
-      icon={Users}
-    />
-  )
+  return <SalespersonsComponent />
 }
 
 export function SettingsPage() {

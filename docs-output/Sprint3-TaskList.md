@@ -18,7 +18,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Remove stubs from `src/main/ipc/stubs.ipc.js` and register handlers in `src/main/index.js`.
   - Ensure all modifications record audit trails via `auditLog()`.
 
-- [ ] **Task 3.2: Salesperson Management UI (`src/renderer/src/pages/Salespersons.jsx`)**
+- [x] **Task 3.2: Salesperson Management UI (`src/renderer/src/pages/Salespersons.jsx`)**
   - Build modern glassmorphic dashboard to register store staff, manage contact numbers, and toggle active status.
   - Register route and view component in `src/renderer/src/pages/index.jsx`.
 
@@ -59,5 +59,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 3.1 Completed. Ready for Task 3.2.
-- Waiting for user command ("implementation call") to begin **Task 3.2: Salesperson Management UI (`src/renderer/src/pages/Salespersons.jsx`)**.
+- **Current Status:** Task 3.2 Completed. Ready for Task 3.3.
+- Waiting for user command ("implementation call") to begin **Task 3.3: Commissions IPC Handlers (`src/main/ipc/commissions.ipc.js`)**.
