@@ -25,7 +25,7 @@
   - Expose all reporting endpoints in `src/preload/index.js`.
 
 ### Phase 5.2: Frontend UI & Reporting Hub
-- [ ] **Task 5.3: Build Expenses Management UI (`src/renderer/src/pages/Expenses.jsx`)**
+- [x] **Task 5.3: Build Expenses Management UI (`src/renderer/src/pages/Expenses.jsx`)**
   - Build intuitive expense entry form (Category dropdown, Amount, Date picker, Description/Notes).
   - Create dynamic data table displaying expenses with filtering by date range and category.
   - Add summary KPI card showing selected period's total expenditure.
@@ -56,5 +56,5 @@
   - Verify inventory valuation totals against stock quantities.
 
 ## 🚦 Execution Control
-- **Current Status:** Task 5.2 Completed. Ready for Phase 5.2 (Task 5.3).
-- Waiting for user command ("implementation call") to begin **Task 5.3: Build Expenses Management UI (`src/renderer/src/pages/Expenses.jsx`)**.
+- **Current Status:** Task 5.3 Completed. Ready for Task 5.4.
+- Waiting for user command ("implementation call") to begin **Task 5.4: Enhance Commission Report UI (`src/renderer/src/pages/Commissions.jsx`)**.
