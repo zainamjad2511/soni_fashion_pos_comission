@@ -7,9 +7,6 @@ export function registerStubHandlers() {
   const articleChannels = ['articles:list', 'articles:get', 'articles:getBySku', 'articles:search', 'articles:create', 'articles:update', 'articles:toggleActive', 'articles:adjustStock']
   articleChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
-  // Suppliers Stubs
-  const supplierChannels = ['suppliers:list', 'suppliers:get', 'suppliers:create', 'suppliers:update', 'suppliers:toggleActive']
-  supplierChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
   // Sales Stubs
   const saleChannels = ['sales:list', 'sales:get', 'sales:create', 'sales:void', 'sales:reprint']
