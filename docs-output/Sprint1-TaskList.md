@@ -46,7 +46,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Ensure tamper-evident insert-only logging.
 
 ### Phase 1.3: IPC Bridge & Handlers
-- [ ] **Task 1.8: Context Bridge & Preload (`preload.js`)**
+- [x] **Task 1.8: Context Bridge & Preload (`preload.js`)**
   - Expose safe, typed `window.electronAPI` channels for all domains (`articles`, `suppliers`, `sales`, `returns`, `reports`, `salespersons`, `commissions`, `expenses`, `settings`, `print`).
 
 - [ ] **Task 1.9: IPC Handler Stubs & Settings Handlers (`main.js` & `ipc/*.ipc.js`)**
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.7 Completed. Ready for Task 1.8.
-- Waiting for user command ("implementation call") to begin **Task 1.8: Context Bridge & Preload (`preload.js`)**.
+- **Current Status:** Task 1.8 Completed. Ready for Task 1.9.
+- Waiting for user command ("implementation call") to begin **Task 1.9: IPC Handler Stubs & Settings Handlers (`main.js` & `ipc/*.ipc.js`)**.

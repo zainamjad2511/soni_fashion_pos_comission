@@ -3,6 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getDb, closeDb } from './db/database.js'
+import { registerSettingsHandlers } from './ipc/settings.ipc.js'
+import { registerStubHandlers } from './ipc/stubs.ipc.js'
 
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox')
@@ -59,6 +61,10 @@ app.whenReady().then(() => {
 
   // Initialize SQLite Database
   getDb()
+
+  // Register IPC Handlers
+  registerSettingsHandlers()
+  registerStubHandlers()
 
   createWindow()
 
