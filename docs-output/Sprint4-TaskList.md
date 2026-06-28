@@ -37,12 +37,12 @@
   - Build direct inventory selection UI for customer returns without original receipt.
   - Enforce mandatory validation requiring a **Reason Note** before confirmation button is enabled.
 
-- [ ] **Task 4.7: Build Returns History View & Thermal Receipt Integration**
+- [x] **Task 4.7: Build Returns History View & Thermal Receipt Integration**
   - Implement historical returns log with status filtering.
   - Integrate thermal printing (`print:receipt`) for return and exchange vouchers displaying returned items, net settlement, and audit notes.
 
 ### Phase 4.3: Acceptance Verification
-- [ ] **Task 4.8: Sprint 4 End-to-End Verification & Acceptance Testing**
+- [x] **Task 4.8: Sprint 4 End-to-End Verification & Acceptance Testing**
   - Test Case 1: Partial refund against invoice verifying stock restoration and commission reversal.
   - Test Case 2: Double return prevention (verify fully returned items block duplicate processing).
   - Test Case 3: Atomic exchange flow verifying stock movements for both returned and new articles.
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 4.6 Completed. Ready for Task 4.7.
-- Waiting for user command ("implementation call") to begin **Task 4.7: Build Returns History View & Thermal Receipt Integration**.
+- **Current Status:** Sprint 4 (Returns & Exchange Module) 100% Completed & Verified.
+- All tasks passed acceptance verification. Ready for next sprint or production handoff.
