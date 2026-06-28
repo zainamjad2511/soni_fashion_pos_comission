@@ -26,7 +26,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Create global index.css with styling best practices and custom scrollbars.
 
 ### Phase 1.2: Database Foundation & Services (Main Process)
-- [ ] **Task 1.3: SQLite Database Initialization (`db/database.js`)**
+- [x] **Task 1.3: SQLite Database Initialization (`db/database.js`)**
   - Set up SQLite connection at `app.getPath('userData')/sonifashion.db`.
   - Enforce required runtime PRAGMAs (`WAL`, `foreign_keys = ON`, `synchronous = NORMAL`, `busy_timeout = 5000`).
 
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.2 Completed. Ready for Task 1.3.
-- Waiting for user command ("implementation call") to begin **Task 1.3: SQLite Database Initialization (`db/database.js`)**.
+- **Current Status:** Task 1.3 Completed. Ready for Task 1.4.
+- Waiting for user command ("implementation call") to begin **Task 1.4: Schema Migrations Engine (`db/migrations.js`)**.

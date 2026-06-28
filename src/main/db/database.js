@@ -2,6 +2,7 @@ import { app } from 'electron'
 import path from 'path'
 import Database from 'better-sqlite3'
 import fs from 'fs'
+import { runMigrations } from './migrations.js'
 
 let dbInstance = null
 
@@ -23,6 +24,9 @@ export function getDb() {
   db.pragma('foreign_keys = ON')
   db.pragma('synchronous = NORMAL')
   db.pragma('busy_timeout = 5000')
+
+  // Run schema migrations
+  runMigrations(db)
 
   dbInstance = db
   return dbInstance
