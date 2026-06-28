@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   RotateCcw,
   Search,
@@ -14,7 +14,14 @@ import {
   DollarSign,
   Tag,
   Package,
-  XCircle
+  XCircle,
+  Plus,
+  Minus,
+  Trash2,
+  RefreshCw,
+  Printer,
+  CreditCard,
+  Banknote
 } from 'lucide-react'
 
 export function Returns() {
@@ -32,6 +39,36 @@ export function Returns() {
   const [matchingSales, setMatchingSales] = useState([])
   const [skuError, setSkuError] = useState('')
 
+  // Task 4.5: Item Selection & Exchange Net Settlement State
+  const [returnType, setReturnType] = useState('refund') // 'refund' | 'exchange'
+  const [returnQuantities, setReturnQuantities] = useState({}) // { [sale_item_id]: qty }
+  const [returnNotes, setReturnNotes] = useState('')
+  const [salespersons, setSalespersons] = useState([])
+  const [selectedStaff, setSelectedStaff] = useState(null)
+
+  // Exchange Replacement Cart State
+  const [articleSearchQuery, setArticleSearchQuery] = useState('')
+  const [articleSearchResults, setArticleSearchResults] = useState([])
+  const [replacementCart, setReplacementCart] = useState([])
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [processingReturn, setProcessingReturn] = useState(false)
+  const [processResult, setProcessResult] = useState(null)
+
+  useEffect(() => {
+    async function loadSalespersons() {
+      if (window.electronAPI && window.electronAPI.salespersons) {
+        try {
+          const list = await window.electronAPI.salespersons.list({ is_active: 1 })
+          setSalespersons(list || [])
+          if (list && list.length > 0) setSelectedStaff(list[0].id)
+        } catch (e) {
+          console.error('Failed to load salespersons:', e)
+        }
+      }
+    }
+    loadSalespersons()
+  }, [])
+
   // Handle Invoice Lookup
   const handleInvoiceLookup = async (e, customInvoiceNo = null) => {
     if (e) e.preventDefault()
@@ -41,6 +78,10 @@ export function Returns() {
     setLoadingLookup(true)
     setLookupError('')
     setSelectedSale(null)
+    setProcessResult(null)
+    setReturnQuantities({})
+    setReplacementCart([])
+    setReturnNotes('')
 
     try {
       if (customInvoiceNo) {
@@ -85,6 +126,137 @@ export function Returns() {
     }
   }
 
+  // Quantity adjustments for returnable items
+  const handleQtyChange = (itemId, delta, maxQty) => {
+    const current = returnQuantities[itemId] || 0
+    const next = Math.max(0, Math.min(maxQty, current + delta))
+    setReturnQuantities({ ...returnQuantities, [itemId]: next })
+  }
+
+  const calculateRefundCredit = () => {
+    if (!selectedSale || !selectedSale.items) return 0
+    return selectedSale.items.reduce((sum, item) => {
+      const qty = returnQuantities[item.id] || 0
+      return sum + (qty * item.retail_price_snapshot)
+    }, 0)
+  }
+  const refundCredit = calculateRefundCredit()
+
+  // Article search for exchange replacement
+  const handleArticleSearch = async (query) => {
+    setArticleSearchQuery(query)
+    if (!query.trim() || query.trim().length < 2) {
+      setArticleSearchResults([])
+      return
+    }
+    try {
+      const res = await window.electronAPI.articles.list({ search: query.trim() })
+      setArticleSearchResults(res || [])
+    } catch (e) {
+      console.error('Article search failed:', e)
+    }
+  }
+
+  const addReplacementItem = (article) => {
+    const existing = replacementCart.find((item) => item.article_id === article.id)
+    if (existing) {
+      if (existing.quantity >= article.quantity) {
+        alert(`Cannot exceed available inventory stock (${article.quantity}) for ${article.name}`)
+        return
+      }
+      setReplacementCart(replacementCart.map((item) =>
+        item.article_id === article.id
+          ? { ...item, quantity: item.quantity + 1, line_total: (item.quantity + 1) * item.retail_price_snapshot }
+          : item
+      ))
+    } else {
+      if (article.quantity < 1) {
+        alert(`Article "${article.name}" is currently out of stock!`)
+        return
+      }
+      setReplacementCart([
+        ...replacementCart,
+        {
+          article_id: article.id,
+          name: article.name,
+          sku: article.sku,
+          quantity: 1,
+          max_quantity: article.quantity,
+          retail_price_snapshot: article.selling_price,
+          wholesale_price_snapshot: article.purchase_price || 0,
+          discount_amount: 0,
+          line_total: article.selling_price
+        }
+      ])
+    }
+    setArticleSearchQuery('')
+    setArticleSearchResults([])
+  }
+
+  const updateReplacementQty = (articleId, delta) => {
+    setReplacementCart(replacementCart.map((item) => {
+      if (item.article_id === articleId) {
+        const nextQty = Math.max(1, Math.min(item.max_quantity, item.quantity + delta))
+        return { ...item, quantity: nextQty, line_total: nextQty * item.retail_price_snapshot }
+      }
+      return item
+    }))
+  }
+
+  const removeReplacementItem = (articleId) => {
+    setReplacementCart(replacementCart.filter((item) => item.article_id !== articleId))
+  }
+
+  const calculateReplacementTotal = () => {
+    return replacementCart.reduce((sum, item) => sum + item.line_total, 0)
+  }
+  const replacementTotal = calculateReplacementTotal()
+  const netSettlement = replacementTotal - refundCredit
+
+  // Execute transaction
+  const handleProcessTransaction = async () => {
+    const selectedReturnedCount = Object.values(returnQuantities).reduce((a, b) => a + b, 0)
+    if (selectedReturnedCount === 0 && returnType === 'refund') {
+      alert('Please specify return quantity for at least one item.')
+      return
+    }
+    if (returnType === 'exchange' && selectedReturnedCount === 0 && replacementCart.length === 0) {
+      alert('Please select items to return or add replacement items to complete exchange.')
+      return
+    }
+
+    const itemsPayload = selectedSale.items
+      .filter((item) => (returnQuantities[item.id] || 0) > 0)
+      .map((item) => ({
+        sale_item_id: item.id,
+        article_id: item.article_id,
+        quantity_returned: returnQuantities[item.id],
+        refund_per_unit: item.retail_price_snapshot
+      }))
+
+    setProcessingReturn(true)
+    try {
+      const payload = {
+        original_sale_id: selectedSale.id,
+        return_type: returnType,
+        processed_by: selectedStaff || 1,
+        items: itemsPayload,
+        notes: returnNotes.trim() || `Customer ${returnType} processed against invoice ${selectedSale.invoice_number}`,
+        replacement_items: returnType === 'exchange' ? replacementCart : [],
+        payment_method: paymentMethod,
+        salesperson_id: selectedStaff || 1
+      }
+
+      const res = await window.electronAPI.returns.create(payload)
+      setProcessResult(res)
+    } catch (err) {
+      console.error('Transaction processing error:', err)
+      alert(`Transaction Failed: ${err.message}`)
+    } finally {
+      setProcessingReturn(false)
+    }
+  }
+
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', minimumFractionDigits: 0 }).format(val || 0)
   }
@@ -115,7 +287,7 @@ export function Returns() {
           }`}
         >
           <FileText className="w-4 h-4" />
-          Tab 1: Invoice Lookup
+          Tab 1: Invoice Lookup &amp; Processing
         </button>
         <button
           onClick={() => setActiveTab('sku')}
@@ -152,7 +324,7 @@ export function Returns() {
         </button>
       </div>
 
-      {/* Tab 1 Content: Invoice Lookup */}
+      {/* Tab 1 Content: Invoice Lookup & Processing */}
       {activeTab === 'invoice' && (
         <div className="space-y-6 animate-fadeIn">
           {/* Search Card */}
@@ -192,9 +364,64 @@ export function Returns() {
             )}
           </div>
 
-          {/* Selected Sale Preview */}
-          {selectedSale && (
-            <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl space-y-6">
+          {/* Transaction Success Confirmation Modal / Banner */}
+          {processResult && (
+            <div className="bg-gradient-to-r from-emerald-950/90 via-slate-900 to-teal-950/90 border-2 border-emerald-500/50 rounded-2xl p-8 shadow-2xl space-y-6 animate-scaleUp">
+              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white uppercase tracking-wider">Transaction Successfully Processed</h2>
+                    <p className="text-xs text-emerald-300 font-mono mt-0.5">Return Reference: {processResult.returnNumber}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setSelectedSale(null); setProcessResult(null); setInvoiceQuery(''); }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Start New Return
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  <div className="text-xs text-slate-400">Refund Credit Value</div>
+                  <div className="text-lg font-bold text-amber-400 font-mono mt-1">{formatCurrency(processResult.refundCredit)}</div>
+                </div>
+                {processResult.newSaleId && (
+                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                    <div className="text-xs text-slate-400">Replacement Invoice</div>
+                    <div className="text-lg font-bold text-teal-400 font-mono mt-1">Generated (Sale ID #{processResult.newSaleId})</div>
+                  </div>
+                )}
+                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  <div className="text-xs text-slate-400">Net Financial Settlement</div>
+                  <div className={`text-lg font-bold font-mono mt-1 ${processResult.netAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatCurrency(Math.abs(processResult.netAmount))}
+                    <span className="text-xs font-normal text-slate-400 ml-1">
+                      {processResult.netAmount > 0 ? '(Customer Paid)' : processResult.netAmount < 0 ? '(Refunded to Customer)' : '(Even Swap)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => alert(`Thermal receipt printing scheduled for Task 4.7 for ${processResult.returnNumber}`)}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Print Return / Exchange Slip
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Selected Sale Preview & Processing Panel */}
+          {selectedSale && !processResult && (
+            <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl space-y-6 animate-fadeIn">
+              {/* Header Info */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
@@ -205,69 +432,290 @@ export function Returns() {
                   </div>
                   <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-400 pt-1">
                     <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-500" /> {new Date(selectedSale.sale_date).toLocaleString()}</span>
-                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-500" /> Staff: {selectedSale.salesperson_name || 'N/A'}</span>
-                    <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5 text-slate-500" /> Payment: <span className="capitalize">{selectedSale.payment_method}</span></span>
+                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-500" /> Original Staff: {selectedSale.salesperson_name || 'N/A'}</span>
                   </div>
                 </div>
 
-                <div className="text-right bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 shrink-0">
-                  <div className="text-xs text-slate-400">Grand Total Paid</div>
-                  <div className="text-lg font-bold text-emerald-400 font-mono">{formatCurrency(selectedSale.grand_total)}</div>
+                {/* Return Type Toggle */}
+                <div className="flex items-center bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setReturnType('refund')}
+                    className={`px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 ${
+                      returnType === 'refund' ? 'bg-amber-500 text-slate-950 font-bold shadow-lg' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Standard Refund
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReturnType('exchange')}
+                    className={`px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 ${
+                      returnType === 'exchange' ? 'bg-teal-500 text-slate-950 font-bold shadow-lg' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Item Exchange
+                  </button>
                 </div>
               </div>
 
-              {/* Items Table */}
+              {/* Items Table with Quantity Selection */}
               <div>
-                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-emerald-400" /> Purchased Articles Available for Return
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-emerald-400" /> Select Items to Return
+                  </h3>
+                  <span className="text-xs text-amber-400 font-mono">Total Refund Credit: {formatCurrency(refundCredit)}</span>
+                </div>
+
                 <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
                   <table className="w-full text-left border-collapse text-sm">
                     <thead>
                       <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
                         <th className="p-3.5 font-medium">Article &amp; SKU</th>
                         <th className="p-3.5 font-medium text-center">Sold Qty</th>
-                        <th className="p-3.5 font-medium text-center">Already Returned</th>
                         <th className="p-3.5 font-medium text-center">Avail. To Return</th>
                         <th className="p-3.5 font-medium text-right">Unit Price</th>
-                        <th className="p-3.5 font-medium text-right">Line Total</th>
+                        <th className="p-3.5 font-medium text-center">Return Qty</th>
+                        <th className="p-3.5 font-medium text-right">Refund Value</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
-                      {selectedSale.items && selectedSale.items.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-900/40 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-medium text-white">{item.article_name}</div>
-                            <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku} {item.supplier_article_code ? `(${item.supplier_article_code})` : ''}</div>
-                          </td>
-                          <td className="p-3.5 text-center font-mono text-slate-300">{item.quantity}</td>
-                          <td className="p-3.5 text-center font-mono text-amber-400/90 font-medium">
-                            {item.already_returned > 0 ? `-${item.already_returned}` : '0'}
-                          </td>
-                          <td className="p-3.5 text-center font-mono">
-                            <span className={`px-2.5 py-1 rounded-md font-bold text-xs ${
-                              item.available_to_return > 0 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'
-                            }`}>
-                              {item.available_to_return}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-right font-mono text-slate-300">{formatCurrency(item.retail_price_snapshot)}</td>
-                          <td className="p-3.5 text-right font-mono font-medium text-white">{formatCurrency(item.line_total)}</td>
-                        </tr>
-                      ))}
+                      {selectedSale.items && selectedSale.items.map((item) => {
+                        const currentQty = returnQuantities[item.id] || 0
+                        const isDisabled = item.available_to_return <= 0
+                        return (
+                          <tr key={item.id} className={`transition-colors ${currentQty > 0 ? 'bg-amber-500/10' : 'hover:bg-slate-900/40'}`}>
+                            <td className="p-3.5">
+                              <div className="font-medium text-white">{item.article_name}</div>
+                              <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                            </td>
+                            <td className="p-3.5 text-center font-mono text-slate-300">{item.quantity}</td>
+                            <td className="p-3.5 text-center font-mono">
+                              <span className={`px-2.5 py-1 rounded-md font-bold text-xs ${
+                                !isDisabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'
+                              }`}>
+                                {item.available_to_return}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right font-mono text-slate-300">{formatCurrency(item.retail_price_snapshot)}</td>
+                            <td className="p-3.5 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={isDisabled || currentQty <= 0}
+                                  onClick={() => handleQtyChange(item.id, -1, item.available_to_return)}
+                                  className="p-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white rounded-md transition-all"
+                                >
+                                  <Minus className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="w-8 text-center font-mono font-bold text-white">{currentQty}</span>
+                                <button
+                                  type="button"
+                                  disabled={isDisabled || currentQty >= item.available_to_return}
+                                  onClick={() => handleQtyChange(item.id, 1, item.available_to_return)}
+                                  className="p-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white rounded-md transition-all"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-right font-mono font-medium text-amber-400">
+                              {formatCurrency(currentQty * item.retail_price_snapshot)}
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Transition to Task 4.5 banner */}
-              <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-slate-300 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <span>Ready to process returns or exchanges against this invoice.</span>
+              {/* Task 4.5: Exchange Replacement Cart Panel */}
+              {returnType === 'exchange' && (
+                <div className="border-t border-slate-800 pt-6 space-y-4 animate-fadeIn">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-teal-400 flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
+                    </h3>
+                    <div className="relative w-full sm:w-80">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        value={articleSearchQuery}
+                        onChange={(e) => handleArticleSearch(e.target.value)}
+                        placeholder="Search replacement article SKU..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono"
+                      />
+                      {articleSearchResults.length > 0 && (
+                        <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
+                          {articleSearchResults.map((art) => (
+                            <button
+                              key={art.id}
+                              type="button"
+                              onClick={() => addReplacementItem(art)}
+                              className="w-full p-3 text-left hover:bg-slate-800/80 transition-colors flex items-center justify-between"
+                            >
+                              <div>
+                                <div className="text-xs font-medium text-white">{art.name}</div>
+                                <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Stock: {art.quantity}</div>
+                              </div>
+                              <div className="text-xs font-bold text-teal-400 font-mono">{formatCurrency(art.selling_price)}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Replacement Cart Table */}
+                  <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
+                          <th className="p-3.5 font-medium">Replacement Article</th>
+                          <th className="p-3.5 font-medium text-right">Unit Price</th>
+                          <th className="p-3.5 font-medium text-center">Quantity</th>
+                          <th className="p-3.5 font-medium text-right">Line Total</th>
+                          <th className="p-3.5 font-medium text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {replacementCart.length === 0 ? (
+                          <tr>
+                            <td colSpan="5" className="p-6 text-center text-xs text-slate-500 italic">No replacement items added yet. Search and select articles above.</td>
+                          </tr>
+                        ) : (
+                          replacementCart.map((item) => (
+                            <tr key={item.article_id} className="hover:bg-slate-900/40 transition-colors">
+                              <td className="p-3.5">
+                                <div className="font-medium text-white">{item.name}</div>
+                                <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                              </td>
+                              <td className="p-3.5 text-right font-mono text-slate-300">{formatCurrency(item.retail_price_snapshot)}</td>
+                              <td className="p-3.5 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateReplacementQty(item.article_id, -1)}
+                                    className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                  >
+                                    <Minus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <span className="w-8 text-center font-mono font-bold text-white">{item.quantity}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateReplacementQty(item.article_id, 1)}
+                                    className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="p-3.5 text-right font-mono font-bold text-teal-400">{formatCurrency(item.line_total)}</td>
+                              <td className="p-3.5 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => removeReplacementItem(item.article_id)}
+                                  className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-400 italic">
-                  Item selection &amp; net settlement calculation panel scheduled for Task 4.5.
+              )}
+
+              {/* Net Settlement Banner & Processing Details */}
+              <div className="border-t border-slate-800 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Processing Salesperson</label>
+                      <select
+                        value={selectedStaff || ''}
+                        onChange={(e) => setSelectedStaff(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        {salespersons.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.commission_rate}%)</option>
+                        ))}
+                      </select>
+                    </div>
+                    {returnType === 'exchange' && (
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Payment Settlement Method</label>
+                        <select
+                          value={paymentMethod}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 capitalize"
+                        >
+                          <option value="cash">Cash</option>
+                          <option value="card">Card / Bank Transfer</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Audit Reason / Notes</label>
+                    <input
+                      type="text"
+                      value={returnNotes}
+                      onChange={(e) => setReturnNotes(e.target.value)}
+                      placeholder="Optional reason note (e.g., Size exchange, defective stitching)..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculation Summary Card */}
+                <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex justify-between text-sm text-slate-300">
+                    <span>Refund Credit (Returned Items):</span>
+                    <span className="font-mono font-bold text-amber-400">-{formatCurrency(refundCredit)}</span>
+                  </div>
+                  {returnType === 'exchange' && (
+                    <div className="flex justify-between text-sm text-slate-300">
+                      <span>Replacement Articles Total:</span>
+                      <span className="font-mono font-bold text-teal-400">+{formatCurrency(replacementTotal)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
+                    <span className="text-sm font-bold text-white uppercase tracking-wider">
+                      {returnType === 'refund' ? 'Net Customer Refund:' : netSettlement > 0 ? 'Customer Pays Difference:' : netSettlement < 0 ? 'Store Refunds Customer:' : 'Even Exchange:'}
+                    </span>
+                    <span className={`text-xl font-bold font-mono ${
+                      returnType === 'refund' ? 'text-amber-400' : netSettlement > 0 ? 'text-emerald-400' : netSettlement < 0 ? 'text-amber-400' : 'text-slate-300'
+                    }`}>
+                      {formatCurrency(returnType === 'refund' ? refundCredit : Math.abs(netSettlement))}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={processingReturn || (returnType === 'refund' && refundCredit === 0)}
+                    onClick={handleProcessTransaction}
+                    className={`w-full py-3.5 rounded-xl font-bold text-slate-950 text-sm shadow-lg transition-all flex items-center justify-center gap-2 mt-2 ${
+                      returnType === 'refund'
+                        ? 'bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-500 shadow-amber-400/20'
+                        : 'bg-teal-400 hover:bg-teal-300 disabled:bg-slate-800 disabled:text-slate-500 shadow-teal-400/20'
+                    }`}
+                  >
+                    {processingReturn ? (
+                      <div className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund' : 'Exchange Transaction'}</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

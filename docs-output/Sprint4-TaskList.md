@@ -28,7 +28,7 @@
   - Implement Tab 1 (Invoice Lookup) with instant validation and status checking (`completed` vs `voided`).
   - Implement Tab 2 (SKU Search) allowing cashiers to trace historical invoices by article barcode or supplier code.
 
-- [ ] **Task 4.5: Implement Item Selection & Exchange Net Settlement Panel**
+- [x] **Task 4.5: Implement Item Selection & Exchange Net Settlement Panel**
   - Render selectable return items bounded by `(qty_sold - already_returned)`.
   - Add return type toggle: **Refund** vs **Exchange**.
   - Build interactive Exchange Cart calculating real-time net settlement (`Refund Credit` minus replacement items = net customer payment or store refund).
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 4.4 Completed. Ready for Task 4.5.
-- Waiting for user command ("implementation call") to begin **Task 4.5: Implement Item Selection & Exchange Net Settlement Panel**.
+- **Current Status:** Task 4.5 Completed. Ready for Task 4.6.
+- Waiting for user command ("implementation call") to begin **Task 4.6: Implement Manual Returns Interface (`Returns.jsx` Tab 3)**.
