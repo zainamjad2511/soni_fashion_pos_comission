@@ -2,6 +2,7 @@ import React from 'react'
 import { PlaceholderPage } from './PlaceholderPage.jsx'
 import { Settings as SettingsComponent } from './Settings.jsx'
 import { Suppliers as SuppliersComponent } from './Suppliers.jsx'
+import { Inventory as InventoryComponent } from './Inventory.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -37,14 +38,7 @@ export function POSSalePage() {
 }
 
 export function InventoryPage() {
-  return (
-    <PlaceholderPage
-      title="Article & Stock Inventory"
-      sprint="Sprint 3"
-      description="Comprehensive article database, supplier catalog linkage, stock movements ledger, and automated reorder alerts."
-      icon={Package}
-    />
-  )
+  return <InventoryComponent />
 }
 
 export function SuppliersPage() {

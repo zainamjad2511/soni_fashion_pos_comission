@@ -32,7 +32,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement `articles:toggleActive`: block deactivation if `quantity > 0` (return warning prompt).
   - Implement `articles:search`: fast lookup limit 20 for POS integration.
 
-- [ ] **Task 2.4: Stock IN & Ledger Handlers (`src/main/ipc/articles.ipc.js`)**
+- [x] **Task 2.4: Stock IN & Ledger Handlers (`src/main/ipc/articles.ipc.js`)**
   - Implement `articles:adjustStock` (or `stockMovements:createShipment`): single atomic transaction receiving multiple items against a supplier.
   - Increment `articles.quantity` for each received item and insert immutable rows into `stock_movements` (type=`IN`).
   - Implement `articles:getStockMovements`: retrieve historical inventory ledger for a selected article.
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.3 Completed. Ready for Task 2.4.
-- Waiting for user command ("implementation call") to begin **Task 2.4: Stock IN & Ledger Handlers (`src/main/ipc/articles.ipc.js`)**.
+- **Current Status:** Task 2.4 Completed. Ready for Task 2.5.
+- Waiting for user command ("implementation call") to begin **Task 2.5: Articles Inventory Catalog UI (`src/renderer/src/pages/Inventory.jsx`)**.
