@@ -33,7 +33,7 @@
   - Add return type toggle: **Refund** vs **Exchange**.
   - Build interactive Exchange Cart calculating real-time net settlement (`Refund Credit` minus replacement items = net customer payment or store refund).
 
-- [ ] **Task 4.6: Implement Manual Returns Interface (`Returns.jsx` Tab 3)**
+- [x] **Task 4.6: Implement Manual Returns Interface (`Returns.jsx` Tab 3)**
   - Build direct inventory selection UI for customer returns without original receipt.
   - Enforce mandatory validation requiring a **Reason Note** before confirmation button is enabled.
 
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 4.5 Completed. Ready for Task 4.6.
-- Waiting for user command ("implementation call") to begin **Task 4.6: Implement Manual Returns Interface (`Returns.jsx` Tab 3)**.
+- **Current Status:** Task 4.6 Completed. Ready for Task 4.7.
+- Waiting for user command ("implementation call") to begin **Task 4.7: Build Returns History View & Thermal Receipt Integration**.

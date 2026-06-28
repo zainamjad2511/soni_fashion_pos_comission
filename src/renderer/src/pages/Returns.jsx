@@ -22,7 +22,10 @@ import {
   Printer,
   CreditCard,
   Banknote,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  Filter,
+  X
 } from 'lucide-react'
 
 export function Returns() {
@@ -63,13 +66,25 @@ export function Returns() {
   const [processingManual, setProcessingManual] = useState(false)
   const [manualResult, setManualResult] = useState(null)
 
+  // Task 4.7: Returns History & Thermal Receipt State
+  const [historyList, setHistoryList] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [historyFilterType, setHistoryFilterType] = useState('')
+  const [historySearch, setHistorySearch] = useState('')
+  const [historyStartDate, setHistoryStartDate] = useState('')
+  const [historyEndDate, setHistoryEndDate] = useState('')
+  const [selectedHistoryDetail, setSelectedHistoryDetail] = useState(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
   useEffect(() => {
     async function loadSalespersons() {
       if (window.electronAPI && window.electronAPI.salespersons) {
         try {
-          const list = await window.electronAPI.salespersons.list({ is_active: 1 })
-          setSalespersons(list || [])
-          if (list && list.length > 0) setSelectedStaff(list[0].id)
+          const res = await window.electronAPI.salespersons.list({ is_active: 1 })
+          const list = (res && res.data) ? res.data : res
+          const validList = Array.isArray(list) ? list : []
+          setSalespersons(validList)
+          if (validList.length > 0) setSelectedStaff(validList[0].id)
         } catch (e) {
           console.error('Failed to load salespersons:', e)
         }
@@ -77,6 +92,88 @@ export function Returns() {
     }
     loadSalespersons()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchReturnsHistory()
+    }
+  }, [activeTab, historyFilterType, historyStartDate, historyEndDate])
+
+  const fetchReturnsHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const filters = {}
+      if (historyFilterType) filters.return_type = historyFilterType
+      if (historySearch.trim()) filters.search = historySearch.trim()
+      if (historyStartDate) filters.start_date = historyStartDate
+      if (historyEndDate) filters.end_date = historyEndDate
+
+      const res = await window.electronAPI.returns.list(filters)
+      const list = (res && res.data) ? res.data : res
+      setHistoryList(Array.isArray(list) ? list : [])
+    } catch (e) {
+      console.error('Failed to fetch returns history:', e)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  // Handle Thermal Voucher Printing
+  const handlePrintReturnVoucher = async (retObj) => {
+    try {
+      let fullRet = retObj
+      if (!fullRet.items) {
+        const res = await window.electronAPI.returns.get(retObj.returnId || retObj.id || retObj.returnNumber || retObj.return_number)
+        fullRet = (res && res.data) ? res.data : res
+      }
+
+      if (!fullRet) {
+        alert('Could not retrieve full return voucher details for printing.')
+        return
+      }
+
+      const receiptData = {
+        invoice_number: fullRet.return_number || fullRet.returnNumber || 'RETURN VOUCHER',
+        sale_date: fullRet.return_date ? new Date(fullRet.return_date).toLocaleString() : new Date().toLocaleString(),
+        salesperson_name: fullRet.processed_by_name || 'Returns Staff',
+        items: (fullRet.items || []).map((i) => ({
+          name: i.article_name || i.name || 'Returned Article',
+          retail_price_snapshot: i.refund_per_unit || i.retail_price_snapshot || 0,
+          quantity: i.quantity_returned || i.quantity || 1,
+          line_total: (i.quantity_returned || i.quantity || 1) * (i.refund_per_unit || i.retail_price_snapshot || 0)
+        })),
+        subtotal: fullRet.refund_credit || fullRet.refundCredit || 0,
+        total_discount: 0,
+        grand_total: -(fullRet.refund_credit || fullRet.refundCredit || 0),
+        payment_method: `${fullRet.return_type || 'REFUND'} VOUCHER`
+      }
+
+      const printRes = await window.electronAPI.print.receipt(receiptData)
+      if (printRes && printRes.success) {
+        // Printed silently
+      } else if (printRes && printRes.error) {
+        alert(`Thermal Printer Notification: ${printRes.error}`)
+      }
+    } catch (e) {
+      console.error('Failed to print thermal voucher:', e)
+      alert(`Print Error: ${e.message}`)
+    }
+  }
+
+  const handleViewDetail = async (retId) => {
+    setLoadingDetail(true)
+    setSelectedHistoryDetail(null)
+    try {
+      const res = await window.electronAPI.returns.get(retId)
+      const detail = (res && res.data) ? res.data : res
+      setSelectedHistoryDetail(detail)
+    } catch (e) {
+      console.error('Failed to get return details:', e)
+      alert(`Error fetching return details: ${e.message}`)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
 
   // Handle Invoice Lookup
   const handleInvoiceLookup = async (e, customInvoiceNo = null) => {
@@ -160,7 +257,8 @@ export function Returns() {
     }
     try {
       const res = await window.electronAPI.articles.list({ search: query.trim() })
-      setArticleSearchResults(res || [])
+      const list = (res && res.data) ? res.data : res
+      setArticleSearchResults(Array.isArray(list) ? list : [])
     } catch (e) {
       console.error('Article search failed:', e)
     }
@@ -275,7 +373,8 @@ export function Returns() {
     }
     try {
       const res = await window.electronAPI.articles.list({ search: query.trim() })
-      setManualSearchResults(res || [])
+      const list = (res && res.data) ? res.data : res
+      setManualSearchResults(Array.isArray(list) ? list : [])
     } catch (e) {
       console.error('Manual article search failed:', e)
     }
@@ -436,7 +535,7 @@ export function Returns() {
           }`}
         >
           <History className="w-4 h-4" />
-          Tab 4: Returns History
+          Tab 4: Returns History Log
         </button>
       </div>
 
@@ -525,7 +624,7 @@ export function Returns() {
 
               <div className="flex justify-end pt-2">
                 <button
-                  onClick={() => alert(`Thermal receipt printing scheduled for Task 4.7 for ${processResult.returnNumber}`)}
+                  onClick={() => handlePrintReturnVoucher(processResult)}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" /> Print Return / Exchange Slip
@@ -665,7 +764,7 @@ export function Returns() {
                       />
                       {articleSearchResults.length > 0 && (
                         <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
-                          {articleSearchResults.map((art) => (
+                          {(Array.isArray(articleSearchResults) ? articleSearchResults : []).map((art) => (
                             <button
                               key={art.id}
                               type="button"
@@ -758,7 +857,7 @@ export function Returns() {
                         onChange={(e) => setSelectedStaff(Number(e.target.value))}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                       >
-                        {salespersons.map((s) => (
+                        {(Array.isArray(salespersons) ? salespersons : []).map((s) => (
                           <option key={s.id} value={s.id}>{s.name} ({s.commission_rate}%)</option>
                         ))}
                       </select>
@@ -901,7 +1000,7 @@ export function Returns() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {matchingSales.map((sale) => (
+                    {(Array.isArray(matchingSales) ? matchingSales : []).map((sale) => (
                       <tr key={sale.id} className="hover:bg-slate-900/40 transition-colors">
                         <td className="p-3.5 font-mono font-bold text-white">{sale.invoice_number}</td>
                         <td className="p-3.5 text-slate-300 text-xs">{new Date(sale.sale_date).toLocaleString()}</td>
@@ -956,7 +1055,7 @@ export function Returns() {
                   <div className="text-2xl font-bold text-amber-400 font-mono mt-1">{formatCurrency(manualResult.refundCredit)}</div>
                 </div>
                 <button
-                  onClick={() => alert(`Thermal receipt printing scheduled for Task 4.7 for ${manualResult.returnNumber}`)}
+                  onClick={() => handlePrintReturnVoucher(manualResult)}
                   className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" /> Print Credit Voucher
@@ -998,7 +1097,7 @@ export function Returns() {
                   />
                   {manualSearchResults.length > 0 && (
                     <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
-                      {manualSearchResults.map((art) => (
+                      {(Array.isArray(manualSearchResults) ? manualSearchResults : []).map((art) => (
                         <button
                           key={art.id}
                           type="button"
@@ -1098,7 +1197,7 @@ export function Returns() {
                       onChange={(e) => setSelectedStaff(Number(e.target.value))}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                     >
-                      {salespersons.map((s) => (
+                      {(Array.isArray(salespersons) ? salespersons : []).map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
@@ -1154,14 +1253,277 @@ export function Returns() {
         </div>
       )}
 
-      {/* Tab 4 Placeholder for upcoming task */}
+      {/* Tab 4 Content: Returns History & Audit Log */}
       {activeTab === 'history' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
-          <History className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-semibold text-slate-300">Returns &amp; Exchanges Log</h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Historical audit log with receipt reprint and financial status filters. Scheduled for implementation in Task 4.7.
-          </p>
+        <div className="space-y-6 animate-fadeIn">
+          {/* Filters Card */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <Filter className="w-5 h-5 text-emerald-400" /> Filter Historical Returns &amp; Exchanges
+              </h3>
+              <button
+                onClick={fetchReturnsHistory}
+                disabled={loadingHistory}
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} /> Refresh Log
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search Return # or Invoice #..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <select
+                  value={historyFilterType}
+                  onChange={(e) => setHistoryFilterType(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 capitalize"
+                >
+                  <option value="">All Return Types</option>
+                  <option value="refund">Refunds Only</option>
+                  <option value="exchange">Exchanges Only</option>
+                  <option value="manual">Manual Returns</option>
+                </select>
+              </div>
+
+              <div>
+                <input
+                  type="date"
+                  value={historyStartDate}
+                  onChange={(e) => setHistoryStartDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="date"
+                  value={historyEndDate}
+                  onChange={(e) => setHistoryEndDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* History Results Table */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
+                    <th className="p-4 font-medium">Return Ref #</th>
+                    <th className="p-4 font-medium">Date &amp; Time</th>
+                    <th className="p-4 font-medium text-center">Type</th>
+                    <th className="p-4 font-medium">Original Invoice</th>
+                    <th className="p-4 font-medium">Processed By</th>
+                    <th className="p-4 font-medium text-right">Refund Credit</th>
+                    <th className="p-4 font-medium text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {loadingHistory ? (
+                    <tr>
+                      <td colSpan="7" className="p-12 text-center text-slate-500">
+                        <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
+                        <span>Loading historical returns...</span>
+                      </td>
+                    </tr>
+                  ) : historyList.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="p-12 text-center text-xs text-slate-500 italic">
+                        No return or exchange audit logs match the current filter criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    (Array.isArray(historyList) ? historyList : []).map((ret) => (
+                      <tr key={ret.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-4 font-mono font-bold text-white">{ret.return_number}</td>
+                        <td className="p-4 text-slate-300 text-xs">{new Date(ret.return_date).toLocaleString()}</td>
+                        <td className="p-4 text-center">
+                          <span className={`px-2.5 py-1 rounded-md font-bold text-[10px] uppercase tracking-wider border ${
+                            ret.return_type === 'refund' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                            ret.return_type === 'exchange' ? 'bg-teal-500/20 text-teal-400 border-teal-500/30' :
+                            'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                          }`}>
+                            {ret.return_type}
+                          </span>
+                        </td>
+                        <td className="p-4 font-mono text-slate-300 text-xs">
+                          {ret.original_invoice_number || <span className="text-slate-500 italic">Manual</span>}
+                          {ret.exchange_new_invoice_number && <div className="text-[10px] text-teal-400 mt-0.5">Exch: {ret.exchange_new_invoice_number}</div>}
+                        </td>
+                        <td className="p-4 text-slate-300 text-xs">{ret.processed_by_name || 'Staff'}</td>
+                        <td className="p-4 text-right font-mono font-bold text-amber-400">{formatCurrency(ret.refund_credit)}</td>
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleViewDetail(ret.id)}
+                              title="Inspect Details"
+                              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handlePrintReturnVoucher(ret)}
+                              title="Reprint Thermal Voucher"
+                              className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors border border-emerald-500/30"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Return Detail Modal */}
+      {selectedHistoryDetail && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900/95 backdrop-blur z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white font-mono">{selectedHistoryDetail.return_number}</h3>
+                  <p className="text-xs text-slate-400">{new Date(selectedHistoryDetail.return_date).toLocaleString()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedHistoryDetail(null)}
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+                <div>
+                  <span className="text-slate-500 block">Transaction Type</span>
+                  <span className="font-bold text-white uppercase mt-0.5 block">{selectedHistoryDetail.return_type}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Original Invoice</span>
+                  <span className="font-mono text-white mt-0.5 block">{selectedHistoryDetail.original_invoice_number || 'None (Manual)'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Processed By</span>
+                  <span className="text-white mt-0.5 block">{selectedHistoryDetail.processed_by_name || 'Staff'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Total Refund Credit</span>
+                  <span className="font-mono font-bold text-amber-400 mt-0.5 block">{formatCurrency(selectedHistoryDetail.refund_credit)}</span>
+                </div>
+              </div>
+
+              {selectedHistoryDetail.notes && (
+                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+                  <span className="font-bold text-slate-400 block mb-1">Audit / Reason Note:</span>
+                  <p className="italic">{selectedHistoryDetail.notes}</p>
+                </div>
+              )}
+
+              {/* Returned Items Table */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Returned Items Restored to Inventory
+                </h4>
+                <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
+                        <th className="p-3">Article &amp; SKU</th>
+                        <th className="p-3 text-center">Returned Qty</th>
+                        <th className="p-3 text-right">Refund Price</th>
+                        <th className="p-3 text-right">Line Credit</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {(selectedHistoryDetail.items || []).map((item) => (
+                        <tr key={item.id}>
+                          <td className="p-3 font-medium text-white">
+                            {item.article_name || 'Article'}
+                            <div className="text-[10px] text-slate-500 font-mono">{item.sku}</div>
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold text-amber-400">+{item.quantity_returned}</td>
+                          <td className="p-3 text-right font-mono text-slate-300">{formatCurrency(item.refund_per_unit)}</td>
+                          <td className="p-3 text-right font-mono font-bold text-white">{formatCurrency(item.quantity_returned * item.refund_per_unit)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Replacement Items if exchange */}
+              {(selectedHistoryDetail.replacement_items || []).length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5 text-teal-400" /> Issued Replacement Articles (Exchange Sale #{selectedHistoryDetail.exchange_new_sale_id})
+                  </h4>
+                  <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
+                          <th className="p-3">Article &amp; SKU</th>
+                          <th className="p-3 text-center">Issued Qty</th>
+                          <th className="p-3 text-right">Unit Price</th>
+                          <th className="p-3 text-right">Line Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {selectedHistoryDetail.replacement_items.map((rep) => (
+                          <tr key={rep.id}>
+                            <td className="p-3 font-medium text-white">
+                              {rep.article_name || 'Article'}
+                              <div className="text-[10px] text-slate-500 font-mono">{rep.sku}</div>
+                            </td>
+                            <td className="p-3 text-center font-mono font-bold text-teal-400">{rep.quantity}</td>
+                            <td className="p-3 text-right font-mono text-slate-300">{formatCurrency(rep.retail_price_snapshot)}</td>
+                            <td className="p-3 text-right font-mono font-bold text-white">{formatCurrency(rep.line_total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-slate-800 bg-slate-900/95 flex justify-end gap-3 sticky bottom-0">
+              <button
+                onClick={() => setSelectedHistoryDetail(null)}
+                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors"
+              >
+                Close Window
+              </button>
+              <button
+                onClick={() => handlePrintReturnVoucher(selectedHistoryDetail)}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+              >
+                <Printer className="w-4 h-4" /> Print Thermal Voucher
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
