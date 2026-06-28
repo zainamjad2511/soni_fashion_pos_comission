@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { format } from 'date-fns'
-import { Clock, ShieldCheck, MapPin } from 'lucide-react'
+import { Clock, ShieldCheck, MapPin, Printer } from 'lucide-react'
+import { ReprintModal } from './ReprintModal.jsx'
 
 const routeTitles = {
   '/': 'Dashboard Overview',
@@ -19,6 +20,7 @@ const routeTitles = {
 export function TopBar() {
   const location = useLocation()
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isReprintOpen, setIsReprintOpen] = useState(false)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
@@ -50,12 +52,24 @@ export function TopBar() {
           <span>{format(currentTime, 'EEE, MMM dd, yyyy | hh:mm:ss a')}</span>
         </div>
 
+        {/* Reprint Receipt Button */}
+        <button
+          onClick={() => setIsReprintOpen(true)}
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-light border border-brand/30 text-xs font-semibold transition-all shadow-sm"
+          title="Lookup and reprint thermal receipt"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Reprint Receipt</span>
+        </button>
+
         {/* Security Indicator */}
         <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
           <ShieldCheck className="w-4 h-4" />
           <span>Protected</span>
         </div>
       </div>
+
+      <ReprintModal isOpen={isReprintOpen} onClose={() => setIsReprintOpen(false)} />
     </header>
   )
 }

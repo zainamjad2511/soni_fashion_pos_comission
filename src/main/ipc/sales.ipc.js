@@ -247,9 +247,20 @@ export function registerSalesHandlers() {
   })
 
   handleIpc('sales:reprint', (_, invoiceNo) => {
-    // Placeholder until thermal printing engine is created in Task 3.8
-    console.log(`[Reprint] Initiated reprint for invoice: ${invoiceNo}`)
-    return { success: true, message: `Reprint requested for ${invoiceNo}` }
+    const db = getDb()
+    if (!invoiceNo) throw new Error('Invoice number required.')
+
+    const sale = db.prepare('SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact FROM sales s LEFT JOIN salespersons sp ON s.salesperson_id = sp.id WHERE s.invoice_number = ? OR s.id = ?').get(invoiceNo, invoiceNo)
+    if (!sale) throw new Error(`Invoice "${invoiceNo}" not found.`)
+
+    const items = db.prepare(`
+      SELECT si.*, a.sku, a.name as article_name
+      FROM sale_items si
+      JOIN articles a ON si.article_id = a.id
+      WHERE si.sale_id = ?
+    `).all(sale.id)
+
+    return { ...sale, items }
   })
 
   console.log('[IPC] Registered Sales handlers.')
