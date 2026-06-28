@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { getDb, closeDb } from './db/database.js'
 
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox')
@@ -56,6 +57,9 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // Initialize SQLite Database
+  getDb()
+
   createWindow()
 
   app.on('activate', function () {
@@ -69,6 +73,7 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  closeDb()
   if (process.platform !== 'darwin') {
     app.quit()
   }

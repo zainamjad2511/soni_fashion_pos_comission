@@ -20,7 +20,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Rebuild `better-sqlite3` native addon against Electron.
   - Verify app launches cleanly.
 
-- [ ] **Task 1.2: Configure Tailwind CSS & Brand Theme**
+- [x] **Task 1.2: Configure Tailwind CSS & Brand Theme**
   - Initialize Tailwind CSS configuration.
   - Define custom palette (deep rose / maroon primary, soft rose accents, sleek modern dark/light mode tokens).
   - Create global index.css with styling best practices and custom scrollbars.
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.1 Completed. Ready for Task 1.2.
-- Waiting for user command ("implementation call") to begin **Task 1.2: Configure Tailwind CSS & Brand Theme**.
+- **Current Status:** Task 1.2 Completed. Ready for Task 1.3.
+- Waiting for user command ("implementation call") to begin **Task 1.3: SQLite Database Initialization (`db/database.js`)**.
