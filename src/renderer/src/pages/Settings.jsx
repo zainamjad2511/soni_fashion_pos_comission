@@ -22,10 +22,11 @@ export function Settings() {
   const [toast, setToast] = useState(null)
   const [availablePrinters, setAvailablePrinters] = useState([])
   const [formData, setFormData] = useState({
-    shop_name: '',
-    shop_address: '',
-    shop_contact: '',
-    receipt_footer: '',
+    shop_name: 'Soni Fashion | سونی فیشن',
+    shop_tagline: 'Jahan Fashion enters your life',
+    shop_address: 'Machli Bazar, Daska',
+    shop_contact: '03246470929',
+    receipt_footer: 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
     receipt_printer_name: '',
     default_commission: '5',
     sku_prefix: 'SF',
@@ -198,8 +199,22 @@ export function Settings() {
                   name="shop_name"
                   value={formData.shop_name}
                   onChange={handleChange}
-                  placeholder="e.g. Soni Fashion"
+                  placeholder="e.g. Soni Fashion | سونی فیشن"
                   required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
+                />
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>Shop Tagline / Subtitle</span>
+                </label>
+                <input
+                  type="text"
+                  name="shop_tagline"
+                  value={formData.shop_tagline || ''}
+                  onChange={handleChange}
+                  placeholder="e.g. Jahan Fashion enters your life"
                   className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
                 />
               </div>

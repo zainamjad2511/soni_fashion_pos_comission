@@ -200,7 +200,7 @@ export function Reports() {
 
       {/* Print Only Header */}
       <div className="hidden print:block border-b-2 border-black pb-4 mb-6">
-        <h1 className="text-2xl font-bold uppercase tracking-wider text-black">Soni Fashion POS — Financial Report</h1>
+        <h1 className="text-2xl font-bold uppercase tracking-wider text-black">Soni Fashion | سونی فیشن POS — Financial Report</h1>
         <div className="flex justify-between text-sm mt-2 text-black font-semibold">
           <span>Report Type: {activeTab.toUpperCase()}</span>
           <span>Period: {startDate} to {endDate}</span>

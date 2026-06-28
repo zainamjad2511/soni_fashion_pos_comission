@@ -47,10 +47,10 @@ function getReceiptHtmlTemplate() {
 <body>
   <div id="receipt-content">
     <div class="header text-center">
-      <div class="store-name">SONI FASHION</div>
-      <div class="info-line">Exclusive Ladies & Gents Wear</div>
-      <div class="info-line">Main Commercial Market, Lahore</div>
-      <div class="info-line">Ph: 0300-1234567</div>
+      <div class="store-name" id="store-name">SONI FASHION | سونی فیشن</div>
+      <div class="info-line" id="store-tagline">Jahan Fashion enters your life</div>
+      <div class="info-line" id="store-address">Machli Bazar, Daska</div>
+      <div class="info-line" id="store-contact">WhatsApp/Ph: 03246470929</div>
     </div>
     <div class="info-line"><span class="bold">Inv #:</span> <span id="inv-no"></span></div>
     <div class="info-line"><span class="bold">Date:</span> <span id="inv-date"></span></div>
@@ -69,12 +69,18 @@ function getReceiptHtmlTemplate() {
     </div>
     <div class="footer">
       <div>THANK YOU FOR SHOPPING WITH US!</div>
-      <div style="margin-top: 4px;">No cash refund. Exchange within 7 days with original receipt.</div>
+      <div style="margin-top: 4px; font-weight: bold;" id="store-footer">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED</div>
     </div>
   </div>
   <script>
     function renderReceipt(data) {
       if (!data) return;
+      if (document.getElementById('store-name') && data.shop_name) document.getElementById('store-name').textContent = data.shop_name;
+      if (document.getElementById('store-tagline') && data.shop_tagline) document.getElementById('store-tagline').textContent = data.shop_tagline;
+      if (document.getElementById('store-address') && data.shop_address) document.getElementById('store-address').textContent = data.shop_address;
+      if (document.getElementById('store-contact') && data.shop_contact) document.getElementById('store-contact').textContent = 'WhatsApp/Ph: ' + data.shop_contact;
+      if (document.getElementById('store-footer') && data.receipt_footer) document.getElementById('store-footer').textContent = data.receipt_footer;
+
       document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
       document.getElementById('inv-date').textContent = data.sale_date || new Date().toLocaleString();
       document.getElementById('inv-cashier').textContent = data.salesperson_name || 'Cashier';
@@ -133,9 +139,22 @@ export function registerPrintHandlers() {
         const htmlTemplate = getReceiptHtmlTemplate()
         const encodedHtml = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlTemplate)
 
+        const settingsRows = db.prepare('SELECT key, value FROM settings').all()
+        const settingsMap = {}
+        settingsRows.forEach(r => { settingsMap[r.key] = r.value })
+
+        const enrichedData = {
+          shop_name: settingsMap.shop_name || 'Soni Fashion | سونی فیشن',
+          shop_tagline: settingsMap.shop_tagline || 'Jahan Fashion enters your life',
+          shop_address: settingsMap.shop_address || 'Machli Bazar, Daska',
+          shop_contact: settingsMap.shop_contact || '03246470929',
+          receipt_footer: settingsMap.receipt_footer || 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
+          ...receiptData
+        }
+
         receiptWindow.webContents.once('did-finish-load', async () => {
           try {
-            await receiptWindow.webContents.executeJavaScript(`renderReceipt(${JSON.stringify(receiptData)});`)
+            await receiptWindow.webContents.executeJavaScript(`renderReceipt(${JSON.stringify(enrichedData)});`)
             
             // Give layout engine 250ms to settle DOM height and styles
             setTimeout(() => {

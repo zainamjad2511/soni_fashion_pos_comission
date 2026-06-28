@@ -78,10 +78,10 @@
 <body>
   <div id="receipt-content">
     <div class="header text-center">
-      <div class="store-name">SONI FASHION</div>
-      <div class="info-line">Exclusive Ladies & Gents Wear</div>
-      <div class="info-line">Main Commercial Market, Lahore</div>
-      <div class="info-line">Ph: 0300-1234567</div>
+      <div class="store-name" id="store-name">SONI FASHION | سونی فیشن</div>
+      <div class="info-line" id="store-tagline">Jahan Fashion enters your life</div>
+      <div class="info-line" id="store-address">Machli Bazar, Daska</div>
+      <div class="info-line" id="store-contact">WhatsApp/Ph: 03246470929</div>
     </div>
 
     <div class="info-line"><span class="bold">Inv #:</span> <span id="inv-no">INV-20260628-0001</span></div>
@@ -126,7 +126,7 @@
 
     <div class="footer">
       <div>THANK YOU FOR SHOPPING WITH US!</div>
-      <div style="margin-top: 4px;">No cash refund. Exchange within 7 days with original tag and receipt.</div>
+      <div style="margin-top: 4px; font-weight: bold;" id="store-footer">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED</div>
       <div style="margin-top: 6px; font-size: 9px; color: #555;">Software by Antigravity POS</div>
     </div>
   </div>
@@ -134,6 +134,12 @@
   <script>
     function renderReceipt(data) {
       if (!data) return;
+      if (document.getElementById('store-name') && data.shop_name) document.getElementById('store-name').textContent = data.shop_name;
+      if (document.getElementById('store-tagline') && data.shop_tagline) document.getElementById('store-tagline').textContent = data.shop_tagline;
+      if (document.getElementById('store-address') && data.shop_address) document.getElementById('store-address').textContent = data.shop_address;
+      if (document.getElementById('store-contact') && data.shop_contact) document.getElementById('store-contact').textContent = 'WhatsApp/Ph: ' + data.shop_contact;
+      if (document.getElementById('store-footer') && data.receipt_footer) document.getElementById('store-footer').textContent = data.receipt_footer;
+
       document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
       document.getElementById('inv-date').textContent = data.sale_date || new Date().toLocaleString();
       document.getElementById('inv-cashier').textContent = data.salesperson_name || 'Cashier';

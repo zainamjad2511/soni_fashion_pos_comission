@@ -11,7 +11,8 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  Tag
+  Tag,
+  Eye
 } from 'lucide-react'
 
 export function ReprintModal({ isOpen, onClose }) {
@@ -19,6 +20,7 @@ export function ReprintModal({ isOpen, onClose }) {
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(false)
   const [printingId, setPrintingId] = useState(null)
+  const [previewSale, setPreviewSale] = useState(null)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -89,6 +91,23 @@ export function ReprintModal({ isOpen, onClose }) {
       showToast('error', err.message || 'Error executing thermal reprint.')
     } finally {
       setPrintingId(null)
+    }
+  }
+
+  const handlePreview = async (sale) => {
+    try {
+      if (window.electronAPI && window.electronAPI.sales) {
+        const res = await window.electronAPI.sales.reprint(sale.invoice_number)
+        const fullSale = res.success ? res.data : res
+        if (fullSale) {
+          setPreviewSale(fullSale)
+        }
+      } else {
+        setPreviewSale(sale)
+      }
+    } catch (err) {
+      console.error('[ReprintModal] Preview error:', err)
+      setPreviewSale(sale)
     }
   }
 
@@ -234,23 +253,33 @@ export function ReprintModal({ isOpen, onClose }) {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleReprint(sale)}
-                        disabled={isPrinting}
-                        className="px-4 py-2.5 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-light font-semibold text-xs transition-all border border-brand/40 flex items-center gap-2 shadow-md disabled:opacity-50"
-                      >
-                        {isPrinting ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Sending...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Reprint Receipt</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePreview(sale)}
+                          className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs transition-all border border-slate-700 flex items-center gap-1.5 shadow-sm"
+                          title="View Receipt Structure Mockup"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Preview Bill</span>
+                        </button>
+                        <button
+                          onClick={() => handleReprint(sale)}
+                          disabled={isPrinting}
+                          className="px-4 py-2.5 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-light font-semibold text-xs transition-all border border-brand/40 flex items-center gap-2 shadow-md disabled:opacity-50"
+                        >
+                          {isPrinting ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Sending...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Reprint Receipt</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
@@ -270,6 +299,79 @@ export function ReprintModal({ isOpen, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Live 80mm Thermal Receipt Preview Modal */}
+      {previewSale && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-white text-black rounded-xl p-6 w-[320px] shadow-2xl font-mono text-xs border border-gray-300 max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setPreviewSale(null)}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
+              <div className="font-bold text-base tracking-wide">SONI FASHION | سونی فیشن</div>
+              <div className="text-[11px] mt-1">Jahan Fashion enters your life</div>
+              <div className="text-[11px]">Machli Bazar, Daska</div>
+              <div className="text-[11px]">WhatsApp/Ph: 03246470929</div>
+            </div>
+
+            <div className="space-y-1 border-b border-dashed border-black pb-3 mb-3 text-[11px]">
+              <div><strong className="font-bold">Inv #:</strong> {previewSale.invoice_number}</div>
+              <div><strong className="font-bold">Date:</strong> {previewSale.sale_date || new Date().toLocaleString()}</div>
+              <div><strong className="font-bold">Cashier:</strong> {previewSale.salesperson_name || 'Staff'}</div>
+            </div>
+
+            <table className="w-full text-left border-collapse mb-3 text-[11px]">
+              <thead>
+                <tr className="border-b border-black font-bold">
+                  <th className="py-1">Item</th>
+                  <th className="py-1 text-center">Qty</th>
+                  <th className="py-1 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(previewSale.items || []).length === 0 ? (
+                  <tr><td colSpan={3} className="py-2 text-center italic text-gray-500">No item details recorded</td></tr>
+                ) : (
+                  previewSale.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="py-1.5">
+                        <div className="font-bold">{item.name || item.article_name || 'Item'}</div>
+                        <div className="text-[9px] text-gray-600">@ Rs.{Number(item.retail_price_snapshot || 0).toLocaleString()}</div>
+                      </td>
+                      <td className="py-1.5 text-center">{item.quantity}</td>
+                      <td className="py-1.5 text-right font-bold">Rs.{Number(item.line_total || 0).toLocaleString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            <div className="border-t border-dashed border-black pt-2 space-y-1 text-right text-[11px]">
+              <div className="flex justify-between"><span>Subtotal:</span><span>Rs. {Number(previewSale.subtotal || previewSale.grand_total || 0).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Discount:</span><span>Rs. {Number(previewSale.total_discount || 0).toLocaleString()}</span></div>
+              <div className="flex justify-between font-bold text-sm border-y border-black py-1 my-1"><span>TOTAL:</span><span>Rs. {Number(previewSale.grand_total || 0).toLocaleString()}</span></div>
+              <div className="flex justify-between uppercase"><span>Payment:</span><span>{previewSale.payment_method || 'CASH'}</span></div>
+            </div>
+
+            <div className="border-t border-dashed border-black mt-4 pt-3 text-center text-[10px] space-y-1">
+              <div>THANK YOU FOR SHOPPING WITH US!</div>
+              <div className="font-bold mt-1">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED</div>
+              <div className="text-[9px] text-gray-500 mt-2">Software by Antigravity POS</div>
+            </div>
+
+            <button
+              onClick={() => setPreviewSale(null)}
+              className="mt-5 w-full py-2 bg-black text-white rounded-lg font-sans font-semibold text-xs hover:bg-gray-800 transition-all shadow"
+            >
+              Close Preview
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

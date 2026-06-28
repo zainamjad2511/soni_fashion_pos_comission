@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Soni Fashion — POS Receipt Comparison Prototype</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+
+    body {
+      background-color: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      margin: 0;
+      font-family: sans-serif;
+      color: #eee;
+    }
+    .preview-header {
+      text-align: center;
+      margin-bottom: 30px;
+      max-width: 700px;
+    }
+    .preview-header h1 {
+      font-size: 22px;
+      margin: 0 0 8px 0;
+      color: #fff;
+    }
+    .preview-header p {
+      font-size: 13px;
+      color: #bbb;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    .comparison-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 40px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1000px;
+    }
+    .option-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .option-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .option-desc {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 16px;
+      text-align: center;
+      max-width: 280px;
+    }
+
+    /* 80mm Thermal Receipt Shared Styling */
+    .receipt-container {
+      background: #ffffff;
+      width: 80mm;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      font-family: 'Courier New', Courier, monospace;
+      color: #000000;
+      box-sizing: border-box;
+    }
+    
+    /* Option A: Full Padding */
+    .receipt-full {
+      padding: 6mm;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    
+    /* Option B: Compact Padding & Tighter Line Height */
+    .receipt-compact {
+      padding: 4mm;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+    
+    /* Header Section */
+    .header { text-align: center; }
+    
+    .logo-img {
+      max-width: 50mm;
+      max-height: 22mm;
+      object-fit: contain;
+      margin-bottom: 4px;
+      filter: grayscale(100%) contrast(150%);
+    }
+    .logo-img-compact {
+      max-width: 42mm;
+      max-height: 18mm;
+      object-fit: contain;
+      margin-bottom: 2px;
+      filter: grayscale(100%) contrast(150%);
+    }
+    
+    /* Bigger English, Smaller Urdu Title */
+    .store-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .english-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+    .english-title-compact {
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .urdu-nastaleeq {
+      font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Nafees Regular', serif;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 700;
+      direction: rtl;
+      position: relative;
+      top: -3px;
+    }
+    
+    .store-tagline { font-size: 10.5px; color: #333; }
+    .store-address { font-size: 10.5px; }
+    .contact-line { font-size: 11px; font-weight: bold; }
+    
+    /* Dividers */
+    .divider { border-top: 1px dashed #000; margin: 6px 0; }
+    .divider-tight { border-top: 1px dashed #000; margin: 4px 0; }
+    .divider-solid { border-top: 1px solid #000; margin: 6px 0; }
+    
+    /* Metadata Box */
+    .meta-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    
+    .salesman-row {
+      border-top: 1px dotted #888;
+      border-bottom: 1px dotted #888;
+      padding: 3px 0;
+      margin-top: 4px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    /* Items Table */
+    table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+    th { text-align: left; border-bottom: 1px solid #000; padding: 3px 0; font-weight: bold; }
+    td { padding: 4px 0; vertical-align: top; }
+    
+    .item-name { font-weight: bold; font-size: 11.5px; }
+    .item-sub { font-size: 9.5px; color: #444; }
+    
+    /* Totals Section */
+    .totals-row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .grand-total-row {
+      font-size: 13.5px;
+      font-weight: bold;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 4px 0;
+      margin: 4px 0;
+    }
+    
+    /* Footer & Policies */
+    .footer { text-align: center; margin-top: 8px; }
+    .thank-you { font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+    .policy-box { font-size: 9.5px; line-height: 1.35; margin: 4px 0; color: #222; }
+    
+    /* QR Code Section */
+    .social-section {
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px dashed #000;
+      text-align: center;
+    }
+    .social-title { font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+    .qr-img { width: 75px; height: 75px; display: block; margin: 0 auto; }
+    
+    .software-tag {
+      margin-top: 8px;
+      font-size: 8.5px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="preview-header">
+    <h1>Soni Fashion — Receipt Design Options</h1>
+    <p>Compare the two styles below. Both include your shop SKU on every item for effortless refunds & exchanges. The English store title is now larger while the Urdu Nastaleeq text is kept smaller and aligned.</p>
+  </div>
+
+  <div class="comparison-wrapper">
+    
+    <!-- OPTION A: FULL STANDARD RECEIPT -->
+    <div class="option-column">
+      <div class="option-title">Option A: Full Marketing Slip</div>
+      <div class="option-desc">Includes TikTok QR code and detailed return terms. Ideal for standard customer engagement.</div>
+      
+      <div class="receipt-container receipt-full">
+        <!-- HEADER -->
+        <div class="header">
+          <img src="src/renderer/src/assets/logo.jpg" alt="Soni Fashion" class="logo-img" onerror="this.style.display='none'" />
+          <div class="store-title">
+            <span class="english-title">SONI FASHION</span> | <span class="urdu-nastaleeq">سونی فیشن</span>
+          </div>
+          <div class="store-tagline">Jahan Fashion enters your life</div>
+          <div class="store-address">Machli Bazar, Daska</div>
+          <div class="contact-line">WhatsApp / Ph: 03246470929</div>
+        </div>
+
+        <div class="divider-solid"></div>
+
+        <!-- METADATA -->
+        <div class="meta-row">
+          <span><span class="bold">Inv #:</span> SNF-INV-0042</span>
+          <span>29-Jun-2026</span>
+        </div>
+        <div class="meta-row">
+          <span>Time: 01:35 PM</span>
+          <span>Items: 3</span>
+        </div>
+        <div class="salesman-row">
+          <span>Salesman:</span>
+          <span>Zain Amjad</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ITEMS TABLE WITH SKU -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">SKU</th>
+              <th style="width: 40%;">Item</th>
+              <th class="text-center" style="width: 10%;">Qty</th>
+              <th class="text-right" style="width: 30%;">Total (Rs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-size: 10.5px; font-weight: bold; color: #333;">SF-101</td>
+              <td>
+                <div class="item-name">Bridal Suit</div>
+                <div class="item-sub">@ 18,500 (-500)</div>
+              </td>
+              <td class="text-center bold">1</td>
+              <td class="text-right bold" style="font-size: 12.5px;">18,000</td>
+            </tr>
+            <tr>
+              <td style="font-size: 10.5px; font-weight: bold; color: #333;">SF-204</td>
+              <td>
+                <div class="item-name">Silk Kurti</div>
+                <div class="item-sub">@ 4,500</div>
+              </td>
+              <td class="text-center bold">2</td>
+              <td class="text-right bold" style="font-size: 12.5px;">9,000</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <!-- TOTALS -->
+        <div class="totals-row"><span>Subtotal:</span><span>Rs. 27,500</span></div>
+        <div class="totals-row"><span>Discount:</span><span>- Rs. 500</span></div>
+        <div class="totals-row grand-total-row"><span>TOTAL PAYABLE:</span><span>Rs. 27,000</span></div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+          <div class="thank-you">THANK YOU FOR SHOPPING WITH SONI FASHION!</div>
+          <div class="policy-box">
+            Exchange allowed within 7 days with original receipt.<br>
+            No cash refund. ONLY EXCHANGE IS ALLOWED.
+          </div>
+        </div>
+
+        <!-- TIKTOK QR -->
+        <div class="social-section">
+          <div class="social-title">Follow us on TikTok @sonifashion</div>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://tiktok.com/@sonifashion&margin=0" alt="TikTok QR Code" class="qr-img" />
+          <div style="font-size: 9px; margin-top: 3px;">Scan for New Arrivals & Offers</div>
+          
+          <div class="software-tag">Developed by Zain Amjad - 0312-7301850</div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- OPTION B: COMPACT MINIMAL RECEIPT -->
+    <div class="option-column">
+      <div class="option-title">Option B: Compact Paper-Saver</div>
+      <div class="option-desc">Height-wise short, no TikTok QR code, tighter padding. Saves thermal paper roll while keeping all essentials.</div>
+      
+      <div class="receipt-container receipt-compact">
+        <!-- HEADER -->
+        <div class="header">
+          <img src="src/renderer/src/assets/logo.jpg" alt="Soni Fashion" class="logo-img-compact" onerror="this.style.display='none'" />
+          <div class="store-title">
+            <span class="english-title-compact">SONI FASHION</span> | <span class="urdu-nastaleeq">سونی فیشن</span>
+          </div>
+          <div class="store-tagline">Jahan Fashion enters your life</div>
+          <div class="store-address">Machli Bazar, Daska</div>
+          <div class="contact-line">WhatsApp / Ph: 03246470929</div>
+        </div>
+
+        <div class="divider-tight"></div>
+
+        <!-- METADATA -->
+        <div class="meta-row">
+          <span><span class="bold">Inv #:</span> SNF-INV-0042</span>
+          <span>29-Jun-2026 | 01:35 PM</span>
+        </div>
+        <div class="salesman-row">
+          <span>Salesman: Zain Amjad</span>
+          <span>Items: 3</span>
+        </div>
+
+        <div class="divider-tight"></div>
+
+        <!-- ITEMS TABLE WITH SKU -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%;">SKU</th>
+              <th style="width: 40%;">Item</th>
+              <th class="text-center" style="width: 10%;">Qty</th>
+              <th class="text-right" style="width: 30%;">Total (Rs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-size: 10px; font-weight: bold; color: #333;">SF-101</td>
+              <td>
+                <div class="item-name">Bridal Suit</div>
+                <div class="item-sub">@ 18,500 (-500)</div>
+              </td>
+              <td class="text-center bold">1</td>
+              <td class="text-right bold" style="font-size: 12px;">18,000</td>
+            </tr>
+            <tr>
+              <td style="font-size: 10px; font-weight: bold; color: #333;">SF-204</td>
+              <td>
+                <div class="item-name">Silk Kurti</div>
+                <div class="item-sub">@ 4,500</div>
+              </td>
+              <td class="text-center bold">2</td>
+              <td class="text-right bold" style="font-size: 12px;">9,000</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="divider-tight"></div>
+
+        <!-- TOTALS -->
+        <div class="totals-row"><span>Subtotal:</span><span>Rs. 27,500</span></div>
+        <div class="totals-row"><span>Discount:</span><span>- Rs. 500</span></div>
+        <div class="totals-row grand-total-row"><span>TOTAL PAYABLE:</span><span>Rs. 27,000</span></div>
+
+        <!-- FOOTER COMPACT -->
+        <div class="footer">
+          <div class="thank-you">THANK YOU FOR SHOPPING WITH SONI FASHION!</div>
+          <div style="font-size: 9px; font-weight: bold; margin-top: 3px;">
+            Exchange allowed within 7 days with original receipt.<br>No cash refund. ONLY EXCHANGE IS ALLOWED.
+          </div>
+          
+          <div class="software-tag" style="margin-top: 6px;">Developed by Zain Amjad - 0312-7301850</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

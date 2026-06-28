@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import logoImg from '../assets/logo.jpg'
 import {
   LayoutDashboard,
   Package,
@@ -31,17 +32,24 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-slate-900/90 border-r border-slate-800/80 backdrop-blur-xl flex flex-col justify-between shrink-0 z-20 select-none shadow-2xl shadow-black">
       {/* Brand Header */}
-      <div className="p-6 border-b border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand via-brand-light to-roseaccent flex items-center justify-center text-white shadow-lg shadow-brand/40">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-          </div>
-          <div>
-            <h1 className="font-display font-bold text-lg tracking-tight text-white leading-none">
-              Soni Fashion
-            </h1>
-            <span className="text-xs font-medium tracking-widest text-brand-light uppercase mt-1 block">
-              POS Terminal v1.0
+      <div className="p-5 border-b border-slate-800/80 bg-slate-950/40">
+        <div className="flex items-center gap-3.5">
+          <img
+            src={logoImg}
+            alt="Soni Fashion Logo"
+            className="w-12 h-12 rounded-2xl object-cover border border-brand/40 shadow-lg shadow-brand/20 shrink-0"
+          />
+          <div className="overflow-hidden">
+            <div className="flex items-center gap-1.5 justify-between">
+              <h1 className="font-display font-bold text-base tracking-tight text-white leading-none truncate">
+                Soni Fashion
+              </h1>
+              <span className="text-xs font-semibold text-brand-light font-sans" dir="rtl">
+                سونی فیشن
+              </span>
+            </div>
+            <span className="text-[10px] font-medium tracking-wide text-slate-400 block mt-1 truncate italic">
+              Jahan Fashion enters your life
             </span>
           </div>
         </div>
