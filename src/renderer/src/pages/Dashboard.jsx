@@ -12,13 +12,17 @@ import {
   Users,
   CheckCircle2,
   Tag,
-  ChevronRight
+  ChevronRight,
+  Receipt,
+  ShoppingCart
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export function Dashboard() {
   const [articles, setArticles] = useState([])
   const [suppliersCount, setSuppliersCount] = useState(0)
+  const [todaySalesCount, setTodaySalesCount] = useState(0)
+  const [todayRevenue, setTodayRevenue] = useState(0)
   const [loading, setLoading] = useState(true)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const navigate = useNavigate()
@@ -43,6 +47,20 @@ export function Dashboard() {
           const supRes = await window.electronAPI.suppliers.list({ is_active: 1 })
           if (supRes.success) {
             setSuppliersCount(supRes.data?.length || 0)
+          }
+        }
+        // Fetch today's sales telemetry
+        if (window.electronAPI.sales) {
+          const todayStr = new Date().toISOString().slice(0, 10)
+          const salesRes = await window.electronAPI.sales.list({ start_date: todayStr, end_date: todayStr, status: 'completed' })
+          if (salesRes.success && Array.isArray(salesRes.data)) {
+            setTodaySalesCount(salesRes.data.length)
+            const rev = salesRes.data.reduce((sum, s) => sum + Number(s.grand_total || 0), 0)
+            setTodayRevenue(rev)
+          } else if (Array.isArray(salesRes)) {
+            setTodaySalesCount(salesRes.length)
+            const rev = salesRes.reduce((sum, s) => sum + Number(s.grand_total || 0), 0)
+            setTodayRevenue(rev)
           }
         }
       }
@@ -105,7 +123,42 @@ export function Dashboard() {
       </div>
 
       {/* KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Today's Live Revenue Card */}
+        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-all" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Today's Total Revenue</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <DollarSign className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
+            {loading ? '...' : `Rs. ${todayRevenue.toLocaleString()}`}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>Live Cash & Checkout Intake</span>
+          </div>
+        </div>
+
+        {/* Today's Live Sales Count Card */}
+        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-brand/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-brand/10 via-slate-900 to-slate-900">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-brand/20 transition-all" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-light">Today's Sales Volume</span>
+            <div className="w-10 h-10 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light">
+              <Receipt className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-display font-bold text-white tracking-tight mb-1">
+            {loading ? '...' : todaySalesCount}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span>Processed POS transactions today</span>
+          </div>
+        </div>
+
         {/* Total Active SKUs Card */}
         <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-brand/40 transition-all duration-300 shadow-xl">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-brand/20 transition-all" />

@@ -19,6 +19,7 @@ import {
   Printer
 } from 'lucide-react'
 import { useCartStore } from '../store/cartStore.js'
+import { ReprintModal } from '../components/ReprintModal.jsx'
 
 export function POSSale() {
   const [salespersons, setSalespersons] = useState([])
@@ -28,6 +29,7 @@ export function POSSale() {
   const [processing, setProcessing] = useState(false)
   const [toast, setToast] = useState(null)
   const [lastCompletedSale, setLastCompletedSale] = useState(null)
+  const [isReprintOpen, setIsReprintOpen] = useState(false)
 
   const searchInputRef = useRef(null)
 
@@ -252,6 +254,14 @@ export function POSSale() {
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear Cart</span>
+          </button>
+
+          <button
+            onClick={() => setIsReprintOpen(true)}
+            className="px-4 py-2 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-light font-medium text-xs transition-all border border-brand/40 flex items-center gap-1.5 shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Reprint Receipt</span>
           </button>
         </div>
       </div>
@@ -603,6 +613,8 @@ export function POSSale() {
           </div>
         </div>
       </div>
+
+      <ReprintModal isOpen={isReprintOpen} onClose={() => setIsReprintOpen(false)} />
     </div>
   )
 }
