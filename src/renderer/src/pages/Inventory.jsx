@@ -19,6 +19,7 @@ import {
   Truck
 } from 'lucide-react'
 import { StockInModal } from '../components/StockInModal.jsx'
+import { StockMovementsModal } from '../components/StockMovementsModal.jsx'
 
 export function Inventory() {
   const [articles, setArticles] = useState([])
@@ -31,6 +32,7 @@ export function Inventory() {
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isStockInOpen, setIsStockInOpen] = useState(false)
+  const [historyArticle, setHistoryArticle] = useState(null)
   const [editingArticle, setEditingArticle] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -459,6 +461,13 @@ export function Inventory() {
                       </td>
                       <td className="py-4 px-6 text-right whitespace-nowrap space-x-2">
                         <button
+                          onClick={() => setHistoryArticle(art)}
+                          className="p-2 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-light border border-brand/30 transition-all"
+                          title="View Stock Movement Ledger"
+                        >
+                          <History className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleOpenDrawer(art)}
                           className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/60"
                           title="Edit Article & Pricing"
@@ -746,6 +755,16 @@ export function Inventory() {
         onClose={() => setIsStockInOpen(false)}
         onSuccess={() => {
           showToast('success', 'Stock IN shipment manifest processed successfully!')
+          fetchArticles()
+        }}
+      />
+
+      {/* Stock Movement Ledger Modal */}
+      <StockMovementsModal
+        isOpen={!!historyArticle}
+        onClose={() => setHistoryArticle(null)}
+        article={historyArticle}
+        onStockAdjusted={() => {
           fetchArticles()
         }}
       />

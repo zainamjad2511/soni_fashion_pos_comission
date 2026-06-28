@@ -46,7 +46,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
 - [x] **Task 2.6: Stock IN Shipment Receiving UI (`StockInModal.jsx`)**
   - Build shipment receiving interface allowing user to select a supplier, append multiple articles to an incoming shipment manifest, specify received quantities, and submit in one atomic action.
 
-- [ ] **Task 2.7: Stock Movement Ledger Viewer (`StockMovementsModal.jsx`)**
+- [x] **Task 2.7: Stock Movement Ledger Viewer (`StockMovementsModal.jsx`)**
   - Build historical inspection modal displaying chronological entries (`IN`, `OUT`, `ADJUST`, `RETURN`, timestamp, reference note) for any clicked article.
 
 ### Phase 2.4: Dashboard Integration & QA
@@ -62,5 +62,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 2.6 Completed. Ready for Task 2.7.
-- Waiting for user command ("implementation call") to begin **Task 2.7: Stock Movement Ledger Viewer (`StockMovementsModal.jsx`)**.
+- **Current Status:** Task 2.7 Completed. Ready for Task 2.8.
+- Waiting for user command ("implementation call") to begin **Task 2.8: Inventory Valuation Dashboard Widget (`src/renderer/src/pages/Dashboard.jsx`)**.
