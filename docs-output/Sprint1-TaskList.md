@@ -41,7 +41,7 @@ Each task will be executed sequentially. No task will start until explicitly aut
   - Implement daily backup logic on app startup copying `.db` file to `AppData/backups/`.
   - Add pruning logic for backups older than 30 days.
 
-- [ ] **Task 1.7: Audit Log Service (`services/audit.service.js`)**
+- [x] **Task 1.7: Audit Log Service (`services/audit.service.js`)**
   - Create shared `auditLog(db, actionType, entityType, entityId, description, oldValue, newValue)` function.
   - Ensure tamper-evident insert-only logging.
 
@@ -67,5 +67,5 @@ Each task will be executed sequentially. No task will start until explicitly aut
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 1.6 Completed. Ready for Task 1.7.
-- Waiting for user command ("implementation call") to begin **Task 1.7: Audit Log Service (`services/audit.service.js`)**.
+- **Current Status:** Task 1.7 Completed. Ready for Task 1.8.
+- Waiting for user command ("implementation call") to begin **Task 1.8: Context Bridge & Preload (`preload.js`)**.
