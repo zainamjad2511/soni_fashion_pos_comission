@@ -17,10 +17,6 @@ export function registerStubHandlers() {
   reportChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
 
-  // Commissions Stubs
-  const commissionChannels = ['commissions:list', 'commissions:getSummary', 'commissions:setRate', 'commissions:updateStatus']
-  commissionChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
-
   // Expenses Stubs
   const expenseChannels = ['expenses:list', 'expenses:create', 'expenses:update', 'expenses:delete']
   expenseChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
