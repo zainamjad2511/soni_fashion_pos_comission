@@ -282,8 +282,87 @@ export function registerReturnsHandlers() {
 
     return tx()
   })
-  handleIpc('returns:list', () => { throw new Error('returns:list not implemented yet (Task 4.3)') })
-  handleIpc('returns:get', () => { throw new Error('returns:get not implemented yet (Task 4.3)') })
+  handleIpc('returns:list', (_, filters) => {
+    const db = getDb()
+    let query = `
+      SELECT r.*, 
+             s1.invoice_number AS original_invoice_number,
+             s2.invoice_number AS exchange_new_invoice_number,
+             sp.name AS processed_by_name
+      FROM returns r
+      LEFT JOIN sales s1 ON r.original_sale_id = s1.id
+      LEFT JOIN sales s2 ON r.exchange_new_sale_id = s2.id
+      LEFT JOIN salespersons sp ON r.processed_by = sp.id
+      WHERE 1=1
+    `
+    const params = []
+
+    if (filters) {
+      if (filters.start_date) {
+        query += ' AND date(r.return_date) >= date(?)'
+        params.push(filters.start_date.trim())
+      }
+      if (filters.end_date) {
+        query += ' AND date(r.return_date) <= date(?)'
+        params.push(filters.end_date.trim())
+      }
+      if (filters.return_type) {
+        query += ' AND r.return_type = ?'
+        params.push(filters.return_type.trim())
+      }
+      if (filters.search && filters.search.trim()) {
+        const term = `%${filters.search.trim()}%`
+        query += ' AND (r.return_number LIKE ? OR s1.invoice_number LIKE ? OR r.notes LIKE ?)'
+        params.push(term, term, term)
+      }
+    }
+
+    query += ' ORDER BY r.return_date DESC'
+    const stmt = db.prepare(query)
+    return stmt.all(...params)
+  })
+
+  handleIpc('returns:get', (_, idOrNumber) => {
+    const db = getDb()
+    if (!idOrNumber) throw new Error('Return ID or number required.')
+
+    const ret = db.prepare(`
+      SELECT r.*, 
+             s1.invoice_number AS original_invoice_number,
+             s2.invoice_number AS exchange_new_invoice_number,
+             sp.name AS processed_by_name
+      FROM returns r
+      LEFT JOIN sales s1 ON r.original_sale_id = s1.id
+      LEFT JOIN sales s2 ON r.exchange_new_sale_id = s2.id
+      LEFT JOIN salespersons sp ON r.processed_by = sp.id
+      WHERE r.id = ? OR r.return_number = ?
+    `).get(idOrNumber, idOrNumber)
+
+    if (!ret) throw new Error(`Return record "${idOrNumber}" not found.`)
+
+    const items = db.prepare(`
+      SELECT ri.*, a.sku, a.name AS article_name, a.supplier_article_code
+      FROM return_items ri
+      JOIN articles a ON ri.article_id = a.id
+      WHERE ri.return_id = ?
+    `).all(ret.id)
+
+    let replacement_items = []
+    if (ret.exchange_new_sale_id) {
+      replacement_items = db.prepare(`
+        SELECT si.*, a.sku, a.name AS article_name
+        FROM sale_items si
+        JOIN articles a ON si.article_id = a.id
+        WHERE si.sale_id = ?
+      `).all(ret.exchange_new_sale_id)
+    }
+
+    return {
+      ...ret,
+      items,
+      replacement_items
+    }
+  })
 
   console.log('[IPC] Registered Returns handlers.')
 }

@@ -11,7 +11,7 @@
   - Implement `returns:lookupSale` taking an invoice number, returning the sale header and all `sale_items` joined with article details and already-returned quantities.
   - Implement `returns:lookupBySku` taking an article SKU or supplier code, returning a list of matching completed sales sorted by date.
 
-- [ ] **Task 4.2: Implement Returns Creation IPC Handler (`returns:create`)**
+- [x] **Task 4.2: Implement Returns Creation IPC Handler (`returns:create`)**
   - Build atomic SQLite transaction supporting normal refunds, item exchanges, and manual returns (`original_sale_id = NULL`).
   - Generate sequential return numbers (`RET-YYYYMMDD-XXXX`).
   - Restore stock (`UPDATE articles SET quantity = quantity + ?`) and log movements (`RETURN_IN`).
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 4.1 Completed. Ready for Task 4.2.
-- Waiting for user command ("implementation call") to begin **Task 4.2: Implement Returns Creation IPC Handler (`returns:create`)**.
+- **Current Status:** Task 4.2 Completed. Ready for Task 4.3.
+- Waiting for user command ("implementation call") to begin **Task 4.3: Implement Returns Listing IPC Handler (`returns:list`) & Remove Stubs**.
