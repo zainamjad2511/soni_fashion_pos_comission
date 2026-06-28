@@ -4,9 +4,6 @@ export function registerStubHandlers() {
   const stubMessage = (channel) => `Stub handler for ${channel}: not implemented yet.`
 
 
-  // Sales Stubs
-  const saleChannels = ['sales:list', 'sales:get', 'sales:create', 'sales:void', 'sales:reprint']
-  saleChannels.forEach(ch => handleIpc(ch, () => { throw new Error(stubMessage(ch)) }))
 
   // Returns Stubs
   const returnChannels = ['returns:list', 'returns:get', 'returns:create']
