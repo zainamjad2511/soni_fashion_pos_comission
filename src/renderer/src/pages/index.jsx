@@ -6,6 +6,7 @@ import { Inventory as InventoryComponent } from './Inventory.jsx'
 import { Dashboard as DashboardComponent } from './Dashboard.jsx'
 import { Salespersons as SalespersonsComponent } from './Salespersons.jsx'
 import { POSSale as POSSaleComponent } from './POSSale.jsx'
+import { Returns as ReturnsComponent } from './Returns.jsx'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -35,14 +36,7 @@ export function SuppliersPage() {
 }
 
 export function ReturnsPage() {
-  return (
-    <PlaceholderPage
-      title="Returns & Exchanges Processing"
-      sprint="Sprint 4"
-      description="Refund calculation engine, customer credit slips, net exchange billing, and damaged stock categorization."
-      icon={RotateCcw}
-    />
-  )
+  return <ReturnsComponent />
 }
 
 export function ExpensesPage() {

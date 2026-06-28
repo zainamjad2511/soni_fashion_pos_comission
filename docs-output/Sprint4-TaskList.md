@@ -19,12 +19,12 @@
   - For exchanges, atomically create replacement sale record (`exchange_return_id` set) and link (`exchange_new_sale_id`).
   - Return result `{ returnNumber, refundCredit, newSaleId, netAmount }`.
 
-- [ ] **Task 4.3: Implement Returns Listing IPC Handler (`returns:list`) & Remove Stubs**
+- [x] **Task 4.3: Implement Returns Listing IPC Handler (`returns:list`) & Remove Stubs**
   - Implement `returns:list` supporting date range and search filtering.
   - Replace stub handlers in `src/main/ipc/stubs.ipc.js` and register active domain handlers in `src/main/index.js`.
 
 ### Phase 4.2: Tabbed Returns & Exchanges UI
-- [ ] **Task 4.4: Build Tabbed Lookup Interface (`Returns.jsx` Tabs 1 & 2)**
+- [x] **Task 4.4: Build Tabbed Lookup Interface (`Returns.jsx` Tabs 1 & 2)**
   - Implement Tab 1 (Invoice Lookup) with instant validation and status checking (`completed` vs `voided`).
   - Implement Tab 2 (SKU Search) allowing cashiers to trace historical invoices by article barcode or supplier code.
 
@@ -51,5 +51,5 @@
 ---
 
 ## 🚦 Execution Control
-- **Current Status:** Task 4.2 Completed. Ready for Task 4.3.
-- Waiting for user command ("implementation call") to begin **Task 4.3: Implement Returns Listing IPC Handler (`returns:list`) & Remove Stubs**.
+- **Current Status:** Task 4.4 Completed. Ready for Task 4.5.
+- Waiting for user command ("implementation call") to begin **Task 4.5: Implement Item Selection & Exchange Net Settlement Panel**.
