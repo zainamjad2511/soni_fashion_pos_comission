@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   History,
   X,
@@ -126,8 +127,8 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
       <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Toast inside modal */}
         {toast && (
@@ -395,6 +396,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

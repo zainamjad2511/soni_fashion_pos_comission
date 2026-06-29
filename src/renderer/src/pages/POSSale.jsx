@@ -310,7 +310,7 @@ export function POSSale() {
         {/* Left Column: SKU Search & Cart Table (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Instant Search Box */}
-          <div className="glass-card p-4 rounded-2xl border border-slate-800/80 relative shadow-xl">
+          <div className="glass-card p-4 rounded-2xl border border-slate-800/80 relative shadow-xl z-50">
             <div className="relative">
               <Search className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
               <input
@@ -330,7 +330,7 @@ export function POSSale() {
 
             {/* Instant Search Dropdown Results */}
             {searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-slate-800 max-h-80 overflow-y-auto custom-scrollbar animate-fade-in">
+              <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-[100] overflow-hidden divide-y divide-slate-800 max-h-80 overflow-y-auto custom-scrollbar animate-fade-in">
                 {searchResults.map((art) => (
                   <div
                     key={art.id}
@@ -557,9 +557,7 @@ export function POSSale() {
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: 'cash', label: 'Cash Payment' },
-                  { id: 'exchange_customer_pays', label: 'Exchange (+Cash)' },
-                  { id: 'exchange_store_refunds', label: 'Exchange (Refund)' },
-                  { id: 'exchange_even', label: 'Exchange (Even)' }
+                  { id: 'online', label: 'Online Transfer' }
                 ].map((m) => (
                   <button
                     key={m.id}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Truck,
   Plus,
@@ -182,8 +183,8 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
 
   const totalUnits = manifestItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
       <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
@@ -420,6 +421,7 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

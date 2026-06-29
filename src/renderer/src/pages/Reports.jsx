@@ -493,7 +493,7 @@ export function Reports() {
           {activeTab === 'inventory' && (
             <div className="space-y-6 animate-fade-in">
               {/* Valuation KPIs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 print:grid-cols-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 print:grid-cols-3">
                 <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active SKU Count</span>
                   <h3 className="text-3xl font-display font-bold text-white mt-2">
@@ -507,7 +507,7 @@ export function Reports() {
                   <h3 className="text-3xl font-display font-bold text-blue-400 mt-2">
                     {inventoryData.summary.total_units}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Physical inventory inventory count</span>
+                  <span className="text-xs text-slate-500 mt-1 block">Physical inventory count</span>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
@@ -517,21 +517,12 @@ export function Reports() {
                   </h3>
                   <span className="text-xs text-slate-500 mt-1 block">Capital invested in inventory</span>
                 </div>
-
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Retail Potential Valuation</span>
-                  <h3 className="text-2xl font-display font-bold text-emerald-400 mt-2 font-mono">
-                    Rs. {Number(inventoryData.summary.grand_total_retail).toLocaleString()}
-                  </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Expected revenue at full retail</span>
-                </div>
               </div>
 
               {/* Valuation Table */}
               <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
                 <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
                   <h4 className="font-semibold text-white text-sm">Stock Valuation Audit Sheet</h4>
-                  <span className="text-xs text-slate-400">Projected Margin: Rs. {(Number(inventoryData.summary.grand_total_retail) - Number(inventoryData.summary.grand_total_cost)).toLocaleString()}</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-sm">
@@ -542,15 +533,13 @@ export function Reports() {
                         <th className="py-3.5 px-4">Category</th>
                         <th className="py-3.5 px-4 text-center">Stock Qty</th>
                         <th className="py-3.5 px-4 text-right">Unit Cost</th>
-                        <th className="py-3.5 px-4 text-right">Unit Retail</th>
                         <th className="py-3.5 px-4 text-right">Total Cost Value</th>
-                        <th className="py-3.5 px-4 text-right">Total Retail Value</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
                       {inventoryData.articles.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="py-12 text-center text-slate-500">
+                          <td colSpan={6} className="py-12 text-center text-slate-500">
                             No active articles found in catalog.
                           </td>
                         </tr>
@@ -562,9 +551,7 @@ export function Reports() {
                             <td className="py-3 px-4 text-slate-400 text-xs">{art.category}</td>
                             <td className="py-3 px-4 text-center font-mono font-bold text-white">{art.quantity}</td>
                             <td className="py-3 px-4 text-right font-mono text-slate-400">Rs. {Number(art.wholesale_price || 0).toLocaleString()}</td>
-                            <td className="py-3 px-4 text-right font-mono text-slate-300">Rs. {Number(art.retail_price || 0).toLocaleString()}</td>
                             <td className="py-3 px-4 text-right font-mono font-bold text-amber-400">Rs. {Number(art.total_cost_value || 0).toLocaleString()}</td>
-                            <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">Rs. {Number(art.total_retail_value || 0).toLocaleString()}</td>
                           </tr>
                         ))
                       )}

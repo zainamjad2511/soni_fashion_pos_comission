@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Users,
   Search,
@@ -393,8 +394,8 @@ export function Salespersons() {
       )}
 
       {/* Slide-Over Drawer Modal */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
+      {isDrawerOpen && createPortal(
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
           <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col justify-between shadow-2xl animate-slide-left">
             {/* Drawer Header */}
             <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -482,7 +483,8 @@ export function Salespersons() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

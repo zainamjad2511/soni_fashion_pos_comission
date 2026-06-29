@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   RotateCcw,
   Search,
@@ -200,7 +201,12 @@ export function Returns() {
         setInvoiceQuery(customInvoiceNo)
         setActiveTab('invoice')
       }
-      const sale = await window.electronAPI.returns.lookupSale(query)
+      const res = await window.electronAPI.returns.lookupSale(query)
+      if (!res || !res.success) {
+        setLookupError(res?.error || `Invoice "${query}" not found.`)
+        return
+      }
+      const sale = res.data
       if (sale.status === 'voided') {
         setLookupError(`Invoice "${sale.invoice_number}" is VOIDED. Cannot process returns or exchanges against a voided sale.`)
       } else {
@@ -224,8 +230,13 @@ export function Returns() {
     setMatchingSales([])
 
     try {
-      const results = await window.electronAPI.returns.lookupBySku(skuQuery)
-      if (!results || results.length === 0) {
+      const res = await window.electronAPI.returns.lookupBySku(skuQuery)
+      if (!res || !res.success) {
+        setSkuError(res?.error || `Error searching historical sales by SKU.`)
+        return
+      }
+      const results = Array.isArray(res.data) ? res.data : []
+      if (results.length === 0) {
         setSkuError(`No historical sales found matching SKU/Code "${skuQuery}".`)
       } else {
         setMatchingSales(results)
@@ -361,8 +372,12 @@ export function Returns() {
       }
 
       const res = await window.electronAPI.returns.create(payload)
-      setProcessResult(res)
-      showToast('success', `Return transaction completed successfully! Voucher #${res?.returnNumber || res?.return_number || ''}`)
+      if (!res || !res.success) {
+        throw new Error(res?.error || 'Failed to process return transaction')
+      }
+      const resultData = res.data
+      setProcessResult(resultData)
+      showToast('success', `Return transaction completed successfully! Voucher #${resultData?.returnNumber || resultData?.return_number || ''}`)
     } catch (err) {
       console.error('Transaction processing error:', err)
       showToast('error', `Transaction Failed: ${err.message}`)
@@ -468,7 +483,11 @@ export function Returns() {
       }
 
       const res = await window.electronAPI.returns.create(payload)
-      setManualResult(res)
+      if (!res || !res.success) {
+        throw new Error(res?.error || 'Failed to record manual return')
+      }
+      const resultData = res.data
+      setManualResult(resultData)
       setManualCart([])
       setManualNotes('')
       showToast('success', 'Manual return voucher recorded successfully!')
@@ -1422,8 +1441,8 @@ export function Returns() {
       )}
 
       {/* Return Detail Modal */}
-      {selectedHistoryDetail && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+      {selectedHistoryDetail && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
             <div className="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900/95 backdrop-blur z-10">
               <div className="flex items-center gap-3">
@@ -1552,7 +1571,8 @@ export function Returns() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

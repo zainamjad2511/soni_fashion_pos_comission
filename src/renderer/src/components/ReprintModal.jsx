@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   Search,
@@ -113,8 +114,8 @@ export function ReprintModal({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
       {/* Toast */}
       {toast && (
         <div className="absolute top-6 z-50 animate-bounce">
@@ -302,7 +303,7 @@ export function ReprintModal({ isOpen, onClose }) {
 
       {/* Live 80mm Thermal Receipt Preview Modal */}
       {previewSale && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-white text-black rounded-xl p-6 w-[320px] shadow-2xl font-mono text-xs border border-gray-300 max-h-[90vh] overflow-y-auto relative">
             <button
               onClick={() => setPreviewSale(null)}
@@ -372,6 +373,7 @@ export function ReprintModal({ isOpen, onClose }) {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   )
 }

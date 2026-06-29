@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Receipt,
   Search,
@@ -458,8 +459,8 @@ export function Expenses() {
       </div>
 
       {/* Side Drawer for Record / Edit Expense */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-sm flex justify-end animate-fade-in">
+      {isDrawerOpen && createPortal(
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/80 backdrop-blur-sm flex justify-end animate-fade-in">
           <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl animate-slide-left">
             {/* Drawer Header */}
             <div className="p-6 border-b border-slate-800 flex items-center justify-between">
@@ -605,12 +606,13 @@ export function Expenses() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {deletingExpense && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      {deletingExpense && createPortal(
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-up">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
@@ -661,7 +663,8 @@ export function Expenses() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
