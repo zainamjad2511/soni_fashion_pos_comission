@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    --bg-canvas: #F7F5F0;
-    --bg-panel: #EFEBE3;
+    --bg-canvas: #FAF6EE;
+    --bg-panel: #F4EFE6;
     --text-primary: #332822;
     --text-muted: #7A6F69;
-    --border-color: #C4BDB7;
+    --border-color: #D6CDBF;
   }
 
   * {
@@ -96,8 +96,8 @@
 
 /* Sidebar, Header & Secondary Panels background override */
 aside, header, nav[class*="bg-"] {
-  background: #EFEBE3 !important;
-  border-color: #C4BDB7 !important;
+  background: #F4EFE6 !important;
+  border-color: #D6CDBF !important;
   color: #332822 !important;
 }
 
@@ -108,25 +108,30 @@ table {
 }
 
 thead, tr[class*="bg-slate-950"], th {
-  background: #EFEBE3 !important;
+  background: #F4EFE6 !important;
   color: #332822 !important;
-  border-bottom: 1px solid #C4BDB7 !important;
+  border-bottom: 2px solid #C4B8A5 !important;
 }
 
 tbody tr {
   background: #FFFFFF !important;
   color: #332822 !important;
-  border-bottom: 1px solid #E5E7EB !important;
+  border-bottom: 1px solid #E6DFD5 !important;
 }
 
 tbody tr:hover {
-  background: #F7F5F0 !important;
+  background: #FAF6EE !important;
 }
 
-/* 2. Override Text Colors (Remove neon green, cyan, blue, amber, rose) */
-[class*="text-slate-"], [class*="text-emerald-"], [class*="text-cyan-"], [class*="text-blue-"], [class*="text-amber-"], [class*="text-rose-"], [class*="text-brand"], [class*="gradient-text"], [class*="text-white"] {
+/* 2. Override Text Colors */
+[class*="text-slate-"], [class*="text-emerald-"], [class*="text-cyan-"], [class*="text-blue-"], [class*="text-amber-"], [class*="text-rose-"], [class*="gradient-text"], [class*="text-white"] {
   color: #332822 !important;
   background-image: none !important;
+  -webkit-text-fill-color: #332822 !important;
+}
+
+[class*="text-brand"] {
+  color: #332822 !important;
   -webkit-text-fill-color: #332822 !important;
 }
 
@@ -167,25 +172,25 @@ button, a[class*="rounded-"] {
 
 /* Active navigation links in Sidebar */
 a[aria-current="page"], a.active {
-  background: #FFFFFF !important;
+  background: #E6DFD5 !important;
   color: #332822 !important;
-  border: 1px solid #332822 !important;
+  border: 1px solid #C4B8A5 !important;
   font-weight: 600 !important;
   -webkit-text-fill-color: #332822 !important;
 }
 
 /* Primary action buttons */
 button[class*="bg-brand"], button[class*="bg-emerald-"], button[class*="bg-blue-"], button[class*="bg-rose-"], button[class*="bg-gradient-"] {
-  background: #332822 !important;
-  color: #F7F5F0 !important;
-  border: 1px solid #332822 !important;
-  -webkit-text-fill-color: #F7F5F0 !important;
+  background: #E6DFD5 !important;
+  color: #332822 !important;
+  border: 1px solid #C4B8A5 !important;
+  -webkit-text-fill-color: #332822 !important;
 }
 
 button[class*="bg-brand"]:hover, button[class*="bg-emerald-"]:hover, button[class*="bg-blue-"]:hover, button[class*="bg-rose-"]:hover {
-  background: #4A3C34 !important;
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
+  background: #DFD5C6 !important;
+  color: #332822 !important;
+  -webkit-text-fill-color: #332822 !important;
 }
 
 /* Inputs & Selects */
