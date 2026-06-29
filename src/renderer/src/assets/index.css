@@ -207,6 +207,43 @@ input:focus, select:focus, textarea:focus {
   outline: none !important;
 }
 
+/* Toast Notifications & Alert Banners Override */
+div[class*="fixed"][class*="bottom-"] > div {
+  background: #FAF6EE !important;
+  color: #332822 !important;
+  -webkit-text-fill-color: #332822 !important;
+  border: 2px solid #332822 !important;
+  box-shadow: 4px 4px 0px rgba(51, 40, 34, 0.15) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  padding: 1rem 1.5rem !important;
+}
+
+div[class*="fixed"][class*="bottom-"] > div[class*="bg-rose-"] {
+  background: #FDF8F5 !important;
+  border-color: #8C3A3A !important;
+  color: #8C3A3A !important;
+  -webkit-text-fill-color: #8C3A3A !important;
+}
+
+div[class*="fixed"][class*="bottom-"] > div[class*="bg-rose-"] * {
+  color: #8C3A3A !important;
+  -webkit-text-fill-color: #8C3A3A !important;
+}
+
+div[class*="fixed"][class*="bottom-"] > div[class*="bg-emerald-"] {
+  background: #F5F9F6 !important;
+  border-color: #4A5D4E !important;
+  color: #4A5D4E !important;
+  -webkit-text-fill-color: #4A5D4E !important;
+}
+
+div[class*="fixed"][class*="bottom-"] > div[class*="bg-emerald-"] * {
+  color: #4A5D4E !important;
+  -webkit-text-fill-color: #4A5D4E !important;
+}
+
 /* Report Print Styles */
 @media print {
   body * { visibility: hidden; }

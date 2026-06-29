@@ -185,6 +185,26 @@ export function POSSale() {
     }
   }
 
+  // Keyboard shortcuts for Complete Sale [F12] and Print Receipt [F11 / Ctrl+P]
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault()
+        if (!processing && items.length > 0) {
+          handleCompleteSale()
+        }
+      } else if (e.key === 'F11' || (e.ctrlKey && e.key.toLowerCase() === 'p')) {
+        e.preventDefault()
+        if (lastCompletedSale && window.electronAPI?.print?.receipt) {
+          window.electronAPI.print.receipt(lastCompletedSale)
+          showToast('success', 'Sending receipt to thermal printer...')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [items, selectedSalesperson, orderDiscount, paymentMethod, notes, processing, lastCompletedSale])
+
   const subtotal = getSubtotal()
   const totalDiscount = getTotalDiscount()
   const grandTotal = getGrandTotal()
@@ -246,6 +266,29 @@ export function POSSale() {
           </div>
 
           <button
+            onClick={handleCompleteSale}
+            disabled={processing || items.length === 0}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Complete Sale [F12]</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (lastCompletedSale && window.electronAPI?.print?.receipt) {
+                window.electronAPI.print.receipt(lastCompletedSale)
+                showToast('success', 'Sending receipt to thermal printer...')
+              }
+            }}
+            disabled={!lastCompletedSale}
+            className="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-semibold text-xs transition-all border border-emerald-500/40 flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print Receipt [F11]</span>
+          </button>
+
+          <button
             onClick={() => {
               if (window.confirm('Are you sure you want to clear current cart items?')) clearCart()
             }}
@@ -266,44 +309,7 @@ export function POSSale() {
         </div>
       </div>
 
-      {/* Success Banner for Last Completed Sale */}
-      {lastCompletedSale && (
-        <div className="bg-emerald-950/60 border border-emerald-500/40 p-4 rounded-2xl flex items-center justify-between animate-fade-in shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-display font-bold text-white text-base">
-                Transaction Successful: {lastCompletedSale.invoice_number}
-              </h4>
-              <p className="text-xs text-emerald-300/80">
-                Processed total Rs. {lastCompletedSale.grand_total.toLocaleString()} via {lastCompletedSale.payment_method}.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (window.electronAPI?.print?.receipt) {
-                  window.electronAPI.print.receipt(lastCompletedSale)
-                  showToast('success', 'Sending receipt to thermal printer...')
-                }
-              }}
-              className="px-4 py-2 rounded-xl bg-brand/20 hover:bg-brand/30 text-brand-light text-xs font-semibold transition-all border border-brand/40 flex items-center gap-1.5"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print Receipt</span>
-            </button>
-            <button
-              onClick={() => setLastCompletedSale(null)}
-              className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-semibold transition-all border border-emerald-500/40 flex items-center gap-1.5"
-            >
-              <span>Dismiss</span>
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {/* Main 2-Column Terminal Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -603,10 +609,25 @@ export function POSSale() {
                 </>
               ) : (
                 <>
-                  <span>Complete Sale</span>
+                  <span>Complete Sale [F12]</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
+            </button>
+
+            {/* Print Receipt Button (Permanently on screen, enabled only after completed sale) */}
+            <button
+              onClick={() => {
+                if (lastCompletedSale && window.electronAPI?.print?.receipt) {
+                  window.electronAPI.print.receipt(lastCompletedSale)
+                  showToast('success', 'Sending receipt to thermal printer...')
+                }
+              }}
+              disabled={!lastCompletedSale}
+              className="w-full py-3.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-display font-bold text-base flex items-center justify-center gap-2 border border-emerald-500/40 shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-3"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Print Receipt [F11] {lastCompletedSale ? `(#${lastCompletedSale.invoice_number})` : ''}</span>
             </button>
           </div>
         </div>

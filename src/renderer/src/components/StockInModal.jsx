@@ -164,11 +164,11 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
         }
 
         const res = await window.electronAPI.articles.adjustStock(payload)
-        if (res && (res.processed_items > 0 || Array.isArray(res.results))) {
+        if (res && (res.success || res.processed_items > 0 || (res.data && res.data.processed_items > 0))) {
           onSuccess && onSuccess()
           onClose()
         } else {
-          setError('Failed to process incoming shipment.')
+          setError((res && res.error) ? res.error : 'Failed to process incoming shipment.')
         }
       }
     } catch (err) {

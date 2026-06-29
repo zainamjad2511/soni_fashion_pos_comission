@@ -90,7 +90,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
         }
 
         const res = await window.electronAPI.articles.adjustStock(payload)
-        if (res && (res.processed_items > 0 || Array.isArray(res.results))) {
+        if (res && (res.success || res.processed_items > 0 || (res.data && res.data.processed_items > 0))) {
           showToastMsg('success', `Stock successfully adjusted by ${qty > 0 ? '+' + qty : qty} units.`)
           setAdjustQty('')
           setAdjustNote('')
@@ -98,7 +98,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
           fetchMovements()
           onStockAdjusted && onStockAdjusted()
         } else {
-          setError('Failed to record stock adjustment.')
+          setError((res && res.error) ? res.error : 'Failed to record stock adjustment.')
         }
       }
     } catch (err) {
