@@ -30,6 +30,12 @@ import {
 
 export function Returns() {
   const [activeTab, setActiveTab] = useState('invoice')
+  const [toast, setToast] = useState(null)
+
+  const showToast = (type, message) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4500)
+  }
 
   // Tab 1: Invoice Lookup State
   const [invoiceQuery, setInvoiceQuery] = useState('')
@@ -128,7 +134,7 @@ export function Returns() {
       }
 
       if (!fullRet) {
-        alert('Could not retrieve full return voucher details for printing.')
+        showToast('error', 'Could not retrieve full return voucher details for printing.')
         return
       }
 
@@ -150,13 +156,13 @@ export function Returns() {
 
       const printRes = await window.electronAPI.print.receipt(receiptData)
       if (printRes && printRes.success) {
-        // Printed silently
+        showToast('success', 'Return voucher sent to thermal printer.')
       } else if (printRes && printRes.error) {
-        alert(`Thermal Printer Notification: ${printRes.error}`)
+        showToast('error', `Thermal Printer Notification: ${printRes.error}`)
       }
     } catch (e) {
       console.error('Failed to print thermal voucher:', e)
-      alert(`Print Error: ${e.message}`)
+      showToast('error', `Print Error: ${e.message}`)
     }
   }
 
@@ -169,7 +175,7 @@ export function Returns() {
       setSelectedHistoryDetail(detail)
     } catch (e) {
       console.error('Failed to get return details:', e)
-      alert(`Error fetching return details: ${e.message}`)
+      showToast('error', `Error fetching return details: ${e.message}`)
     } finally {
       setLoadingDetail(false)
     }
@@ -268,7 +274,7 @@ export function Returns() {
     const existing = replacementCart.find((item) => item.article_id === article.id)
     if (existing) {
       if (existing.quantity >= article.quantity) {
-        alert(`Cannot exceed available inventory stock (${article.quantity}) for ${article.name}`)
+        showToast('error', `Cannot exceed available inventory stock (${article.quantity}) for ${article.name}`)
         return
       }
       setReplacementCart(replacementCart.map((item) =>
@@ -278,7 +284,7 @@ export function Returns() {
       ))
     } else {
       if (article.quantity < 1) {
-        alert(`Article "${article.name}" is currently out of stock!`)
+        showToast('error', `Article "${article.name}" is currently out of stock!`)
         return
       }
       setReplacementCart([
@@ -324,21 +330,21 @@ export function Returns() {
   const handleProcessTransaction = async () => {
     const selectedReturnedCount = Object.values(returnQuantities).reduce((a, b) => a + b, 0)
     if (selectedReturnedCount === 0 && returnType === 'refund') {
-      alert('Please specify return quantity for at least one item.')
+      showToast('error', 'Please specify return quantity for at least one item.')
       return
     }
     if (returnType === 'exchange' && selectedReturnedCount === 0 && replacementCart.length === 0) {
-      alert('Please select items to return or add replacement items to complete exchange.')
+      showToast('error', 'Please select items to return or add replacement items to complete exchange.')
       return
     }
 
     const itemsPayload = selectedSale.items
-      .filter((item) => (returnQuantities[item.id] || 0) > 0)
-      .map((item) => ({
-        sale_item_id: item.id,
-        article_id: item.article_id,
-        quantity_returned: returnQuantities[item.id],
-        refund_per_unit: item.retail_price_snapshot
+      .filter((i) => returnQuantities[i.id] > 0)
+      .map((i) => ({
+        sale_item_id: i.id,
+        article_id: i.article_id,
+        quantity_returned: returnQuantities[i.id],
+        refund_per_unit: i.retail_price_snapshot || i.price || 0
       }))
 
     setProcessingReturn(true)
@@ -356,9 +362,10 @@ export function Returns() {
 
       const res = await window.electronAPI.returns.create(payload)
       setProcessResult(res)
+      showToast('success', `Return transaction completed successfully! Voucher #${res?.returnNumber || res?.return_number || ''}`)
     } catch (err) {
       console.error('Transaction processing error:', err)
-      alert(`Transaction Failed: ${err.message}`)
+      showToast('error', `Transaction Failed: ${err.message}`)
     } finally {
       setProcessingReturn(false)
     }
@@ -436,11 +443,11 @@ export function Returns() {
 
   const handleProcessManualReturn = async () => {
     if (manualCart.length === 0) {
-      alert('Please add at least one article to process a manual return.')
+      showToast('error', 'Please add at least one article to process a manual return.')
       return
     }
     if (!manualNotes || !manualNotes.trim()) {
-      alert('A mandatory reason note is required for manual returns.')
+      showToast('error', 'A mandatory reason note is required for manual returns.')
       return
     }
 
@@ -464,20 +471,41 @@ export function Returns() {
       setManualResult(res)
       setManualCart([])
       setManualNotes('')
+      showToast('success', 'Manual return voucher recorded successfully!')
     } catch (err) {
       console.error('Manual return processing error:', err)
-      alert(`Transaction Failed: ${err.message}`)
+      showToast('error', `Transaction Failed: ${err.message}`)
     } finally {
       setProcessingManual(false)
     }
   }
 
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', minimumFractionDigits: 0 }).format(val || 0)
+    return `Rs. ${Number(val || 0).toLocaleString()}`
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 relative">
+      {/* Floating Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-8 right-8 z-50 animate-bounce">
+          <div
+            className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-medium text-sm ${
+              toast.type === 'success'
+                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
+                : 'bg-rose-950/90 border-rose-500/50 text-rose-200'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-900/40 via-teal-900/30 to-slate-900/60 p-6 rounded-2xl border border-emerald-500/20 shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-4">
