@@ -327,15 +327,24 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                     </thead>
                     <tbody className="divide-y divide-slate-800/50 text-xs">
                       {movements.map((mov) => {
-                        const isPos = mov.quantity > 0 || mov.type === 'IN' || mov.type === 'RETURN'
-                        const isNeg = mov.quantity < 0 || mov.type === 'OUT'
-                        const displayQty = mov.quantity > 0 ? `+${mov.quantity}` : mov.quantity
+                        const mType = mov.movement_type || mov.type || 'UNKNOWN'
+                        const isOut = mType === 'OUT' || (mType === 'ADJUSTMENT' && mov.quantity < 0)
+                        const isIn = mType === 'IN' || mType === 'RETURN' || mType === 'RETURN_IN' || (mType === 'ADJUSTMENT' && mov.quantity > 0)
+                        
+                        let displayQty = mov.quantity
+                        if (mType === 'OUT') {
+                          displayQty = `-${Math.abs(mov.quantity)}`
+                        } else if (mov.quantity > 0) {
+                          displayQty = `+${mov.quantity}`
+                        } else if (mov.quantity < 0) {
+                          displayQty = `${mov.quantity}`
+                        }
 
                         let badgeColor = 'bg-slate-800 text-slate-300 border-slate-700'
-                        if (mov.type === 'IN') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        else if (mov.type === 'OUT') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        else if (mov.type === 'ADJUSTMENT') badgeColor = 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                        else if (mov.type === 'RETURN') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                        if (mType === 'IN' || mType === 'RETURN_IN') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        else if (mType === 'OUT') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                        else if (mType === 'ADJUSTMENT') badgeColor = 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                        else if (mType === 'RETURN') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
 
                         return (
                           <tr key={mov.id} className="hover:bg-slate-900/40 transition-colors">
@@ -345,14 +354,14 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold font-mono tracking-wider border inline-flex items-center gap-1 ${badgeColor}`}>
-                                {mov.type === 'IN' ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                <span>{mov.type}</span>
+                                {isIn ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                                <span>{mType}</span>
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-center whitespace-nowrap">
                               <span
                                 className={`font-mono font-bold text-sm px-2 py-0.5 rounded ${
-                                  isPos ? 'text-emerald-400 bg-emerald-500/10' : isNeg ? 'text-rose-400 bg-rose-500/10' : 'text-slate-300'
+                                  isIn ? 'text-emerald-400 bg-emerald-500/10' : isOut ? 'text-rose-400 bg-rose-500/10' : 'text-slate-300'
                                 }`}
                               >
                                 {displayQty}

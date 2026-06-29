@@ -50,7 +50,7 @@ export function Returns() {
   const [skuError, setSkuError] = useState('')
 
   // Task 4.5: Item Selection & Exchange Net Settlement State
-  const [returnType, setReturnType] = useState('refund') // 'refund' | 'exchange'
+  const [returnType, setReturnType] = useState('exchange') // 'refund' | 'exchange'
   const [returnQuantities, setReturnQuantities] = useState({}) // { [sale_item_id]: qty }
   const [returnNotes, setReturnNotes] = useState('')
   const [salespersons, setSalespersons] = useState([])
@@ -305,10 +305,10 @@ export function Returns() {
           sku: article.sku,
           quantity: 1,
           max_quantity: article.quantity,
-          retail_price_snapshot: article.selling_price,
-          wholesale_price_snapshot: article.purchase_price || 0,
+          retail_price_snapshot: Number(article.retail_price || article.selling_price || 0),
+          wholesale_price_snapshot: Number(article.wholesale_price || article.purchase_price || 0),
           discount_amount: 0,
-          line_total: article.selling_price
+          line_total: Number(article.retail_price || article.selling_price || 0)
         }
       ])
     }
@@ -385,6 +385,19 @@ export function Returns() {
     }
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault()
+        if (selectedSale && !processingReturn && activeTab === 'invoice') {
+          handleProcessTransaction()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedSale, processingReturn, activeTab, returnQuantities, replacementCart, returnType])
+
   // Task 4.6: Manual return handlers
   const handleManualSearch = async (query) => {
     setManualSearchQuery(query)
@@ -417,8 +430,8 @@ export function Returns() {
           name: article.name,
           sku: article.sku,
           quantity: 1,
-          refund_per_unit: article.selling_price,
-          line_total: article.selling_price
+          refund_per_unit: Number(article.retail_price || article.selling_price || 0),
+          line_total: Number(article.retail_price || article.selling_price || 0)
         }
       ])
     }
@@ -701,19 +714,16 @@ export function Returns() {
                 <div className="flex items-center bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setReturnType('refund')}
-                    className={`px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 ${
-                      returnType === 'refund' ? 'bg-amber-500 text-slate-950 font-bold shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
+                    disabled
+                    title="Standard refunds are temporarily disabled. Only exchanges are permitted."
+                    className="px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 text-slate-600 cursor-not-allowed bg-slate-900/50"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" /> Standard Refund
+                    <RotateCcw className="w-3.5 h-3.5" /> Standard Refund (Disabled)
                   </button>
                   <button
                     type="button"
                     onClick={() => setReturnType('exchange')}
-                    className={`px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 ${
-                      returnType === 'exchange' ? 'bg-teal-500 text-slate-950 font-bold shadow-lg' : 'text-slate-400 hover:text-white'
-                    }`}
+                    className="px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 bg-teal-500 text-slate-950 font-bold shadow-lg"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Item Exchange
                   </button>
@@ -821,7 +831,7 @@ export function Returns() {
                                 <div className="text-xs font-medium text-white">{art.name}</div>
                                 <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Stock: {art.quantity}</div>
                               </div>
-                              <div className="text-xs font-bold text-teal-400 font-mono">{formatCurrency(art.selling_price)}</div>
+                              <div className="text-xs font-bold text-teal-400 font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
                             </button>
                           ))}
                         </div>
@@ -973,7 +983,7 @@ export function Returns() {
                     ) : (
                       <>
                         <CheckCircle2 className="w-5 h-5" />
-                        <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund' : 'Exchange Transaction'}</span>
+                        <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund [F12]' : 'Exchange Transaction [F12]'}</span>
                       </>
                     )}
                   </button>
@@ -1154,7 +1164,7 @@ export function Returns() {
                             <div className="text-xs font-medium text-white">{art.name}</div>
                             <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Current Stock: {art.quantity}</div>
                           </div>
-                          <div className="text-xs font-bold text-amber-400 font-mono">{formatCurrency(art.selling_price)}</div>
+                          <div className="text-xs font-bold text-amber-400 font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
                         </button>
                       ))}
                     </div>

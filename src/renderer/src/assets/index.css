@@ -180,14 +180,14 @@ a[aria-current="page"], a.active {
 }
 
 /* Primary action buttons */
-button[class*="bg-brand"], button[class*="bg-emerald-"], button[class*="bg-blue-"], button[class*="bg-rose-"], button[class*="bg-gradient-"] {
+button[class*="bg-brand"], button[class*="bg-emerald-"], button[class*="bg-blue-"], button[class*="bg-rose-"], button[class*="bg-gradient-"], button[class*="bg-teal-"], button[class*="bg-amber-"] {
   background: #E6DFD5 !important;
   color: #332822 !important;
   border: 1px solid #C4B8A5 !important;
   -webkit-text-fill-color: #332822 !important;
 }
 
-button[class*="bg-brand"]:hover, button[class*="bg-emerald-"]:hover, button[class*="bg-blue-"]:hover, button[class*="bg-rose-"]:hover {
+button[class*="bg-brand"]:hover, button[class*="bg-emerald-"]:hover, button[class*="bg-blue-"]:hover, button[class*="bg-rose-"]:hover, button[class*="bg-teal-"]:hover, button[class*="bg-amber-"]:hover {
   background: #DFD5C6 !important;
   color: #332822 !important;
   -webkit-text-fill-color: #332822 !important;

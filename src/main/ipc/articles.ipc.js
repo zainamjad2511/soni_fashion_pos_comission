@@ -362,17 +362,26 @@ export function registerArticlesHandlers() {
     return adjustTransaction()
   })
 
-  handleIpc('articles:getStockMovements', (_, articleId) => {
+  handleIpc('articles:getStockMovements', (_, arg) => {
     const db = getDb()
+    let articleId = null
+    let limit = 100
+    if (typeof arg === 'object' && arg !== null) {
+      articleId = arg.article_id !== undefined ? arg.article_id : arg.articleId
+      if (arg.limit !== undefined) limit = Number(arg.limit)
+    } else if (arg !== undefined && arg !== null) {
+      articleId = arg
+    }
+
     if (!articleId) {
       const stmt = db.prepare(`
         SELECT sm.*, a.sku, a.name as article_name
         FROM stock_movements sm
         JOIN articles a ON sm.article_id = a.id
         ORDER BY sm.id DESC
-        LIMIT 100
+        LIMIT ?
       `)
-      return stmt.all()
+      return stmt.all(limit)
     }
     const stmt = db.prepare(`
       SELECT sm.*, a.sku, a.name as article_name
@@ -380,9 +389,9 @@ export function registerArticlesHandlers() {
       JOIN articles a ON sm.article_id = a.id
       WHERE sm.article_id = ?
       ORDER BY sm.id DESC
-      LIMIT 100
+      LIMIT ?
     `)
-    return stmt.all(Number(articleId))
+    return stmt.all(Number(articleId), limit)
   })
 
   console.log('[IPC] Registered Articles handlers.')
