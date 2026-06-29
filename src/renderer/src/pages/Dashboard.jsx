@@ -28,6 +28,7 @@ export function Dashboard() {
   const [suppliersCount, setSuppliersCount] = useState(0)
   const [todaySalesCount, setTodaySalesCount] = useState(0)
   const [todayRevenue, setTodayRevenue] = useState(0)
+  const [todayGrossProfit, setTodayGrossProfit] = useState(0)
   const [cashFlow, setCashFlow] = useState({ cash_in: 0, cash_out: 0, net_cash: 0 })
   const [loading, setLoading] = useState(true)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
@@ -42,7 +43,6 @@ export function Dashboard() {
     try {
       if (window.electronAPI) {
         const todayStr = new Date().toISOString().slice(0, 10)
-        const currentMonthStr = todayStr.slice(0, 7)
 
         // Fetch active articles
         if (window.electronAPI.articles) {
@@ -69,6 +69,14 @@ export function Dashboard() {
           setTodayRevenue(rev)
         }
 
+        // Fetch Today's Profit Summary
+        if (window.electronAPI.reports) {
+          const profitRes = await window.electronAPI.reports.profitSummary({ start_date: todayStr, end_date: todayStr })
+          if (profitRes && profitRes.success && profitRes.data) {
+            setTodayGrossProfit(Number(profitRes.data.gross_profit || 0))
+          }
+        }
+
         // Fetch Today's Cash Flow
         if (window.electronAPI.reports) {
           const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: todayStr })
@@ -89,6 +97,7 @@ export function Dashboard() {
         setSuppliersCount(6)
         setTodaySalesCount(8)
         setTodayRevenue(54000)
+        setTodayGrossProfit(18500)
         setCashFlow({ cash_in: 54000, cash_out: 4500, net_cash: 49500 })
       }
     } catch (err) {
@@ -137,12 +146,11 @@ export function Dashboard() {
       </div>
 
       {/* Primary Financial KPIs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Today's Live Revenue Card */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Total Sales */}
         <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-all" />
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Today's Total Revenue</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Total Sales</span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <Banknote className="w-5 h-5" />
             </div>
@@ -151,45 +159,58 @@ export function Dashboard() {
             {loading ? '...' : `Rs. ${todayRevenue.toLocaleString()}`}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-            <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>{todaySalesCount} completed checkouts today</span>
+            <span>Today's aggregate revenue</span>
           </div>
         </div>
 
-        {/* Daily Net Cash Flow Card */}
+        {/* Card 2: Gross Profit */}
         <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-cyan-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-cyan-950/20 via-slate-900 to-slate-900">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-cyan-500/20 transition-all" />
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Net Daily Cash Flow</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Gross Profit</span>
             <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <Wallet className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5" />
             </div>
           </div>
           <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {loading ? '...' : `Rs. ${cashFlow.net_cash.toLocaleString()}`}
+            {loading ? '...' : `Rs. ${todayGrossProfit.toLocaleString()}`}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span>Inflow: Rs. {cashFlow.cash_in.toLocaleString()} | Out: Rs. {cashFlow.cash_out.toLocaleString()}</span>
+            <span>Estimated margin after COGS</span>
           </div>
         </div>
 
-        {/* Active Catalog SKUs Card */}
+        {/* Card 3: Customers Dealt */}
+        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-rose-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-rose-950/20 via-slate-900 to-slate-900">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Customers Dealt</span>
+            <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
+            {loading ? '...' : todaySalesCount}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Completed sales checkouts</span>
+          </div>
+        </div>
+
+        {/* Card 4: Stock Count */}
         <div
           onClick={() => navigate('/inventory')}
           className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-brand/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-brand/10 via-slate-900 to-slate-900 cursor-pointer"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-brand/20 transition-all" />
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-light">Active Catalog SKUs</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-light">Stock Count</span>
             <div className="w-10 h-10 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light">
               <Package className="w-5 h-5" />
             </div>
           </div>
           <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {totalActiveSKUs} <span className="text-sm font-sans font-normal text-slate-400">({totalStockUnits} units)</span>
+            {loading ? '...' : totalStockUnits} <span className="text-sm font-sans font-normal text-slate-400">({totalActiveSKUs} SKUs)</span>
           </div>
           <div className="flex items-center justify-between text-xs text-slate-400 group-hover:text-slate-300">
-            <span>Manage active retail inventory</span>
+            <span>Active retail items</span>
             <ChevronRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
