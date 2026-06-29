@@ -18,6 +18,10 @@
     font-family: "Segoe UI", Tahoma, "Microsoft Sans Serif", Arial, sans-serif;
   }
 
+  html {
+    font-size: 112.5% !important;
+  }
+
   body {
     background: var(--bg-canvas) !important;
     color: var(--text-primary) !important;
