@@ -70,9 +70,11 @@ export function registerSalesHandlers() {
       const totalDiscount = itemsTotalDiscount + orderDiscount
       const grandTotal = Math.max(0, subtotal - totalDiscount)
 
-      // 3. Generate sequential invoice number: INV-YYYYMMDD-XXXX
+      // 3. Generate sequential invoice number using invoice_prefix setting
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      const prefix = `INV-${todayStr}-`
+      const invPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'invoice_prefix'").get()
+      const basePrefix = (invPrefixRow ? invPrefixRow.value : 'SNF-INV').replace(/-+$/, '')
+      const prefix = `${basePrefix}-${todayStr}-`
       const lastSale = db.prepare('SELECT invoice_number FROM sales WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
       let seq = 1
       if (lastSale && lastSale.invoice_number) {
@@ -177,17 +179,20 @@ export function registerSalesHandlers() {
     const db = getDb()
     if (!idOrInvoice) throw new Error('Sale ID or Invoice Number required.')
 
-    let sale
-    if (typeof idOrInvoice === 'string' && idOrInvoice.startsWith('INV-')) {
-      sale = db.prepare('SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact FROM sales s LEFT JOIN salespersons sp ON s.salesperson_id = sp.id WHERE s.invoice_number = ?').get(idOrInvoice)
-    } else {
-      const idNum = Number(idOrInvoice)
-      if (!isNaN(idNum)) {
-        sale = db.prepare('SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact FROM sales s LEFT JOIN salespersons sp ON s.salesperson_id = sp.id WHERE s.id = ?').get(idNum)
-      } else {
-        sale = db.prepare('SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact FROM sales s LEFT JOIN salespersons sp ON s.salesperson_id = sp.id WHERE s.invoice_number = ?').get(idOrInvoice)
-      }
+    let sale = null
+    const queryStr = String(idOrInvoice).trim()
+    let padded4 = null, padded5 = null
+    if (/^\d+$/.test(queryStr)) {
+      padded4 = queryStr.padStart(4, '0')
+      padded5 = queryStr.padStart(5, '0')
     }
+    sale = db.prepare(`
+      SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
+      FROM sales s
+      LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
+      WHERE s.invoice_number = ? OR s.id = ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ?
+      ORDER BY s.id DESC LIMIT 1
+    `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
 
     if (!sale) throw new Error(`Sale "${idOrInvoice}" not found.`)
 
@@ -250,7 +255,19 @@ export function registerSalesHandlers() {
     const db = getDb()
     if (!invoiceNo) throw new Error('Invoice number required.')
 
-    const sale = db.prepare('SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact FROM sales s LEFT JOIN salespersons sp ON s.salesperson_id = sp.id WHERE s.invoice_number = ? OR s.id = ?').get(invoiceNo, invoiceNo)
+    const queryStr = String(invoiceNo).trim()
+    let padded4 = null, padded5 = null
+    if (/^\d+$/.test(queryStr)) {
+      padded4 = queryStr.padStart(4, '0')
+      padded5 = queryStr.padStart(5, '0')
+    }
+    const sale = db.prepare(`
+      SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
+      FROM sales s
+      LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
+      WHERE s.invoice_number = ? OR s.id = ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ?
+      ORDER BY s.id DESC LIMIT 1
+    `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
     if (!sale) throw new Error(`Invoice "${invoiceNo}" not found.`)
 
     const items = db.prepare(`

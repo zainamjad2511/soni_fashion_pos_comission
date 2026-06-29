@@ -7,12 +7,19 @@ export function registerReturnsHandlers() {
     const db = getDb()
     if (!invoiceNo) throw new Error('Invoice number required.')
 
+    const queryStr = String(invoiceNo).trim()
+    let padded4 = null, padded5 = null
+    if (/^\d+$/.test(queryStr)) {
+      padded4 = queryStr.padStart(4, '0')
+      padded5 = queryStr.padStart(5, '0')
+    }
     const sale = db.prepare(`
       SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
       FROM sales s
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
-      WHERE s.invoice_number = ? OR s.id = ?
-    `).get(invoiceNo, invoiceNo)
+      WHERE s.invoice_number = ? OR s.id = ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ?
+      ORDER BY s.id DESC LIMIT 1
+    `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
 
     if (!sale) throw new Error(`Invoice "${invoiceNo}" not found.`)
 
@@ -110,9 +117,11 @@ export function registerReturnsHandlers() {
         refundCredit += qty * price
       }
 
-      // Generate sequential return number: RET-YYYYMMDD-XXXX
+      // Generate sequential return number using return_prefix setting
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      const prefix = `RET-${todayStr}-`
+      const retPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'return_prefix'").get()
+      const baseRetPrefix = (retPrefixRow ? retPrefixRow.value : 'SNF-RET').replace(/-+$/, '')
+      const prefix = `${baseRetPrefix}-${todayStr}-`
       const lastRet = db.prepare('SELECT return_number FROM returns WHERE return_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
       let seq = 1
       if (lastRet && lastRet.return_number) {
@@ -210,8 +219,10 @@ export function registerReturnsHandlers() {
         const grandTotal = Math.max(0, subtotal - totalDiscount)
         netAmount = grandTotal - refundCredit
 
-        // Generate Invoice Number
-        const invPrefix = `INV-${todayStr}-`
+        // Generate Invoice Number using invoice_prefix setting
+        const invPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'invoice_prefix'").get()
+        const baseInvPrefix = (invPrefixRow ? invPrefixRow.value : 'SNF-INV').replace(/-+$/, '')
+        const invPrefix = `${baseInvPrefix}-${todayStr}-`
         const lastSale = db.prepare('SELECT invoice_number FROM sales WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${invPrefix}%`)
         let invSeq = 1
         if (lastSale && lastSale.invoice_number) {

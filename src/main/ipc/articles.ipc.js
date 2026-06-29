@@ -29,14 +29,30 @@ export function registerArticlesHandlers() {
         query += ' AND articles.is_active = ?'
         params.push(Number(filters.is_active))
       }
+      let exactSku = null
       if (filters.search) {
-        const term = `%${filters.search.trim()}%`
-        query += ' AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ? OR suppliers.code LIKE ?)'
-        params.push(term, term, term, term)
+        const queryStr = filters.search.trim()
+        const term = `%${queryStr}%`
+        if (/^\d+$/.test(queryStr) && queryStr.length <= 5) {
+          const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+          const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+          exactSku = `${cleanPrefix}-${String(queryStr).padStart(5, '0')}`
+        }
+        if (exactSku) {
+          query += ' AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ? OR suppliers.code LIKE ?)'
+          params.push(exactSku, term, term, term, term)
+        } else {
+          query += ' AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ? OR suppliers.code LIKE ?)'
+          params.push(term, term, term, term)
+        }
       }
     }
 
-    query += ' ORDER BY articles.id DESC'
+    if (exactSku) {
+      query += ` ORDER BY CASE WHEN articles.sku = '${exactSku}' THEN 0 ELSE 1 END, articles.id DESC`
+    } else {
+      query += ' ORDER BY articles.id DESC'
+    }
     const stmt = db.prepare(query)
     return stmt.all(...params)
   })
@@ -54,13 +70,20 @@ export function registerArticlesHandlers() {
 
   handleIpc('articles:getBySku', (_, sku) => {
     const db = getDb()
+    let searchSku = sku?.trim()
+    let normalizedSku = null
+    if (searchSku && /^\d+$/.test(searchSku) && searchSku.length <= 5) {
+      const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+      const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+      normalizedSku = `${cleanPrefix}-${String(searchSku).padStart(5, '0')}`
+    }
     const stmt = db.prepare(`
       SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
       FROM articles
       JOIN suppliers ON articles.supplier_id = suppliers.id
-      WHERE articles.sku = ?
+      WHERE articles.sku = ? OR ( ? IS NOT NULL AND articles.sku = ? )
     `)
-    return stmt.get(sku?.trim()) || null
+    return stmt.get(searchSku, normalizedSku, normalizedSku) || null
   })
 
   handleIpc('articles:search', (_, query) => {
@@ -76,15 +99,34 @@ export function registerArticlesHandlers() {
       `)
       return stmt.all()
     }
-    const term = `%${query.trim()}%`
-    const stmt = db.prepare(`
-      SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
-      FROM articles
-      JOIN suppliers ON articles.supplier_id = suppliers.id
-      WHERE articles.is_active = 1 AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ?)
-      LIMIT 20
-    `)
-    return stmt.all(term, term, term)
+    const queryStr = query.trim()
+    const term = `%${queryStr}%`
+    let exactSku = null
+    if (/^\d+$/.test(queryStr) && queryStr.length <= 5) {
+      const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+      const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+      exactSku = `${cleanPrefix}-${String(queryStr).padStart(5, '0')}`
+    }
+    if (exactSku) {
+      const stmt = db.prepare(`
+        SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
+        FROM articles
+        JOIN suppliers ON articles.supplier_id = suppliers.id
+        WHERE articles.is_active = 1 AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ?)
+        ORDER BY CASE WHEN articles.sku = ? THEN 0 ELSE 1 END, articles.quantity DESC
+        LIMIT 20
+      `)
+      return stmt.all(exactSku, term, term, term, exactSku)
+    } else {
+      const stmt = db.prepare(`
+        SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
+        FROM articles
+        JOIN suppliers ON articles.supplier_id = suppliers.id
+        WHERE articles.is_active = 1 AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ?)
+        LIMIT 20
+      `)
+      return stmt.all(term, term, term)
+    }
   })
 
   handleIpc('articles:create', (_, data) => {
@@ -129,7 +171,7 @@ export function registerArticlesHandlers() {
     const createTransaction = db.transaction(() => {
       // Get prefix and auto-increment last_sku_number
       const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
-      const prefix = prefixRow ? prefixRow.value : 'SF'
+      const prefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
 
       const numRow = db.prepare("SELECT value FROM settings WHERE key = 'last_sku_number'").get()
       const currentNum = numRow ? parseInt(numRow.value, 10) : 0
