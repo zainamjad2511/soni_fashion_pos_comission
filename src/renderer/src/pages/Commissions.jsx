@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import {
   Percent,
   Calendar,
-  DollarSign,
+  Banknote,
   TrendingUp,
   Clock,
   CheckCircle2,

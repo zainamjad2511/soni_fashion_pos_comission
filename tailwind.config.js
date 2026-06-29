@@ -47,7 +47,9 @@ module.exports = {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Outfit', 'Roboto', 'sans-serif'],
+        sans: ['"Segoe UI"', 'Tahoma', '"Microsoft Sans Serif"', 'Arial', 'sans-serif'],
+        display: ['"Segoe UI"', 'Tahoma', '"Microsoft Sans Serif"', 'Arial', 'sans-serif'],
+        mono: ['"Segoe UI"', 'Tahoma', '"Microsoft Sans Serif"', 'Arial', 'sans-serif'],
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(162, 34, 62, 0.07)',

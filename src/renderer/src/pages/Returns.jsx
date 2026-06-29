@@ -12,7 +12,6 @@ import {
   ShoppingBag,
   User,
   Calendar,
-  DollarSign,
   Tag,
   Package,
   XCircle,

@@ -10,7 +10,7 @@ import {
   AlertCircle,
   RefreshCw,
   CreditCard,
-  DollarSign,
+  Banknote,
   FileText,
   Tag,
   Barcode,
@@ -504,7 +504,7 @@ export function POSSale() {
           <div className="glass-card p-6 rounded-3xl border border-slate-800/80 shadow-2xl space-y-6 sticky top-6">
             <h3 className="font-display font-bold text-xl text-white pb-3 border-b border-slate-800 flex items-center justify-between">
               <span>Billing Summary</span>
-              <DollarSign className="w-5 h-5 text-brand-light" />
+              <Banknote className="w-5 h-5 text-brand-light" />
             </h3>
 
             {/* Subtotal & Discount breakdown */}

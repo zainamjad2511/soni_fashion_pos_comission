@@ -8,7 +8,7 @@ import {
   Trash2,
   Calendar,
   Filter,
-  DollarSign,
+  Banknote,
   Tag,
   User,
   FileText,
@@ -511,7 +511,7 @@ export function Expenses() {
                   <span className="text-roseaccent">* Required</span>
                 </label>
                 <div className="relative">
-                  <DollarSign className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <Banknote className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="number"
                     name="amount"

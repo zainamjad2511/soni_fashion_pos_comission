@@ -1,32 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --color-primary: #c23352;
-    --color-primary-dark: #a2223e;
-    --color-accent: #f43f5e;
-    --bg-main: #0f1015;
-    --bg-card: rgba(27, 28, 36, 0.75);
-    --border-glass: rgba(255, 255, 255, 0.08);
+    --bg-canvas: #F7F5F0;
+    --bg-panel: #EFEBE3;
+    --text-primary: #332822;
+    --text-muted: #7A6F69;
+    --border-color: #C4BDB7;
   }
 
   * {
-    @apply border-gray-800/60;
+    border-color: var(--border-color) !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    font-family: "Segoe UI", Tahoma, "Microsoft Sans Serif", Arial, sans-serif;
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-maroon-600 selection:text-white min-h-screen overflow-x-hidden;
-    background: radial-gradient(circle at 15% 15%, rgba(162, 34, 62, 0.15) 0%, rgba(15, 16, 21, 1) 50%),
-                radial-gradient(circle at 85% 85%, rgba(244, 63, 94, 0.08) 0%, rgba(15, 16, 21, 1) 60%);
-    background-attachment: fixed;
+    background: var(--bg-canvas) !important;
+    color: var(--text-primary) !important;
+    font-family: "Segoe UI", Tahoma, "Microsoft Sans Serif", Arial, sans-serif !important;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans tracking-tight font-semibold text-white;
+    color: var(--text-primary) !important;
+    font-family: "Segoe UI", Tahoma, "Microsoft Sans Serif", Arial, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: normal !important;
+  }
+
+  .font-mono, [class*="font-mono"] {
+    font-family: "Segoe UI", Tahoma, "Microsoft Sans Serif", Arial, sans-serif !important;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -37,60 +46,159 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 16, 21, 0.6);
+  background: #EFEBE3;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(194, 51, 82, 0.4);
-  border-radius: 9999px;
-  transition: background 0.2s ease;
+  background: #C4BDB7;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(194, 51, 82, 0.8);
+  background: #7A6F69;
 }
 
-/* Glassmorphism & Premium Utilities */
-@layer utilities {
-  .glass-panel {
-    background: rgba(24, 25, 34, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-  }
+/* GLOBAL OVERRIDES FOR PROFESSIONAL CLEAN WINDOW / EDITORIAL THEME (DESIGN.MD) */
 
-  .glass-card {
-    background: linear-gradient(135deg, rgba(35, 37, 50, 0.6) 0%, rgba(24, 25, 34, 0.4) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .glass-card:hover {
-    border-color: rgba(194, 51, 82, 0.4);
-    box-shadow: 0 12px 28px -6px rgba(194, 51, 82, 0.25);
-    transform: translateY(-2px);
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, #fff 0%, #f8d2d9 50%, #e88095 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+/* 1. Remove Glassmorphism & Dark Gradients */
+.glass-card, .glass-panel, [class*="glass-"] {
+  background: #FFFFFF !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid #D1D5DB !important;
+  box-shadow: none !important;
+  color: #332822 !important;
+  transform: none !important;
 }
 
-/* Micro-animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+.glass-card:hover, .glass-panel:hover {
+  border-color: #332822 !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Modal Overlay Dimming */
+.fixed.inset-0[class*="bg-"] {
+  background: rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-/* Report Print Styles — applied only when printing a report page (Doc 2 Section 3.5) */
+/* Strip dark backgrounds & gradients from containers */
+[class*="bg-slate-"], [class*="bg-gradient-"], [class*="from-slate-"], [class*="via-slate-"], [class*="to-slate-"], [class*="from-emerald-"], [class*="from-blue-"], [class*="from-cyan-"], [class*="from-amber-"], [class*="from-brand"] {
+  background: #FFFFFF !important;
+  background-image: none !important;
+}
+
+/* Sidebar, Header & Secondary Panels background override */
+aside, header, nav[class*="bg-"] {
+  background: #EFEBE3 !important;
+  border-color: #C4BDB7 !important;
+  color: #332822 !important;
+}
+
+/* Table styling */
+table {
+  background: #FFFFFF !important;
+  color: #332822 !important;
+}
+
+thead, tr[class*="bg-slate-950"], th {
+  background: #EFEBE3 !important;
+  color: #332822 !important;
+  border-bottom: 1px solid #C4BDB7 !important;
+}
+
+tbody tr {
+  background: #FFFFFF !important;
+  color: #332822 !important;
+  border-bottom: 1px solid #E5E7EB !important;
+}
+
+tbody tr:hover {
+  background: #F7F5F0 !important;
+}
+
+/* 2. Override Text Colors (Remove neon green, cyan, blue, amber, rose) */
+[class*="text-slate-"], [class*="text-emerald-"], [class*="text-cyan-"], [class*="text-blue-"], [class*="text-amber-"], [class*="text-rose-"], [class*="text-brand"], [class*="gradient-text"], [class*="text-white"] {
+  color: #332822 !important;
+  background-image: none !important;
+  -webkit-text-fill-color: #332822 !important;
+}
+
+/* Keep secondary text muted taupe */
+[class*="text-slate-400"], [class*="text-slate-500"], [class*="opacity-70"], [class*="opacity-80"] {
+  color: #7A6F69 !important;
+  -webkit-text-fill-color: #7A6F69 !important;
+}
+
+/* Specific status/alert utilities based on Design.md */
+.text-success {
+  color: #4A5D4E !important;
+  -webkit-text-fill-color: #4A5D4E !important;
+}
+
+.text-error, [class*="text-red-"] {
+  color: #8C3A3A !important;
+  -webkit-text-fill-color: #8C3A3A !important;
+}
+
+/* 3. Strip Pill Effects & Overly Rounded Corners (Design.md: max 2px) */
+*, [class*="rounded-"] {
+  border-radius: 2px !important;
+}
+
+/* 4. Remove Hover Shadows and Transformations */
+*, [class*="hover:shadow-"], [class*="hover:scale-"], [class*="hover:-translate-"], [class*="shadow-"] {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Buttons Styling per Design.md */
+button, a[class*="rounded-"] {
+  border-radius: 2px !important;
+  font-weight: 500 !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Active navigation links in Sidebar */
+a[aria-current="page"], a.active {
+  background: #FFFFFF !important;
+  color: #332822 !important;
+  border: 1px solid #332822 !important;
+  font-weight: 600 !important;
+  -webkit-text-fill-color: #332822 !important;
+}
+
+/* Primary action buttons */
+button[class*="bg-brand"], button[class*="bg-emerald-"], button[class*="bg-blue-"], button[class*="bg-rose-"], button[class*="bg-gradient-"] {
+  background: #332822 !important;
+  color: #F7F5F0 !important;
+  border: 1px solid #332822 !important;
+  -webkit-text-fill-color: #F7F5F0 !important;
+}
+
+button[class*="bg-brand"]:hover, button[class*="bg-emerald-"]:hover, button[class*="bg-blue-"]:hover, button[class*="bg-rose-"]:hover {
+  background: #4A3C34 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* Inputs & Selects */
+input, select, textarea {
+  background: #FFFFFF !important;
+  color: #332822 !important;
+  border: 1px solid #C4BDB7 !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #332822 !important;
+  outline: none !important;
+}
+
+/* Report Print Styles */
 @media print {
   body * { visibility: hidden; }
   #report-root, #report-root * { visibility: visible; }

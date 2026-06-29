@@ -3,7 +3,7 @@ import {
   LayoutDashboard,
   Package,
   AlertTriangle,
-  DollarSign,
+  Banknote,
   TrendingUp,
   TrendingDown,
   RefreshCw,
@@ -144,7 +144,7 @@ export function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Today's Total Revenue</span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <DollarSign className="w-5 h-5" />
+              <Banknote className="w-5 h-5" />
             </div>
           </div>
           <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">

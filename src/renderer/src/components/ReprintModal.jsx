@@ -7,7 +7,7 @@ import {
   FileText,
   Calendar,
   User,
-  DollarSign,
+  Banknote,
   CheckCircle2,
   AlertCircle,
   RefreshCw,

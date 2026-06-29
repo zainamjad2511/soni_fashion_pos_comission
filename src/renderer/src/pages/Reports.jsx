@@ -3,7 +3,7 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  Banknote,
   Package,
   Calendar,
   Printer,

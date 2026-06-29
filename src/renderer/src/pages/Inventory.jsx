@@ -14,7 +14,7 @@ import {
   X,
   Filter,
   Layers,
-  DollarSign,
+  Banknote,
   Tag,
   History,
   Truck
@@ -637,7 +637,7 @@ export function Inventory() {
 
               <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-4">
                 <div className="text-xs font-bold uppercase tracking-wider text-brand-light flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5" />
+                  <Banknote className="w-3.5 h-3.5" />
                   <span>Pricing & Cost Tiers (Rs.)</span>
                 </div>
 
