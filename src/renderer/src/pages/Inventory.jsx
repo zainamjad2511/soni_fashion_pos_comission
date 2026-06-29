@@ -29,7 +29,6 @@ export function Inventory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
-  const [filterLowStock, setFilterLowStock] = useState(false)
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [isStockInOpen, setIsStockInOpen] = useState(false)
@@ -48,7 +47,7 @@ export function Inventory() {
     wholesale_price: '',
     retail_price: '',
     quantity: '0',
-    reorder_level: '5',
+    reorder_level: '0',
     notes: ''
   })
 
@@ -58,7 +57,7 @@ export function Inventory() {
 
   useEffect(() => {
     fetchArticles()
-  }, [searchTerm, selectedSupplier, selectedCategory, filterLowStock, filterActiveOnly])
+  }, [searchTerm, selectedSupplier, selectedCategory, filterActiveOnly])
 
   const showToast = (type, message) => {
     setToast({ type, message })
@@ -86,7 +85,6 @@ export function Inventory() {
           search: searchTerm || undefined,
           supplier_id: selectedSupplier || undefined,
           category: selectedCategory || undefined,
-          low_stock: filterLowStock ? 1 : undefined,
           is_active: filterActiveOnly ? 1 : undefined
         }
         const res = await window.electronAPI.articles.list(filters)
@@ -119,7 +117,7 @@ export function Inventory() {
         wholesale_price: String(article.wholesale_price || ''),
         retail_price: String(article.retail_price || ''),
         quantity: String(article.quantity || 0),
-        reorder_level: String(article.reorder_level !== undefined ? article.reorder_level : 5),
+        reorder_level: '0',
         notes: article.notes || ''
       })
     } else {
@@ -134,7 +132,7 @@ export function Inventory() {
         wholesale_price: '',
         retail_price: '',
         quantity: '0',
-        reorder_level: '5',
+        reorder_level: '0',
         notes: ''
       })
     }
@@ -165,7 +163,7 @@ export function Inventory() {
           wholesale_price: Number(formData.wholesale_price),
           retail_price: Number(formData.retail_price),
           quantity: Number(formData.quantity),
-          reorder_level: Number(formData.reorder_level)
+          reorder_level: 0
         }
 
         let res
@@ -218,7 +216,6 @@ export function Inventory() {
   }
 
   const isPriceWarning = Number(formData.retail_price) > 0 && Number(formData.retail_price) < Number(formData.wholesale_price)
-  const lowStockCount = articles.filter((a) => a.is_active && a.quantity <= a.reorder_level).length
 
   return (
     <div className="space-y-8 pb-12 relative animate-fade-in">
@@ -253,24 +250,11 @@ export function Inventory() {
             Article Inventory
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Browse auto-generated SKUs, set wholesale/retail pricing tiers, and monitor reorder levels.
+            Browse auto-generated SKUs and set wholesale/retail pricing tiers.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {lowStockCount > 0 && (
-            <button
-              onClick={() => setFilterLowStock(!filterLowStock)}
-              className={`px-4 py-3 rounded-xl border font-semibold text-xs flex items-center gap-2 transition-all shadow-lg ${
-                filterLowStock
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-amber-500/20'
-                  : 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
-              }`}
-            >
-              <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span>{lowStockCount} Low Stock Alert{lowStockCount > 1 ? 's' : ''}</span>
-            </button>
-          )}
 
           <button
             onClick={() => setIsStockInOpen(true)}
@@ -368,7 +352,7 @@ export function Inventory() {
               No Articles Found
             </h3>
             <p className="text-sm text-slate-400 max-w-sm mx-auto mb-6">
-              {searchTerm || selectedSupplier || selectedCategory || filterLowStock
+              {searchTerm || selectedSupplier || selectedCategory
                 ? 'No catalog items match your active search filters.'
                 : 'Register your first article to auto-generate SKUs and start tracking inventory.'}
             </p>
@@ -398,7 +382,6 @@ export function Inventory() {
               </thead>
               <tbody className="divide-y divide-slate-800/50 text-sm">
                 {articles.map((art) => {
-                  const isLowStock = art.quantity <= art.reorder_level && art.quantity > 0
                   const isOutOfStock = art.quantity === 0
                   return (
                     <tr
@@ -447,14 +430,12 @@ export function Inventory() {
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
                             isOutOfStock
                               ? 'bg-rose-500/10 border-rose-500/40 text-rose-400 animate-pulse'
-                              : isLowStock
-                              ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
                               : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isOutOfStock ? 'bg-rose-500' : isLowStock ? 'bg-amber-400' : 'bg-emerald-400'
+                              isOutOfStock ? 'bg-rose-500' : 'bg-emerald-400'
                             }`}
                           />
                           <span>{art.quantity} Units</span>
@@ -692,22 +673,6 @@ export function Inventory() {
                   {editingArticle && (
                     <p className="text-[10px] text-slate-500">Use Stock IN or adjustment batch to modify count.</p>
                   )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Low Stock Alert Level
-                  </label>
-                  <input
-                    type="number"
-                    name="reorder_level"
-                    value={formData.reorder_level}
-                    onChange={handleFormChange}
-                    min="0"
-                    required
-                    className="w-full px-3.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-brand"
-                  />
-                  <p className="text-[10px] text-slate-500">Triggers visual warning badge below this threshold.</p>
                 </div>
               </div>
 
