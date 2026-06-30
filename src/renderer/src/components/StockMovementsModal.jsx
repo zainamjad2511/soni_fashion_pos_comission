@@ -128,38 +128,36 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#2E2822]/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+      <div className="w-full max-w-4xl bg-[#F7F5F0] text-[#2E2822] border border-[#2E2822] rounded-[2px] shadow-none overflow-hidden flex flex-col max-h-[90vh]">
         {/* Toast inside modal */}
         {toast && (
-          <div className="absolute top-6 right-6 z-50 animate-bounce">
+          <div className="absolute top-6 right-6 z-50 animate-fade-in">
             <div
-              className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold ${
+              className={`flex items-center gap-2.5 px-4 py-3 rounded-[2px] border font-sans text-xs font-bold ${
                 toast.type === 'success'
-                  ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
-                  : 'bg-rose-950/90 border-rose-500/50 text-rose-200'
+                  ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                  : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
               }`}
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
               <span>{toast.message}</span>
             </div>
           </div>
         )}
 
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between">
+        <div className="p-6 border-b border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/30 flex items-center justify-center text-brand-light shadow-lg shadow-brand/10">
-              <History className="w-6 h-6" />
-            </div>
+            <History className="w-6 h-6 text-[#2E2822]" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 text-brand-light border border-slate-700">
-                  {article.sku}
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#7A6F69]">
+                  [{article.sku}]
                 </span>
-                <h3 className="text-xl font-display font-bold text-white">{article.name}</h3>
+                <h3 className="text-xl font-display font-bold text-[#2E2822]">{article.name}</h3>
               </div>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-3">
+              <p className="text-xs font-sans text-[#7A6F69] mt-1 flex items-center gap-3">
                 <span>Vendor Code: #{article.supplier_article_code || 'N/A'}</span>
                 <span>•</span>
                 <span>Category: {article.category}</span>
@@ -168,7 +166,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-all"
+            className="p-2 rounded-[2px] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -176,75 +174,65 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
 
         {/* Error Banner */}
         {error && (
-          <div className="mx-6 mt-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-3 text-rose-300 text-xs">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="mx-6 mt-6 p-4 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
+            <AlertCircle className="w-4 h-4 text-[#2E2822] shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Modal Content */}
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto font-sans">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-              <div>
-                <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Current Stock</span>
-                <div className="text-2xl font-mono font-bold text-emerald-400 mt-1">
-                  {article.quantity} <span className="text-xs font-sans text-slate-400 font-normal">Units</span>
-                </div>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                <Package className="w-5 h-5" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4 border-b border-[#C9C0B5]">
+            <div className="space-y-1">
+              <span className="text-[11px] text-[#7A6F69] uppercase tracking-[0.14em] font-bold">Current Stock</span>
+              <div className="text-2xl font-mono font-bold text-[#2E2822] mt-1">
+                {article.quantity} <span className="text-xs font-sans text-[#7A6F69] font-normal">Units</span>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-              <div>
-                <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Retail Value</span>
-                <div className="text-2xl font-mono font-bold text-white mt-1">
-                  Rs. {Number(article.retail_price).toLocaleString()}
-                </div>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand-light">
-                <span className="font-bold text-sm">Rs</span>
+            <div className="space-y-1">
+              <span className="text-[11px] text-[#7A6F69] uppercase tracking-[0.14em] font-bold">Retail Value</span>
+              <div className="text-2xl font-mono font-bold text-[#2E2822] mt-1">
+                Rs. {Number(article.retail_price).toLocaleString()}
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-              <div>
-                <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Ledger Entries</span>
-                <div className="text-2xl font-mono font-bold text-slate-300 mt-1">
-                  {movements.length} <span className="text-xs font-sans text-slate-400 font-normal">Records</span>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[11px] text-[#7A6F69] uppercase tracking-[0.14em] font-bold">Total Ledger Entries</span>
+                <div className="text-2xl font-mono font-bold text-[#2E2822] mt-1">
+                  {movements.length} <span className="text-xs font-sans text-[#7A6F69] font-normal">Records</span>
                 </div>
               </div>
               <button
                 onClick={() => setShowAdjustForm(!showAdjustForm)}
-                className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                className="px-3 py-2 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] text-xs font-bold uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all"
               >
                 <Sliders className="w-3.5 h-3.5" />
-                <span>{showAdjustForm ? 'Cancel Adjust' : 'Adjust Stock'}</span>
+                <span>{showAdjustForm ? 'Cancel' : 'Adjust'}</span>
               </button>
             </div>
           </div>
 
           {/* Quick Manual Adjustment Form Drawer */}
           {showAdjustForm && (
-            <form onSubmit={handleManualAdjustment} className="p-5 rounded-2xl bg-amber-950/20 border border-amber-500/40 space-y-4 animate-fade-in">
+            <form onSubmit={handleManualAdjustment} className="p-5 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] space-y-4 animate-fade-in">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <div className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
                   <Sliders className="w-4 h-4" />
                   <span>Record Manual Stock Audit / Damage Write-off</span>
                 </div>
-                <span className="text-[11px] text-amber-300/80">Creates tamper-evident adjustment row in ledger</span>
+                <span className="text-[11px] text-[#7A6F69]">Creates tamper-evident adjustment row in ledger</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-400">Movement Type</label>
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-wider">Movement Type</label>
                   <select
                     value={adjustType}
                     onChange={(e) => setAdjustType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-amber-400"
+                    className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs font-bold focus:outline-none"
                   >
                     <option value="ADJUSTMENT">Stock Audit (Adjust)</option>
                     <option value="OUT">Damage / Loss (Out)</option>
@@ -253,33 +241,32 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-slate-400">Qty Change (+ or -)</label>
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-wider">Qty Change (+ or -)</label>
                   <input
                     type="number"
                     value={adjustQty}
                     onChange={(e) => setAdjustQty(e.target.value)}
                     placeholder="e.g. -2 or +5"
                     required
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/50 text-white font-mono font-bold text-xs focus:outline-none focus:border-amber-400"
-                  >
-                  </input>
+                    className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono font-bold text-xs focus:outline-none"
+                  />
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-[11px] font-semibold text-slate-400">Reason / Reference Note</label>
-                  <div className="flex items-center gap-2">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-wider">Reason / Reference Note</label>
+                  <div className="flex items-center gap-3">
                     <input
                       type="text"
                       value={adjustNote}
                       onChange={(e) => setAdjustNote(e.target.value)}
                       placeholder="e.g. Shelf recount correction or damaged item"
                       required
-                      className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                      className="flex-1 py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none font-bold"
                     />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-amber-500/20 shrink-0 disabled:opacity-50"
+                      className="px-4 py-2 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] font-bold text-xs uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
                     >
                       {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Submit</span>}
                     </button>
@@ -290,42 +277,42 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
           )}
 
           {/* Ledger Table */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-[0.14em]">
               <span>Chronological Movement Ledger</span>
               <button
                 onClick={fetchMovements}
                 disabled={loading}
-                className="flex items-center gap-1.5 text-brand-light hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-[#2E2822] hover:underline transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh Ledger</span>
               </button>
             </div>
 
-            <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+            <div>
               {loading && movements.length === 0 ? (
-                <div className="p-16 flex flex-col items-center justify-center text-slate-400">
-                  <RefreshCw className="w-8 h-8 animate-spin text-brand mb-3" />
-                  <span className="text-xs">Querying stock ledger from SQLite...</span>
+                <div className="py-16 flex flex-col items-center justify-center text-[#7A6F69]">
+                  <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Querying stock ledger from SQLite...</span>
                 </div>
               ) : movements.length === 0 ? (
-                <div className="p-16 text-center text-slate-500 text-xs">
+                <div className="py-16 text-center text-[#7A6F69] text-xs">
                   No historical stock movements recorded for this SKU yet. Use "Receive Shipment" or "Adjust Stock" to create entries.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                        <th className="py-3 px-4">Date & Time</th>
+                      <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                        <th className="py-3 pr-4">Date & Time</th>
                         <th className="py-3 px-4">Type</th>
                         <th className="py-3 px-4 text-center">Qty Change</th>
                         <th className="py-3 px-4">Reference & Note</th>
-                        <th className="py-3 px-4 text-right">Performed By</th>
+                        <th className="py-3 pl-4 text-right">Performed By</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/50 text-xs">
+                    <tbody className="divide-y divide-[#C9C0B5] text-xs font-sans">
                       {movements.map((mov) => {
                         const mType = mov.movement_type || mov.type || 'UNKNOWN'
                         const isOut = mType === 'OUT' || (mType === 'ADJUSTMENT' && mov.quantity < 0)
@@ -340,45 +327,32 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                           displayQty = `${mov.quantity}`
                         }
 
-                        let badgeColor = 'bg-slate-800 text-slate-300 border-slate-700'
-                        if (mType === 'IN' || mType === 'RETURN_IN') badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                        else if (mType === 'OUT') badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                        else if (mType === 'ADJUSTMENT') badgeColor = 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                        else if (mType === 'RETURN') badgeColor = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-
                         return (
-                          <tr key={mov.id} className="hover:bg-slate-900/40 transition-colors">
-                            <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-400 text-[11px] flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                          <tr key={mov.id}>
+                            <td className="py-3.5 pr-4 whitespace-nowrap font-mono text-[#7A6F69] text-xs flex items-center gap-1.5">
                               <span>{formatDate(mov.created_at)}</span>
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold font-mono tracking-wider border inline-flex items-center gap-1 ${badgeColor}`}>
-                                {isIn ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                <span>{mType}</span>
+                              <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#2E2822]">
+                                [{mType}]
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                              <span
-                                className={`font-mono font-bold text-sm px-2 py-0.5 rounded ${
-                                  isIn ? 'text-emerald-400 bg-emerald-500/10' : isOut ? 'text-rose-400 bg-rose-500/10' : 'text-slate-300'
-                                }`}
-                              >
+                              <span className="font-mono font-bold text-sm text-[#2E2822]">
                                 {displayQty}
                               </span>
                             </td>
                             <td className="py-3.5 px-4 max-w-sm">
-                              <div className="font-medium text-white text-xs truncate">
+                              <div className="font-bold text-[#2E2822] text-xs truncate">
                                 {mov.note || 'No description provided'}
                               </div>
-                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                              <div className="text-[10px] text-[#7A6F69] font-mono mt-0.5">
                                 Ref: {mov.reference_type || 'MANUAL'} {mov.reference_id ? `(#${mov.reference_id})` : ''}
                               </div>
                             </td>
-                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1 text-slate-400 text-[11px]">
-                                <User className="w-3 h-3 text-slate-500" />
-                                <span>{mov.performed_by || 'System'}</span>
+                            <td className="py-3.5 pl-4 text-right whitespace-nowrap">
+                              <span className="text-[#7A6F69] text-xs font-medium">
+                                {mov.performed_by || 'System'}
                               </span>
                             </td>
                           </tr>
@@ -393,13 +367,13 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-          <div className="text-xs text-slate-400">
-            Showing up to <strong className="text-white">100 most recent</strong> stock movement records for audit compliance.
+        <div className="p-6 border-t border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between font-sans">
+          <div className="text-xs text-[#7A6F69]">
+            Showing up to <strong className="text-[#2E2822] font-bold">100 most recent</strong> stock movement records for audit compliance.
           </div>
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition-all"
+            className="px-6 py-2 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-bold text-xs uppercase tracking-[0.12em] transition-all"
           >
             Close Ledger
           </button>

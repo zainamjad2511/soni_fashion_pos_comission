@@ -516,21 +516,21 @@ export function Returns() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 relative">
+    <div className="p-8 w-full space-y-8 relative font-sans text-[#2E2822]">
       {/* Floating Toast Notification */}
       {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-bounce">
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
           <div
-            className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-medium text-sm ${
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-bold text-xs uppercase tracking-[0.12em] shadow-none ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
-                : 'bg-rose-950/90 border-rose-500/50 text-rose-200'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
             }`}
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
@@ -538,89 +538,85 @@ export function Returns() {
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-900/40 via-teal-900/30 to-slate-900/60 p-6 rounded-2xl border border-emerald-500/20 shadow-xl backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-500/20 rounded-xl border border-emerald-500/30 shadow-inner">
-            <RotateCcw className="w-8 h-8 text-emerald-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">Returns &amp; Exchanges Engine</h1>
-            <p className="text-sm text-emerald-200/80 mt-1">Lookup sales, process partial refunds, item exchanges, or manual returns with real-time settlement.</p>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#2E2822]">
+        <div>
+          <span className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Logistics &amp; Reverse Flow</span>
+          <h1 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight mt-1">Returns &amp; Exchanges Engine</h1>
+          <p className="text-sm text-[#7A6F69] mt-1">Lookup sales, process partial refunds, item exchanges, or manual returns with real-time settlement.</p>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1">
+      <div className="flex border-b border-[#C9C0B5] gap-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('invoice')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 pb-3 font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all border-b-2 ${
             activeTab === 'invoice'
-              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-t border-x border-emerald-500'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'border-[#2E2822] text-[#2E2822]'
+              : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
           <FileText className="w-4 h-4" />
-          Tab 1: Invoice Lookup &amp; Processing
+          <span>Invoice Processing</span>
         </button>
         <button
           onClick={() => setActiveTab('sku')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 pb-3 font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all border-b-2 ${
             activeTab === 'sku'
-              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-t border-x border-emerald-500'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'border-[#2E2822] text-[#2E2822]'
+              : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
           <Search className="w-4 h-4" />
-          Tab 2: Article SKU Search
+          <span>Article SKU Search</span>
         </button>
         <button
           onClick={() => setActiveTab('manual')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 pb-3 font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all border-b-2 ${
             activeTab === 'manual'
-              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-t border-x border-emerald-500'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'border-[#2E2822] text-[#2E2822]'
+              : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
           <PlusCircle className="w-4 h-4" />
-          Tab 3: Manual Return
+          <span>Manual Return</span>
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium text-sm transition-all ${
+          className={`flex items-center gap-2 pb-3 font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all border-b-2 ${
             activeTab === 'history'
-              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-t border-x border-emerald-500'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              ? 'border-[#2E2822] text-[#2E2822]'
+              : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
           <History className="w-4 h-4" />
-          Tab 4: Returns History Log
+          <span>Returns History Log</span>
         </button>
       </div>
 
       {/* Tab 1 Content: Invoice Lookup & Processing */}
       {activeTab === 'invoice' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Search Card */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <form onSubmit={handleInvoiceLookup} className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-8 animate-fade-in">
+          {/* Search Section */}
+          <div className="py-6 border-b border-[#C9C0B5]">
+            <form onSubmit={handleInvoiceLookup} className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={invoiceQuery}
                   onChange={(e) => setInvoiceQuery(e.target.value)}
                   placeholder="Enter invoice number (e.g., INV-20260628-0001)..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm font-mono"
+                  className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loadingLookup || !invoiceQuery.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm shrink-0"
+                className="bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] font-bold px-8 py-3 rounded-[2px] transition-all uppercase tracking-[0.12em] flex items-center justify-center gap-2 text-xs shrink-0 w-full md:w-auto"
               >
                 {loadingLookup ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
                     <span>Lookup Sale</span>
@@ -631,8 +627,8 @@ export function Returns() {
             </form>
 
             {lookupError && (
-              <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 text-sm animate-shake">
-                <XCircle className="w-5 h-5 shrink-0" />
+              <div className="mt-4 p-4 bg-[#EFEBE3] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
+                <XCircle className="w-4 h-4 shrink-0" />
                 <span>{lookupError}</span>
               </div>
             )}
@@ -640,51 +636,49 @@ export function Returns() {
 
           {/* Transaction Success Confirmation Modal / Banner */}
           {processResult && (
-            <div className="bg-gradient-to-r from-emerald-950/90 via-slate-900 to-teal-950/90 border-2 border-emerald-500/50 rounded-2xl p-8 shadow-2xl space-y-6 animate-scaleUp">
-              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-5">
+            <div className="bg-[#EFEBE3] p-8 space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400">
-                    <CheckCircle2 className="w-8 h-8" />
-                  </div>
+                  <CheckCircle2 className="w-6 h-6 text-[#2E2822]" />
                   <div>
-                    <h2 className="text-xl font-bold text-white uppercase tracking-wider">Transaction Successfully Processed</h2>
-                    <p className="text-xs text-emerald-300 font-mono mt-0.5">Return Reference: {processResult.returnNumber}</p>
+                    <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Transaction Successfully Processed</h2>
+                    <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {processResult.returnNumber}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => { setSelectedSale(null); setProcessResult(null); setInvoiceQuery(''); }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] rounded-[2px] text-xs font-bold uppercase tracking-[0.1em] transition-all flex items-center gap-2"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> Start New Return
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400">Refund Credit Value</div>
-                  <div className="text-lg font-bold text-amber-400 font-mono mt-1">{formatCurrency(processResult.refundCredit)}</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Refund Credit Value</div>
+                  <div className="text-xl font-bold text-[#2E2822] font-mono mt-1">{formatCurrency(processResult.refundCredit)}</div>
                 </div>
                 {processResult.newSaleId && (
-                  <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400">Replacement Invoice</div>
-                    <div className="text-lg font-bold text-teal-400 font-mono mt-1">Generated (Sale ID #{processResult.newSaleId})</div>
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Replacement Invoice</div>
+                    <div className="text-xl font-bold text-[#2E2822] font-mono mt-1">Generated (Sale ID #{processResult.newSaleId})</div>
                   </div>
                 )}
-                <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400">Net Financial Settlement</div>
-                  <div className={`text-lg font-bold font-mono mt-1 ${processResult.netAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Net Financial Settlement</div>
+                  <div className="text-xl font-bold font-mono mt-1 text-[#2E2822]">
                     {formatCurrency(Math.abs(processResult.netAmount))}
-                    <span className="text-xs font-normal text-slate-400 ml-1">
+                    <span className="text-xs font-sans font-normal text-[#7A6F69] ml-1">
                       {processResult.netAmount > 0 ? '(Customer Paid)' : processResult.netAmount < 0 ? '(Refunded to Customer)' : '(Even Swap)'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-4 border-t border-[#C9C0B5]">
                 <button
                   onClick={() => handlePrintReturnVoucher(processResult)}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg flex items-center gap-2"
+                  className="px-6 py-3 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-[0.12em] transition-all flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" /> Print Return / Exchange Slip
                 </button>
@@ -694,36 +688,36 @@ export function Returns() {
 
           {/* Selected Sale Preview & Processing Panel */}
           {selectedSale && !processResult && (
-            <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl space-y-6 animate-fadeIn">
+            <div className="space-y-8 animate-fade-in pt-4">
               {/* Header Info */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C9C0B5] pb-5">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider px-2.5 py-1 bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Verified Completed Sale
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-1.5 font-mono">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> [Verified Completed Sale]
                     </span>
-                    <h2 className="text-xl font-bold text-white font-mono">{selectedSale.invoice_number}</h2>
+                    <h2 className="text-xl font-bold text-[#2E2822] font-mono">{selectedSale.invoice_number}</h2>
                   </div>
-                  <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-400 pt-1">
-                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-slate-500" /> {new Date(selectedSale.sale_date).toLocaleString()}</span>
-                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-slate-500" /> Original Staff: {selectedSale.salesperson_name || 'N/A'}</span>
+                  <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-[#7A6F69] pt-1">
+                    <span className="flex items-center gap-1.5 font-mono"> {new Date(selectedSale.sale_date).toLocaleString()}</span>
+                    <span className="flex items-center gap-1.5"> Original Staff: {selectedSale.salesperson_name || 'N/A'}</span>
                   </div>
                 </div>
 
                 {/* Return Type Toggle */}
-                <div className="flex items-center bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     disabled
                     title="Standard refunds are temporarily disabled. Only exchanges are permitted."
-                    className="px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 text-slate-600 cursor-not-allowed bg-slate-900/50"
+                    className="px-4 py-2 rounded-[2px] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 text-[#7A6F69] cursor-not-allowed bg-[#EFEBE3]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Standard Refund (Disabled)
                   </button>
                   <button
                     type="button"
                     onClick={() => setReturnType('exchange')}
-                    className="px-4 py-2 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 bg-teal-500 text-slate-950 font-bold shadow-lg"
+                    className="px-4 py-2 rounded-[2px] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#2E2822] text-[#F7F5F0]"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Item Exchange
                   </button>
@@ -733,65 +727,63 @@ export function Returns() {
               {/* Items Table with Quantity Selection */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4 text-emerald-400" /> Select Items to Return
+                  <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" /> Select Items to Return
                   </h3>
-                  <span className="text-xs text-amber-400 font-mono">Total Refund Credit: {formatCurrency(refundCredit)}</span>
+                  <span className="text-xs text-[#2E2822] font-mono font-bold">Total Refund Credit: {formatCurrency(refundCredit)}</span>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                  <table className="w-full text-left border-collapse text-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
-                        <th className="p-3.5 font-medium">Article &amp; SKU</th>
-                        <th className="p-3.5 font-medium text-center">Sold Qty</th>
-                        <th className="p-3.5 font-medium text-center">Avail. To Return</th>
-                        <th className="p-3.5 font-medium text-right">Unit Price</th>
-                        <th className="p-3.5 font-medium text-center">Return Qty</th>
-                        <th className="p-3.5 font-medium text-right">Refund Value</th>
+                      <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                        <th className="py-3 pr-4">Article &amp; SKU</th>
+                        <th className="py-3 px-4 text-center">Sold Qty</th>
+                        <th className="py-3 px-4 text-center">Avail. To Return</th>
+                        <th className="py-3 px-4 text-right">Unit Price</th>
+                        <th className="py-3 px-4 text-center">Return Qty</th>
+                        <th className="py-3 pl-4 text-right">Refund Value</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-[#C9C0B5]">
                       {selectedSale.items && selectedSale.items.map((item) => {
                         const currentQty = returnQuantities[item.id] || 0
                         const isDisabled = item.available_to_return <= 0
                         return (
-                          <tr key={item.id} className={`transition-colors ${currentQty > 0 ? 'bg-amber-500/10' : 'hover:bg-slate-900/40'}`}>
-                            <td className="p-3.5">
-                              <div className="font-medium text-white">{item.article_name}</div>
-                              <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                          <tr key={item.id} className={currentQty > 0 ? 'bg-[#EFEBE3]' : ''}>
+                            <td className="py-3.5 pr-4">
+                              <div className="font-bold text-[#2E2822] text-xs">{item.article_name}</div>
+                              <div className="text-[11px] text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
                             </td>
-                            <td className="p-3.5 text-center font-mono text-slate-300">{item.quantity}</td>
-                            <td className="p-3.5 text-center font-mono">
-                              <span className={`px-2.5 py-1 rounded-md font-bold text-xs ${
-                                !isDisabled ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'
-                              }`}>
+                            <td className="py-3.5 px-4 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</td>
+                            <td className="py-3.5 px-4 text-center font-mono">
+                              <span className="font-bold text-xs text-[#2E2822]">
                                 {item.available_to_return}
                               </span>
                             </td>
-                            <td className="p-3.5 text-right font-mono text-slate-300">{formatCurrency(item.retail_price_snapshot)}</td>
-                            <td className="p-3.5 text-center">
+                            <td className="py-3.5 px-4 text-right font-mono text-[#2E2822]">{formatCurrency(item.retail_price_snapshot)}</td>
+                            <td className="py-3.5 px-4 text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <button
                                   type="button"
                                   disabled={isDisabled || currentQty <= 0}
                                   onClick={() => handleQtyChange(item.id, -1, item.available_to_return)}
-                                  className="p-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white rounded-md transition-all"
+                                  className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] disabled:opacity-30 rounded-[2px] transition-all"
                                 >
                                   <Minus className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="w-8 text-center font-mono font-bold text-white">{currentQty}</span>
+                                <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{currentQty}</span>
                                 <button
                                   type="button"
                                   disabled={isDisabled || currentQty >= item.available_to_return}
                                   onClick={() => handleQtyChange(item.id, 1, item.available_to_return)}
-                                  className="p-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white rounded-md transition-all"
+                                  className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] disabled:opacity-30 rounded-[2px] transition-all"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
-                            <td className="p-3.5 text-right font-mono font-medium text-amber-400">
+                            <td className="py-3.5 pl-4 text-right font-mono font-bold text-[#2E2822]">
                               {formatCurrency(currentQty * item.retail_price_snapshot)}
                             </td>
                           </tr>
@@ -804,34 +796,34 @@ export function Returns() {
 
               {/* Task 4.5: Exchange Replacement Cart Panel */}
               {returnType === 'exchange' && (
-                <div className="border-t border-slate-800 pt-6 space-y-4 animate-fadeIn">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-teal-400 flex items-center gap-2">
+                <div className="border-t border-[#C9C0B5] pt-6 space-y-4 animate-fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
                       <RefreshCw className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
                     </h3>
                     <div className="relative w-full sm:w-80">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
                       <input
                         type="text"
                         value={articleSearchQuery}
                         onChange={(e) => handleArticleSearch(e.target.value)}
                         placeholder="Search replacement article SKU..."
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono"
+                        className="w-full bg-transparent border-b border-[#2E2822] pl-10 pr-4 py-2 text-xs text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono font-bold"
                       />
                       {articleSearchResults.length > 0 && (
-                        <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
+                        <div className="absolute z-20 left-0 right-0 mt-1 bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-h-60 overflow-y-auto divide-y divide-[#C9C0B5]">
                           {(Array.isArray(articleSearchResults) ? articleSearchResults : []).map((art) => (
                             <button
                               key={art.id}
                               type="button"
                               onClick={() => addReplacementItem(art)}
-                              className="w-full p-3 text-left hover:bg-slate-800/80 transition-colors flex items-center justify-between"
+                              className="w-full p-3 text-left hover:bg-[#EFEBE3] transition-colors flex items-center justify-between"
                             >
                               <div>
-                                <div className="text-xs font-medium text-white">{art.name}</div>
-                                <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Stock: {art.quantity}</div>
+                                <div className="text-xs font-bold text-[#2E2822]">{art.name}</div>
+                                <div className="text-[10px] text-[#7A6F69] font-mono">{art.sku} | Stock: {art.quantity}</div>
                               </div>
-                              <div className="text-xs font-bold text-teal-400 font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
+                              <div className="text-xs font-bold text-[#2E2822] font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
                             </button>
                           ))}
                         </div>
@@ -840,55 +832,55 @@ export function Returns() {
                   </div>
 
                   {/* Replacement Cart Table */}
-                  <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                    <table className="w-full text-left border-collapse text-sm">
+                  <div className="overflow-x-auto pt-2">
+                    <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
-                          <th className="p-3.5 font-medium">Replacement Article</th>
-                          <th className="p-3.5 font-medium text-right">Unit Price</th>
-                          <th className="p-3.5 font-medium text-center">Quantity</th>
-                          <th className="p-3.5 font-medium text-right">Line Total</th>
-                          <th className="p-3.5 font-medium text-center">Action</th>
+                        <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                          <th className="py-3 pr-4">Replacement Article</th>
+                          <th className="py-3 px-4 text-right">Unit Price</th>
+                          <th className="py-3 px-4 text-center">Quantity</th>
+                          <th className="py-3 px-4 text-right">Line Total</th>
+                          <th className="py-3 pl-4 text-center">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-[#C9C0B5]">
                         {replacementCart.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="p-6 text-center text-xs text-slate-500 italic">No replacement items added yet. Search and select articles above.</td>
+                            <td colSpan="5" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">No replacement items added yet. Search and select articles above.</td>
                           </tr>
                         ) : (
                           replacementCart.map((item) => (
-                            <tr key={item.article_id} className="hover:bg-slate-900/40 transition-colors">
-                              <td className="p-3.5">
-                                <div className="font-medium text-white">{item.name}</div>
-                                <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                            <tr key={item.article_id}>
+                              <td className="py-3.5 pr-4">
+                                <div className="font-bold text-[#2E2822]">{item.name}</div>
+                                <div className="text-xs text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
                               </td>
-                              <td className="p-3.5 text-right font-mono text-slate-300">{formatCurrency(item.retail_price_snapshot)}</td>
-                              <td className="p-3.5 text-center">
+                              <td className="py-3.5 px-4 text-right font-mono text-[#2E2822]">{formatCurrency(item.retail_price_snapshot)}</td>
+                              <td className="py-3.5 px-4 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => updateReplacementQty(item.article_id, -1)}
-                                    className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                    className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                                   >
                                     <Minus className="w-3.5 h-3.5" />
                                   </button>
-                                  <span className="w-8 text-center font-mono font-bold text-white">{item.quantity}</span>
+                                  <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</span>
                                   <button
                                     type="button"
                                     onClick={() => updateReplacementQty(item.article_id, 1)}
-                                    className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                    className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                                   >
                                     <Plus className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </td>
-                              <td className="p-3.5 text-right font-mono font-bold text-teal-400">{formatCurrency(item.line_total)}</td>
-                              <td className="p-3.5 text-center">
+                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.line_total)}</td>
+                              <td className="py-3.5 pl-4 text-center">
                                 <button
                                   type="button"
                                   onClick={() => removeReplacementItem(item.article_id)}
-                                  className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                  className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -903,15 +895,15 @@ export function Returns() {
               )}
 
               {/* Net Settlement Banner & Processing Details */}
-              <div className="border-t border-slate-800 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="border-t border-[#C9C0B5] pt-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
-                      <label className="block text-xs font-medium text-slate-400 mb-1.5">Processing Salesperson</label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#7A6F69] mb-1.5">Processing Salesperson</label>
                       <select
                         value={selectedStaff || ''}
                         onChange={(e) => setSelectedStaff(Number(e.target.value))}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none"
                       >
                         {(Array.isArray(salespersons) ? salespersons : []).map((s) => (
                           <option key={s.id} value={s.id}>{s.name} ({s.commission_rate}%)</option>
@@ -920,11 +912,11 @@ export function Returns() {
                     </div>
                     {returnType === 'exchange' && (
                       <div className="flex-1">
-                        <label className="block text-xs font-medium text-slate-400 mb-1.5">Payment Settlement Method</label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#7A6F69] mb-1.5">Payment Settlement Method</label>
                         <select
                           value={paymentMethod}
                           onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-500 capitalize"
+                          className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none capitalize"
                         >
                           <option value="cash">Cash</option>
                           <option value="card">Card / Bank Transfer</option>
@@ -934,36 +926,34 @@ export function Returns() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Audit Reason / Notes</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#7A6F69] mb-1.5">Audit Reason / Notes</label>
                     <input
                       type="text"
                       value={returnNotes}
                       onChange={(e) => setReturnNotes(e.target.value)}
                       placeholder="Optional reason note (e.g., Size exchange, defective stitching)..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Calculation Summary Card */}
-                <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
-                  <div className="flex justify-between text-sm text-slate-300">
+                <div className="bg-[#EFEBE3] p-6 rounded-[2px] space-y-4">
+                  <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
                     <span>Refund Credit (Returned Items):</span>
-                    <span className="font-mono font-bold text-amber-400">-{formatCurrency(refundCredit)}</span>
+                    <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(refundCredit)}</span>
                   </div>
                   {returnType === 'exchange' && (
-                    <div className="flex justify-between text-sm text-slate-300">
+                    <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
                       <span>Replacement Articles Total:</span>
-                      <span className="font-mono font-bold text-teal-400">+{formatCurrency(replacementTotal)}</span>
+                      <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(replacementTotal)}</span>
                     </div>
                   )}
-                  <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
-                    <span className="text-sm font-bold text-white uppercase tracking-wider">
+                  <div className="border-t border-[#C9C0B5] pt-4 flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em]">
                       {returnType === 'refund' ? 'Net Customer Refund:' : netSettlement > 0 ? 'Customer Pays Difference:' : netSettlement < 0 ? 'Store Refunds Customer:' : 'Even Exchange:'}
                     </span>
-                    <span className={`text-xl font-bold font-mono ${
-                      returnType === 'refund' ? 'text-amber-400' : netSettlement > 0 ? 'text-emerald-400' : netSettlement < 0 ? 'text-amber-400' : 'text-slate-300'
-                    }`}>
+                    <span className="text-xl font-bold font-mono text-[#2E2822]">
                       {formatCurrency(returnType === 'refund' ? refundCredit : Math.abs(netSettlement))}
                     </span>
                   </div>
@@ -972,18 +962,14 @@ export function Returns() {
                     type="button"
                     disabled={processingReturn || (returnType === 'refund' && refundCredit === 0)}
                     onClick={handleProcessTransaction}
-                    className={`w-full py-3.5 rounded-xl font-bold text-slate-950 text-sm shadow-lg transition-all flex items-center justify-center gap-2 mt-2 ${
-                      returnType === 'refund'
-                        ? 'bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-500 shadow-amber-400/20'
-                        : 'bg-teal-400 hover:bg-teal-300 disabled:bg-slate-800 disabled:text-slate-500 shadow-teal-400/20'
-                    }`}
+                    className="w-full py-3.5 rounded-[2px] font-bold text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2 mt-2 bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50"
                   >
                     {processingReturn ? (
-                      <div className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund [F12]' : 'Exchange Transaction [F12]'}</span>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund [F12]' : 'Exchange [F12]'}</span>
                       </>
                     )}
                   </button>
@@ -996,26 +982,26 @@ export function Returns() {
 
       {/* Tab 2 Content: Article SKU Search */}
       {activeTab === 'sku' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <form onSubmit={handleSkuSearch} className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-8 animate-fade-in font-sans">
+          <div className="py-6 border-b border-[#C9C0B5]">
+            <form onSubmit={handleSkuSearch} className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={skuQuery}
                   onChange={(e) => setSkuQuery(e.target.value)}
                   placeholder="Search by article barcode SKU (e.g., SF-00001) or supplier code..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm font-mono"
+                  className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loadingSku || !skuQuery.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm shrink-0"
+                className="bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] font-bold px-8 py-3 rounded-[2px] transition-all uppercase tracking-[0.12em] flex items-center justify-center gap-2 text-xs shrink-0 w-full md:w-auto"
               >
                 {loadingSku ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
                     <span>Search Sales</span>
@@ -1026,8 +1012,8 @@ export function Returns() {
             </form>
 
             {skuError && (
-              <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 text-sm animate-shake">
-                <XCircle className="w-5 h-5 shrink-0" />
+              <div className="mt-4 p-4 bg-[#EFEBE3] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
+                <XCircle className="w-4 h-4 shrink-0" />
                 <span>{skuError}</span>
               </div>
             )}
@@ -1035,37 +1021,37 @@ export function Returns() {
 
           {/* SKU Search Results Table */}
           {matchingSales.length > 0 && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Package className="w-5 h-5 text-emerald-400" />
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                  <Package className="w-4 h-4" />
                   Matching Historical Sales ({matchingSales.length})
                 </h3>
-                <span className="text-xs text-slate-400">Click &quot;Select Sale&quot; to inspect items and process return.</span>
+                <span className="text-xs text-[#7A6F69]">Click &quot;Select Sale&quot; to inspect items and process return.</span>
               </div>
 
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                <table className="w-full text-left border-collapse text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
-                      <th className="p-3.5 font-medium">Invoice #</th>
-                      <th className="p-3.5 font-medium">Date &amp; Time</th>
-                      <th className="p-3.5 font-medium">Salesperson</th>
-                      <th className="p-3.5 font-medium text-right">Grand Total</th>
-                      <th className="p-3.5 font-medium text-center">Action</th>
+                    <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                      <th className="py-3 pr-4">Invoice #</th>
+                      <th className="py-3 px-4">Date &amp; Time</th>
+                      <th className="py-3 px-4">Salesperson</th>
+                      <th className="py-3 px-4 text-right">Grand Total</th>
+                      <th className="py-3 pl-4 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-[#C9C0B5]">
                     {(Array.isArray(matchingSales) ? matchingSales : []).map((sale) => (
-                      <tr key={sale.id} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="p-3.5 font-mono font-bold text-white">{sale.invoice_number}</td>
-                        <td className="p-3.5 text-slate-300 text-xs">{new Date(sale.sale_date).toLocaleString()}</td>
-                        <td className="p-3.5 text-slate-300">{sale.salesperson_name || 'N/A'}</td>
-                        <td className="p-3.5 text-right font-mono font-medium text-emerald-400">{formatCurrency(sale.grand_total)}</td>
-                        <td className="p-3.5 text-center">
+                      <tr key={sale.id}>
+                        <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">{sale.invoice_number}</td>
+                        <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{new Date(sale.sale_date).toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-[#2E2822] font-bold">{sale.salesperson_name || 'N/A'}</td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(sale.grand_total)}</td>
+                        <td className="py-3.5 pl-4 text-center">
                           <button
                             onClick={() => handleInvoiceLookup(null, sale.invoice_number)}
-                            className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 mx-auto"
+                            className="px-4 py-1.5 border border-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mx-auto"
                           >
                             <span>Select Sale</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -1083,36 +1069,34 @@ export function Returns() {
 
       {/* Tab 3 Content: Manual Returns Interface */}
       {activeTab === 'manual' && (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-8 animate-fade-in font-sans">
           {/* Confirmation Modal / Banner for Manual Return */}
           {manualResult && (
-            <div className="bg-gradient-to-r from-amber-950/90 via-slate-900 to-emerald-950/90 border-2 border-amber-500/50 rounded-2xl p-8 shadow-2xl space-y-6 animate-scaleUp">
-              <div className="flex items-center justify-between border-b border-amber-500/20 pb-5">
+            <div className="bg-[#EFEBE3] p-8 space-y-6 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
-                    <CheckCircle2 className="w-8 h-8" />
-                  </div>
+                  <CheckCircle2 className="w-6 h-6 text-[#2E2822]" />
                   <div>
-                    <h2 className="text-xl font-bold text-white uppercase tracking-wider">Manual Return Processed &amp; Stock Restored</h2>
-                    <p className="text-xs text-amber-300 font-mono mt-0.5">Return Reference: {manualResult.returnNumber}</p>
+                    <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Manual Return Processed &amp; Stock Restored</h2>
+                    <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {manualResult.returnNumber}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setManualResult(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] rounded-[2px] text-xs font-bold uppercase tracking-[0.1em] transition-all flex items-center gap-2"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> Process Another Manual Return
                 </button>
               </div>
 
-              <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-6 bg-[#F7F5F0] rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <div className="text-xs text-slate-400">Total Manual Credit Slip Issued</div>
-                  <div className="text-2xl font-bold text-amber-400 font-mono mt-1">{formatCurrency(manualResult.refundCredit)}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#7A6F69]">Total Manual Credit Slip Issued</div>
+                  <div className="text-2xl font-bold text-[#2E2822] font-mono mt-1">{formatCurrency(manualResult.refundCredit)}</div>
                 </div>
                 <button
                   onClick={() => handlePrintReturnVoucher(manualResult)}
-                  className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold transition-all shadow-lg flex items-center gap-2"
+                  className="px-6 py-3 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-[0.12em] transition-all flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" /> Print Credit Voucher
                 </button>
@@ -1121,26 +1105,26 @@ export function Returns() {
           )}
 
           {!manualResult && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+            <div className="space-y-8 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C9C0B5] pb-5">
                 <div>
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <PlusCircle className="w-5 h-5 text-amber-400" /> Manual Return Processing (No Original Receipt)
+                  <h2 className="text-lg font-bold text-[#2E2822] flex items-center gap-2">
+                    <PlusCircle className="w-5 h-5" /> Manual Return Processing (No Original Receipt)
                   </h2>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-[#7A6F69] mt-1">
                     Direct inventory selection for customer returns when original invoice is missing. Automatically restores inventory stock.
                   </p>
                 </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 px-3.5 py-2 rounded-xl flex items-center gap-2 text-amber-400 text-xs shrink-0">
+                <div className="bg-[#EFEBE3] px-3.5 py-2 rounded-[2px] flex items-center gap-2 text-[#2E2822] text-xs font-bold uppercase tracking-wider shrink-0">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>Mandatory Reason Note Required</span>
                 </div>
               </div>
 
               {/* Search Article Bar */}
-              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                <div className="text-xs font-medium text-slate-300 flex items-center gap-2 w-full sm:w-auto">
-                  <Search className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-[#EFEBE3] p-4 rounded-[2px]">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-2 w-full sm:w-auto">
+                  <Search className="w-4 h-4 shrink-0" />
                   <span>Search &amp; Add Article to Return Cart:</span>
                 </div>
                 <div className="relative w-full sm:w-96">
@@ -1149,22 +1133,22 @@ export function Returns() {
                     value={manualSearchQuery}
                     onChange={(e) => handleManualSearch(e.target.value)}
                     placeholder="Type article SKU barcode or name..."
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                    className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
                   />
                   {manualSearchResults.length > 0 && (
-                    <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl max-h-60 overflow-y-auto divide-y divide-slate-800">
+                    <div className="absolute z-20 left-0 right-0 mt-1 bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-h-60 overflow-y-auto divide-y divide-[#C9C0B5]">
                       {(Array.isArray(manualSearchResults) ? manualSearchResults : []).map((art) => (
                         <button
                           key={art.id}
                           type="button"
                           onClick={() => addManualItem(art)}
-                          className="w-full p-3 text-left hover:bg-slate-800/80 transition-colors flex items-center justify-between"
+                          className="w-full p-3 text-left hover:bg-[#EFEBE3] transition-colors flex items-center justify-between"
                         >
                           <div>
-                            <div className="text-xs font-medium text-white">{art.name}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">{art.sku} | Current Stock: {art.quantity}</div>
+                            <div className="text-xs font-bold text-[#2E2822]">{art.name}</div>
+                            <div className="text-[10px] text-[#7A6F69] font-mono">{art.sku} | Current Stock: {art.quantity}</div>
                           </div>
-                          <div className="text-xs font-bold text-amber-400 font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
+                          <div className="text-xs font-bold text-[#2E2822] font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
                         </button>
                       ))}
                     </div>
@@ -1173,51 +1157,51 @@ export function Returns() {
               </div>
 
               {/* Manual Return Cart Table */}
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950/40">
-                <table className="w-full text-left border-collapse text-sm">
+              <div className="overflow-x-auto pt-2">
+                <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-900/80 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
-                      <th className="p-3.5 font-medium">Article &amp; SKU</th>
-                      <th className="p-3.5 font-medium text-center">Return Quantity</th>
-                      <th className="p-3.5 font-medium text-right">Agreed Refund Price</th>
-                      <th className="p-3.5 font-medium text-right">Line Credit Total</th>
-                      <th className="p-3.5 font-medium text-center">Action</th>
+                    <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                      <th className="py-3 pr-4">Article &amp; SKU</th>
+                      <th className="py-3 px-4 text-center">Return Quantity</th>
+                      <th className="py-3 px-4 text-right">Agreed Refund Price</th>
+                      <th className="py-3 px-4 text-right">Line Credit Total</th>
+                      <th className="py-3 pl-4 text-center">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-[#C9C0B5]">
                     {manualCart.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="p-8 text-center text-xs text-slate-500 italic">
+                        <td colSpan="5" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">
                           No items in manual return cart. Search articles above to select inventory being returned.
                         </td>
                       </tr>
                     ) : (
                       manualCart.map((item) => (
-                        <tr key={item.article_id} className="hover:bg-slate-900/40 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-medium text-white">{item.name}</div>
-                            <div className="text-xs text-slate-500 font-mono mt-0.5">{item.sku}</div>
+                        <tr key={item.article_id}>
+                          <td className="py-3.5 pr-4">
+                            <div className="font-bold text-[#2E2822]">{item.name}</div>
+                            <div className="text-xs text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
                           </td>
-                          <td className="p-3.5 text-center">
+                          <td className="py-3.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => updateManualQty(item.article_id, -1)}
-                                className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                               >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
-                              <span className="w-8 text-center font-mono font-bold text-white">{item.quantity}</span>
+                              <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</span>
                               <button
                                 type="button"
                                 onClick={() => updateManualQty(item.article_id, 1)}
-                                className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded-md transition-all"
+                                className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
-                          <td className="p-3.5 text-right font-mono">
+                          <td className="py-3.5 px-4 text-right font-mono">
                             <input
                               type="number"
                               min="0"
@@ -1225,15 +1209,15 @@ export function Returns() {
                               onFocus={(e) => e.target.select()}
                               onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                               onChange={(e) => updateManualPrice(item.article_id, e.target.value)}
-                              className="w-28 text-right bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white focus:outline-none focus:border-amber-400 font-mono text-xs"
+                              className="w-28 text-right bg-transparent border-b border-[#2E2822] px-2 py-1 text-[#2E2822] focus:outline-none font-mono font-bold text-xs"
                             />
                           </td>
-                          <td className="p-3.5 text-right font-mono font-bold text-amber-400">{formatCurrency(item.line_total)}</td>
-                          <td className="p-3.5 text-center">
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.line_total)}</td>
+                          <td className="py-3.5 pl-4 text-center">
                             <button
                               type="button"
                               onClick={() => removeManualItem(item.article_id)}
-                              className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1246,14 +1230,14 @@ export function Returns() {
               </div>
 
               {/* Processing Footer */}
-              <div className="border-t border-slate-800 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="border-t border-[#C9C0B5] pt-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Processing Staff Member</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#7A6F69] mb-1.5">Processing Staff Member</label>
                     <select
                       value={selectedStaff || ''}
                       onChange={(e) => setSelectedStaff(Number(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none"
                     >
                       {(Array.isArray(salespersons) ? salespersons : []).map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
@@ -1262,45 +1246,43 @@ export function Returns() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-amber-400 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#2E2822] mb-1.5 flex items-center gap-1.5">
                       <span>Mandatory Reason Note *</span>
-                      {!manualNotes.trim() && <span className="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded font-normal">Required for Audit</span>}
+                      {!manualNotes.trim() && <span className="text-[10px] bg-[#EFEBE3] text-[#7A6F69] px-2 py-0.5 rounded-[2px] font-normal">Required for Audit</span>}
                     </label>
                     <input
                       type="text"
                       value={manualNotes}
                       onChange={(e) => setManualNotes(e.target.value)}
                       placeholder="Specify mandatory reason (e.g., Customer receipt lost, Manager approved refund)..."
-                      className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
-                        !manualNotes.trim() ? 'border-amber-500/50 focus:border-amber-400' : 'border-slate-800 focus:border-emerald-500'
-                      }`}
+                      className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all"
                     />
                   </div>
                 </div>
 
-                <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-slate-300 uppercase tracking-wider">Total Manual Credit Slip:</span>
-                    <span className="text-2xl font-bold font-mono text-amber-400">{formatCurrency(manualTotal)}</span>
+                <div className="bg-[#EFEBE3] p-6 rounded-[2px] space-y-4">
+                  <div className="flex justify-between items-center text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                    <span>Total Manual Credit Slip:</span>
+                    <span className="text-xl font-bold font-mono text-[#2E2822]">{formatCurrency(manualTotal)}</span>
                   </div>
 
                   <button
                     type="button"
                     disabled={processingManual || manualCart.length === 0 || !manualNotes.trim()}
                     onClick={handleProcessManualReturn}
-                    className="w-full py-4 rounded-xl font-bold bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 text-sm shadow-lg shadow-amber-400/20 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-[2px] font-bold bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2"
                   >
                     {processingManual ? (
-                      <div className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                      <RefreshCw className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 className="w-5 h-5" />
+                        <CheckCircle2 className="w-4 h-4" />
                         <span>Confirm &amp; Issue Manual Credit Voucher</span>
                       </>
                     )}
                   </button>
                   {(!manualNotes.trim() || manualCart.length === 0) && (
-                    <p className="text-[11px] text-center text-slate-500 italic">
+                    <p className="text-[11px] text-center text-[#7A6F69] italic font-sans">
                       {manualCart.length === 0 ? 'Add return items' : 'Fill mandatory reason note'} to enable confirmation.
                     </p>
                   )}
@@ -1313,31 +1295,31 @@ export function Returns() {
 
       {/* Tab 4 Content: Returns History & Audit Log */}
       {activeTab === 'history' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Filters Card */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                <Filter className="w-5 h-5 text-emerald-400" /> Filter Historical Returns &amp; Exchanges
+        <div className="space-y-8 animate-fade-in font-sans">
+          {/* Filters Section */}
+          <div className="py-6 border-b border-[#C9C0B5] space-y-4">
+            <div className="flex items-center justify-between pb-2">
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                <Filter className="w-4 h-4" /> Filter Historical Returns &amp; Exchanges
               </h3>
               <button
                 onClick={fetchReturnsHistory}
                 disabled={loadingHistory}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                className="px-4 py-1.5 bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} /> Refresh Log
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={historySearch}
                   onChange={(e) => setHistorySearch(e.target.value)}
                   placeholder="Search Return # or Invoice #..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full bg-transparent border-b border-[#2E2822] pl-10 pr-4 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
                 />
               </div>
 
@@ -1345,7 +1327,7 @@ export function Returns() {
                 <select
                   value={historyFilterType}
                   onChange={(e) => setHistoryFilterType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 capitalize"
+                  className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none capitalize"
                 >
                   <option value="">All Return Types</option>
                   <option value="refund">Refunds Only</option>
@@ -1359,7 +1341,7 @@ export function Returns() {
                   type="date"
                   value={historyStartDate}
                   onChange={(e) => setHistoryStartDate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none font-mono"
                 />
               </div>
 
@@ -1368,74 +1350,70 @@ export function Returns() {
                   type="date"
                   value={historyEndDate}
                   onChange={(e) => setHistoryEndDate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none font-mono"
                 />
               </div>
             </div>
           </div>
 
           {/* History Results Table */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="pt-4">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-xs uppercase tracking-wider">
-                    <th className="p-4 font-medium">Return Ref #</th>
-                    <th className="p-4 font-medium">Date &amp; Time</th>
-                    <th className="p-4 font-medium text-center">Type</th>
-                    <th className="p-4 font-medium">Original Invoice</th>
-                    <th className="p-4 font-medium">Processed By</th>
-                    <th className="p-4 font-medium text-right">Refund Credit</th>
-                    <th className="p-4 font-medium text-center">Actions</th>
+                  <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                    <th className="py-3 pr-4">Return Ref #</th>
+                    <th className="py-3 px-4">Date &amp; Time</th>
+                    <th className="py-3 px-4 text-center">Type</th>
+                    <th className="py-3 px-4">Original Invoice</th>
+                    <th className="py-3 px-4">Processed By</th>
+                    <th className="py-3 px-4 text-right">Refund Credit</th>
+                    <th className="py-3 pl-4 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-[#C9C0B5]">
                   {loadingHistory ? (
                     <tr>
-                      <td colSpan="7" className="p-12 text-center text-slate-500">
-                        <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
-                        <span>Loading historical returns...</span>
+                      <td colSpan="7" className="py-12 text-center text-[#7A6F69] font-sans">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 text-[#2E2822]" />
+                        <span className="text-xs font-bold uppercase tracking-wider">Loading historical returns...</span>
                       </td>
                     </tr>
                   ) : historyList.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="p-12 text-center text-xs text-slate-500 italic">
+                      <td colSpan="7" className="py-12 text-center text-xs text-[#7A6F69] italic font-sans">
                         No return or exchange audit logs match the current filter criteria.
                       </td>
                     </tr>
                   ) : (
                     (Array.isArray(historyList) ? historyList : []).map((ret) => (
-                      <tr key={ret.id} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="p-4 font-mono font-bold text-white">{ret.return_number}</td>
-                        <td className="p-4 text-slate-300 text-xs">{new Date(ret.return_date).toLocaleString()}</td>
-                        <td className="p-4 text-center">
-                          <span className={`px-2.5 py-1 rounded-md font-bold text-[10px] uppercase tracking-wider border ${
-                            ret.return_type === 'refund' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                            ret.return_type === 'exchange' ? 'bg-teal-500/20 text-teal-400 border-teal-500/30' :
-                            'bg-purple-500/20 text-purple-400 border-purple-500/30'
-                          }`}>
-                            {ret.return_type}
+                      <tr key={ret.id}>
+                        <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">{ret.return_number}</td>
+                        <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{new Date(ret.return_date).toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="font-bold text-[10px] uppercase tracking-[0.14em] text-[#2E2822]">
+                            [{ret.return_type}]
                           </span>
                         </td>
-                        <td className="p-4 font-mono text-slate-300 text-xs">
-                          {ret.original_invoice_number || <span className="text-slate-500 italic">Manual</span>}
-                          {ret.exchange_new_invoice_number && <div className="text-[10px] text-teal-400 mt-0.5">Exch: {ret.exchange_new_invoice_number}</div>}
+                        <td className="py-3.5 px-4 font-mono font-bold text-[#2E2822] text-xs">
+                          {ret.original_invoice_number || <span className="text-[#7A6F69] italic font-sans">Manual</span>}
+                          {ret.exchange_new_invoice_number && <div className="text-[10px] text-[#7A6F69] mt-0.5">Exch: {ret.exchange_new_invoice_number}</div>}
                         </td>
-                        <td className="p-4 text-slate-300 text-xs">{ret.processed_by_name || 'Staff'}</td>
-                        <td className="p-4 text-right font-mono font-bold text-amber-400">{formatCurrency(ret.refund_credit)}</td>
-                        <td className="p-4 text-center">
+                        <td className="py-3.5 px-4 text-[#2E2822] font-bold text-xs">{ret.processed_by_name || 'Staff'}</td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(ret.refund_credit)}</td>
+                        <td className="py-3.5 pl-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => handleViewDetail(ret.id)}
                               title="Inspect Details"
-                              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+                              className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handlePrintReturnVoucher(ret)}
                               title="Reprint Thermal Voucher"
-                              className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg transition-colors border border-emerald-500/30"
+                              className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
                             >
                               <Printer className="w-4 h-4" />
                             </button>
@@ -1454,77 +1432,75 @@ export function Returns() {
       {/* Return Detail Modal */}
       {selectedHistoryDetail && createPortal(
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900/95 backdrop-blur z-10">
+          <div className="bg-[#F7F5F0] rounded-[2px] max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col font-sans shadow-none">
+            <div className="p-6 border-b border-[#C9C0B5] flex items-center justify-between sticky top-0 bg-[#F7F5F0] z-10">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
-                  <FileText className="w-6 h-6" />
-                </div>
+                <FileText className="w-6 h-6 text-[#2E2822]" />
                 <div>
-                  <h3 className="text-lg font-bold text-white font-mono">{selectedHistoryDetail.return_number}</h3>
-                  <p className="text-xs text-slate-400">{new Date(selectedHistoryDetail.return_date).toLocaleString()}</p>
+                  <h3 className="text-lg font-bold text-[#2E2822] font-mono">{selectedHistoryDetail.return_number}</h3>
+                  <p className="text-xs text-[#7A6F69] font-mono">{new Date(selectedHistoryDetail.return_date).toLocaleString()}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedHistoryDetail(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                className="p-2 text-[#7A6F69] hover:text-[#2E2822] rounded-[2px] hover:bg-[#EFEBE3] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-6 flex-1">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#EFEBE3] p-4 rounded-[2px] text-xs">
                 <div>
-                  <span className="text-slate-500 block">Transaction Type</span>
-                  <span className="font-bold text-white uppercase mt-0.5 block">{selectedHistoryDetail.return_type}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Transaction Type</span>
+                  <span className="font-bold text-[#2E2822] uppercase mt-0.5 block">{selectedHistoryDetail.return_type}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Original Invoice</span>
-                  <span className="font-mono text-white mt-0.5 block">{selectedHistoryDetail.original_invoice_number || 'None (Manual)'}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Original Invoice</span>
+                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">{selectedHistoryDetail.original_invoice_number || 'None (Manual)'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Processed By</span>
-                  <span className="text-white mt-0.5 block">{selectedHistoryDetail.processed_by_name || 'Staff'}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Processed By</span>
+                  <span className="font-bold text-[#2E2822] mt-0.5 block">{selectedHistoryDetail.processed_by_name || 'Staff'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Total Refund Credit</span>
-                  <span className="font-mono font-bold text-amber-400 mt-0.5 block">{formatCurrency(selectedHistoryDetail.refund_credit)}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Total Refund Credit</span>
+                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">{formatCurrency(selectedHistoryDetail.refund_credit)}</span>
                 </div>
               </div>
 
               {selectedHistoryDetail.notes && (
-                <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                  <span className="font-bold text-slate-400 block mb-1">Audit / Reason Note:</span>
+                <div className="bg-[#EFEBE3] p-4 rounded-[2px] text-xs text-[#2E2822]">
+                  <span className="font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">Audit / Reason Note:</span>
                   <p className="italic">{selectedHistoryDetail.notes}</p>
                 </div>
               )}
 
               {/* Returned Items Table */}
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Returned Items Restored to Inventory
+                <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5" /> Returned Items Restored to Inventory
                 </h4>
-                <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
-                        <th className="p-3">Article &amp; SKU</th>
-                        <th className="p-3 text-center">Returned Qty</th>
-                        <th className="p-3 text-right">Refund Price</th>
-                        <th className="p-3 text-right">Line Credit</th>
+                      <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold">
+                        <th className="py-2.5 px-3">Article &amp; SKU</th>
+                        <th className="py-2.5 px-3 text-center">Returned Qty</th>
+                        <th className="py-2.5 px-3 text-right">Refund Price</th>
+                        <th className="py-2.5 px-3 text-right">Line Credit</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-[#C9C0B5]">
                       {(selectedHistoryDetail.items || []).map((item) => (
                         <tr key={item.id}>
-                          <td className="p-3 font-medium text-white">
+                          <td className="py-3 px-3 font-bold text-[#2E2822]">
                             {item.article_name || 'Article'}
-                            <div className="text-[10px] text-slate-500 font-mono">{item.sku}</div>
+                            <div className="text-[10px] text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
                           </td>
-                          <td className="p-3 text-center font-mono font-bold text-amber-400">+{item.quantity_returned}</td>
-                          <td className="p-3 text-right font-mono text-slate-300">{formatCurrency(item.refund_per_unit)}</td>
-                          <td className="p-3 text-right font-mono font-bold text-white">{formatCurrency(item.quantity_returned * item.refund_per_unit)}</td>
+                          <td className="py-3 px-3 text-center font-mono font-bold text-[#2E2822]">+{item.quantity_returned}</td>
+                          <td className="py-3 px-3 text-right font-mono text-[#2E2822]">{formatCurrency(item.refund_per_unit)}</td>
+                          <td className="py-3 px-3 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.quantity_returned * item.refund_per_unit)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1535,29 +1511,29 @@ export function Returns() {
               {/* Replacement Items if exchange */}
               {(selectedHistoryDetail.replacement_items || []).length > 0 && (
                 <div>
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5 text-teal-400" /> Issued Replacement Articles (Exchange Sale #{selectedHistoryDetail.exchange_new_sale_id})
+                  <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5" /> Issued Replacement Articles (Exchange Sale #{selectedHistoryDetail.exchange_new_sale_id})
                   </h4>
-                  <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+                  <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
-                          <th className="p-3">Article &amp; SKU</th>
-                          <th className="p-3 text-center">Issued Qty</th>
-                          <th className="p-3 text-right">Unit Price</th>
-                          <th className="p-3 text-right">Line Total</th>
+                        <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold">
+                          <th className="py-2.5 px-3">Article &amp; SKU</th>
+                          <th className="py-2.5 px-3 text-center">Issued Qty</th>
+                          <th className="py-2.5 px-3 text-right">Unit Price</th>
+                          <th className="py-2.5 px-3 text-right">Line Total</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-[#C9C0B5]">
                         {selectedHistoryDetail.replacement_items.map((rep) => (
                           <tr key={rep.id}>
-                            <td className="p-3 font-medium text-white">
+                            <td className="py-3 px-3 font-bold text-[#2E2822]">
                               {rep.article_name || 'Article'}
-                              <div className="text-[10px] text-slate-500 font-mono">{rep.sku}</div>
+                              <div className="text-[10px] text-[#7A6F69] font-mono mt-0.5">{rep.sku}</div>
                             </td>
-                            <td className="p-3 text-center font-mono font-bold text-teal-400">{rep.quantity}</td>
-                            <td className="p-3 text-right font-mono text-slate-300">{formatCurrency(rep.retail_price_snapshot)}</td>
-                            <td className="p-3 text-right font-mono font-bold text-white">{formatCurrency(rep.line_total)}</td>
+                            <td className="py-3 px-3 text-center font-mono font-bold text-[#2E2822]">{rep.quantity}</td>
+                            <td className="py-3 px-3 text-right font-mono text-[#2E2822]">{formatCurrency(rep.retail_price_snapshot)}</td>
+                            <td className="py-3 px-3 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(rep.line_total)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1567,16 +1543,16 @@ export function Returns() {
               )}
             </div>
 
-            <div className="p-5 border-t border-slate-800 bg-slate-900/95 flex justify-end gap-3 sticky bottom-0">
+            <div className="p-5 border-t border-[#C9C0B5] bg-[#F7F5F0] flex justify-end gap-3 sticky bottom-0">
               <button
                 onClick={() => setSelectedHistoryDetail(null)}
-                className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors"
+                className="px-5 py-2.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-colors"
               >
                 Close Window
               </button>
               <button
                 onClick={() => handlePrintReturnVoucher(selectedHistoryDetail)}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
               >
                 <Printer className="w-4 h-4" /> Print Thermal Voucher
               </button>

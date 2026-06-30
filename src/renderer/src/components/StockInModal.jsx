@@ -184,24 +184,22 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
   const totalUnits = manifestItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#2E2822]/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+      <div className="w-full max-w-4xl bg-[#F7F5F0] text-[#2E2822] border border-[#2E2822] rounded-[2px] shadow-none overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <div className="p-6 border-b border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/10">
-              <Truck className="w-6 h-6 animate-pulse" />
-            </div>
+            <Truck className="w-6 h-6 text-[#2E2822]" />
             <div>
-              <h3 className="text-xl font-display font-bold text-white">Receive Stock Shipment</h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h3 className="text-xl font-display font-bold text-[#2E2822]">Receive Stock Shipment</h3>
+              <p className="text-xs font-sans text-[#7A6F69] mt-0.5">
                 Append multiple incoming items to a manifest and update warehouse levels atomically
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-all"
+            className="p-2 rounded-[2px] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -209,25 +207,25 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
 
         {/* Error Banner */}
         {error && (
-          <div className="mx-6 mt-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-3 text-rose-300 text-xs">
-            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="mx-6 mt-6 p-4 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
+            <AlertCircle className="w-4 h-4 text-[#2E2822] shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Modal Body */}
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto font-sans">
           {/* Supplier & Header Metadata */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4 border-b border-[#C9C0B5]">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] flex items-center gap-1">
                 <span>Select Supplier</span>
-                <span className="text-roseaccent">*</span>
+                <span className="text-[#2E2822]">*</span>
               </label>
               <select
                 value={selectedSupplier}
                 onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-bold focus:outline-none focus:border-[#2E2822]"
               >
                 <option value="">Choose Supplier...</option>
                 {suppliers.map((sup) => (
@@ -238,9 +236,8 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] flex items-center gap-1">
                 <span>Shipment Reference / Invoice #</span>
               </label>
               <input
@@ -248,13 +245,12 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                 value={shipmentNote}
                 onChange={(e) => setShipmentNote(e.target.value)}
                 placeholder="e.g. INV-2026-104 or Courier Tracking"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-mono font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-slate-400" />
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] flex items-center gap-1">
                 <span>Received By</span>
               </label>
               <input
@@ -262,34 +258,34 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                 value={performedBy}
                 onChange={(e) => setPerformedBy(e.target.value)}
                 placeholder="Staff Name"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
               />
             </div>
           </div>
 
           {/* Add Item Toolbar */}
           {selectedSupplier && (
-            <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-3 animate-fade-in">
-              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] space-y-3 animate-fade-in">
+              <div className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 <span>Append Article to Shipment Manifest</span>
               </div>
 
               {loadingArticles ? (
-                <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-400">
-                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                <div className="py-4 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7A6F69]">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#2E2822]" />
                   <span>Loading catalog items for selected supplier...</span>
                 </div>
               ) : availableArticles.length === 0 ? (
-                <div className="py-4 text-center text-xs text-slate-400">
+                <div className="py-4 text-center text-xs text-[#7A6F69]">
                   No active catalog articles found for this supplier. Please register articles first.
                 </div>
               ) : (
-                <form onSubmit={handleAddItem} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <form onSubmit={handleAddItem} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   <select
                     value={selectedArticleId}
                     onChange={(e) => setSelectedArticleId(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-medium focus:outline-none focus:border-emerald-500"
+                    className="flex-1 py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs font-bold focus:outline-none"
                   >
                     {availableArticles.map((art) => (
                       <option key={art.id} value={art.id}>
@@ -298,20 +294,20 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                     ))}
                   </select>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <input
                       type="number"
                       value={addQuantity}
                       onChange={(e) => setAddQuantity(e.target.value)}
                       placeholder="Qty"
                       min="1"
-                      className="w-24 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono font-bold text-center focus:outline-none focus:border-emerald-500"
+                      className="w-20 py-1.5 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs font-mono font-bold text-center focus:outline-none"
                     />
                     <button
                       type="submit"
-                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-600/30 shrink-0"
+                      className="px-4 py-2 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-bold uppercase tracking-[0.1em] text-xs flex items-center gap-1.5 transition-all shrink-0"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                       <span>Add Item</span>
                     </button>
                   </div>
@@ -321,38 +317,38 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
           )}
 
           {/* Manifest Table */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-[0.14em]">
               <span>Incoming Manifest Lines ({manifestItems.length})</span>
-              <span>Total Receiving: <strong className="text-emerald-400 font-mono text-sm">{totalUnits} Units</strong></span>
+              <span>Total Receiving: <strong className="text-[#2E2822] font-mono text-sm">{totalUnits} Units</strong></span>
             </div>
 
-            <div className="glass-card rounded-2xl border border-slate-800/80 overflow-hidden">
+            <div>
               {manifestItems.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 text-xs">
+                <div className="py-12 text-center text-[#7A6F69] text-xs">
                   Manifest is empty. Select a supplier above and add items to begin receiving stock.
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                      <th className="py-3 px-4">SKU / Tag</th>
+                    <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                      <th className="py-3 pr-4">SKU / Tag</th>
                       <th className="py-3 px-4">Article Details</th>
                       <th className="py-3 px-4 text-center">Received Qty</th>
-                      <th className="py-3 px-4 text-right">Remove</th>
+                      <th className="py-3 pl-4 text-right">Remove</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/50 text-xs">
+                  <tbody className="divide-y divide-[#C9C0B5] text-xs font-sans">
                     {manifestItems.map((item) => (
-                      <tr key={item.article_id} className="hover:bg-slate-900/40">
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span className="font-mono font-bold text-brand-light px-2.5 py-1 rounded bg-slate-800 border border-slate-700">
+                      <tr key={item.article_id}>
+                        <td className="py-3 pr-4 whitespace-nowrap">
+                          <span className="font-mono font-bold text-[#2E2822]">
                             {item.sku}
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-white">{item.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          <div className="font-bold text-[#2E2822]">{item.name}</div>
+                          <div className="text-[11px] text-[#7A6F69] font-mono mt-0.5">
                             Code: #{item.supplier_article_code} {item.colour && `• ${item.colour}`} {item.size && `• Size: ${item.size}`}
                           </div>
                         </td>
@@ -362,17 +358,17 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                             min="1"
                             value={item.quantity}
                             onChange={(e) => handleQuantityChange(item.article_id, e.target.value)}
-                            className="w-20 px-2 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/50 text-emerald-400 font-mono font-bold text-center text-xs focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            className="w-20 py-1 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono font-bold text-center text-xs focus:outline-none"
                           />
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3 pl-4 text-right">
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(item.article_id)}
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all"
+                            className="p-1 rounded-[2px] text-[#7A6F69] hover:text-[#2E2822] transition-all"
                             title="Remove from manifest"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
@@ -385,10 +381,10 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-6 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
-          <div className="text-xs text-slate-400">
+        <div className="p-6 border-t border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between font-sans">
+          <div className="text-xs text-[#7A6F69]">
             {manifestItems.length > 0 && (
-              <span>Ready to receive <strong className="text-white">{manifestItems.length} SKU lines</strong> into inventory database.</span>
+              <span>Ready to receive <strong className="text-[#2E2822] font-bold">{manifestItems.length} SKU lines</strong> into inventory database.</span>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -396,7 +392,7 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-all"
+              className="px-5 py-2.5 rounded-[2px] bg-[#EFEBE3] border border-[#7A6F69] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] font-bold uppercase tracking-[0.12em] text-xs transition-all"
             >
               Cancel
             </button>
@@ -404,16 +400,16 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
               type="button"
               onClick={handleSubmit}
               disabled={submitting || manifestItems.length === 0}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50"
+              className="px-6 py-2.5 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-bold uppercase tracking-[0.12em] text-xs flex items-center gap-2 transition-all disabled:opacity-50"
             >
               {submitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                   <span>Processing...</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Confirm Stock IN Shipment</span>
                 </>
               )}

@@ -112,46 +112,45 @@ export function Settings() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400">
-        <RefreshCw className="w-10 h-10 animate-spin text-brand mb-4" />
-        <span className="font-medium">Loading settings from SQLite database...</span>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-[#7A6F69]">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#2E2822] mb-4" />
+        <span className="font-sans text-xs tracking-[0.18em] uppercase">Loading settings from database...</span>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8 pb-12 relative animate-fade-in">
+    <div className="space-y-12 pb-16 relative animate-fade-in text-[#2E2822]">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-bounce">
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
           <div
-            className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-medium text-sm ${
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
-                : 'bg-rose-950/90 border-rose-500/50 text-rose-200'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
             }`}
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      {/* Header Bar — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
         <div>
-          <div className="flex items-center gap-2 text-brand-light font-medium text-sm mb-1">
-            <Sliders className="w-4 h-4" />
-            <span>Store Configuration</span>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Store Configuration
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
             System & Shop Settings
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[#7A6F69] font-sans text-sm mt-2">
             Manage store details, receipt templates, commission thresholds, and system prefixes.
           </p>
         </div>
@@ -159,40 +158,38 @@ export function Settings() {
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           {saving ? (
-            <RefreshCw className="w-5 h-5 animate-spin" />
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Save className="w-5 h-5" />
+            <Save className="w-4 h-4" />
           )}
           <span>{saving ? 'Persisting...' : 'Save Configuration'}</span>
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Left Column: General & Receipt Info (2 spans) */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Card 1: Shop Information */}
-          <div className="glass-card p-6 md:p-8 rounded-3xl border border-slate-800/80 shadow-xl space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-center text-brand-light">
-                <Store className="w-5 h-5" />
-              </div>
+        <div className="lg:col-span-2 space-y-12">
+          {/* Section 1: Shop Information — Spatial Open Section */}
+          <div className="space-y-6 pb-12 border-b border-[#C9C0B5]">
+            <div className="border-b border-[#2E2822] pb-4 flex items-baseline justify-between">
               <div>
-                <h3 className="text-lg font-display font-semibold text-white">
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  Brand Identity
+                </span>
+                <h3 className="text-2xl font-display font-bold text-[#2E2822]">
                   Shop Profile
                 </h3>
-                <span className="text-xs text-slate-400">Displayed on thermal receipts and invoices</span>
               </div>
+              <span className="text-xs font-sans text-[#7A6F69]">Displayed on thermal receipts and invoices</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <span>Shop Name</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Shop Name *
                 </label>
                 <input
                   type="text"
@@ -201,13 +198,13 @@ export function Settings() {
                   onChange={handleChange}
                   placeholder="e.g. Soni Fashion | سونی فیشن"
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
+                  className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xl font-display font-bold placeholder-[#7A6F69] focus:outline-none"
                 />
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <span>Shop Tagline / Subtitle</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Shop Tagline / Subtitle
                 </label>
                 <input
                   type="text"
@@ -215,14 +212,13 @@ export function Settings() {
                   value={formData.shop_tagline || ''}
                   onChange={handleChange}
                   placeholder="e.g. Jahan Fashion enters your life"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-roseaccent" />
-                  <span>Physical Address</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Physical Address *
                 </label>
                 <input
                   type="text"
@@ -231,14 +227,13 @@ export function Settings() {
                   onChange={handleChange}
                   placeholder="e.g. Qazi Market, Machli Bazar, Daska"
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
               <div className="md:col-span-2 space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-brand-light" />
-                  <span>Contact Phone Number</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Contact Phone Number
                 </label>
                 <input
                   type="text"
@@ -246,30 +241,30 @@ export function Settings() {
                   value={formData.shop_contact}
                   onChange={handleChange}
                   placeholder="e.g. +92 300 1234567"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
             </div>
           </div>
 
-          {/* Card 2: Receipt & Printer Configuration */}
-          <div className="glass-card p-6 md:p-8 rounded-3xl border border-slate-800/80 shadow-xl space-y-6 relative overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-roseaccent/20 border border-roseaccent/40 flex items-center justify-center text-roseaccent">
-                <Receipt className="w-5 h-5" />
-              </div>
+          {/* Section 2: Receipt & Printer Configuration */}
+          <div className="space-y-6">
+            <div className="border-b border-[#2E2822] pb-4 flex items-baseline justify-between">
               <div>
-                <h3 className="text-lg font-display font-semibold text-white">
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  POS Output Engine
+                </span>
+                <h3 className="text-2xl font-display font-bold text-[#2E2822]">
                   Thermal Receipt Customization
                 </h3>
-                <span className="text-xs text-slate-400">Configure silent POS printing parameters</span>
               </div>
+              <span className="text-xs font-sans text-[#7A6F69]">Configure silent background printing</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-8 pt-2">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <span>Receipt Footer Message</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Receipt Footer Message
                 </label>
                 <textarea
                   name="receipt_footer"
@@ -277,16 +272,15 @@ export function Settings() {
                   onChange={handleChange}
                   rows={2}
                   placeholder="e.g. Thank you for visiting Soni Fashion! No cash refund, exchange within 7 days."
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-medium resize-none"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Printer className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Target Receipt Printer Name (Silent Print)</span>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                    Target Receipt Printer Name (Silent Print)
+                  </label>
                   <button
                     type="button"
                     onClick={async () => {
@@ -298,36 +292,33 @@ export function Settings() {
                         }
                       }
                     }}
-                    className="text-[10px] text-brand-light hover:underline flex items-center gap-1"
+                    className="text-[11px] font-bold text-[#2E2822] uppercase tracking-[0.1em] hover:underline flex items-center gap-1"
                   >
                     <RefreshCw className="w-3 h-3" />
                     <span>Refresh Printers</span>
                   </button>
-                </label>
+                </div>
                 <select
                   name="receipt_printer_name"
                   value={formData.receipt_printer_name || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all text-sm font-mono cursor-pointer"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] focus:outline-none focus:border-[#2E2822] text-xs font-mono cursor-pointer"
                 >
-                  <option value="" className="bg-slate-900 text-slate-400">
-                    -- OS Default Printer --
-                  </option>
+                  <option value="">-- OS Default Printer --</option>
                   {availablePrinters.map((p) => (
-                    <option key={p.name} value={p.name} className="bg-slate-900 text-white">
+                    <option key={p.name} value={p.name}>
                       {p.displayName || p.name} {p.isDefault ? '(System Default)' : ''}
                     </option>
                   ))}
-                  {/* If stored printer is not in detected list, show it as an option */}
                   {formData.receipt_printer_name &&
                     !availablePrinters.some((p) => p.name === formData.receipt_printer_name) && (
-                      <option value={formData.receipt_printer_name} className="bg-slate-900 text-white">
+                      <option value={formData.receipt_printer_name}>
                         {formData.receipt_printer_name} (Saved / Offline)
                       </option>
                     )}
                 </select>
-                <p className="text-[11px] text-slate-500">
-                  Select your thermal receipt printer (e.g. EPSON TM-T82 / Xprinter) for silent background receipt output.
+                <p className="text-[11px] font-sans text-[#7A6F69] pt-1">
+                  Select your thermal receipt printer (e.g. EPSON TM-T82 / Xprinter) for direct background output.
                 </p>
               </div>
             </div>
@@ -335,24 +326,21 @@ export function Settings() {
         </div>
 
         {/* Right Column: Prefixes & Counters (1 span) */}
-        <div className="space-y-8">
-          {/* Card 3: Financial & Prefixes */}
-          <div className="glass-card p-6 rounded-3xl border border-slate-800/80 shadow-xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                <Percent className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-display font-semibold text-white">
-                  Commission & Prefixes
-                </h3>
-                <span className="text-xs text-slate-400">Default rate and SKU rules</span>
-              </div>
+        <div className="space-y-12 lg:border-l lg:border-[#C9C0B5] lg:pl-12">
+          {/* Section 3: Financial & Prefixes */}
+          <div className="space-y-6 pb-12 border-b border-[#C9C0B5]">
+            <div className="border-b border-[#2E2822] pb-4">
+              <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                Thresholds & Rules
+              </span>
+              <h3 className="text-2xl font-display font-bold text-[#2E2822]">
+                Commission & Prefixes
+              </h3>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6 pt-2">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Default Staff Commission (%)
                 </label>
                 <div className="relative">
@@ -365,14 +353,14 @@ export function Settings() {
                     max="100"
                     step="0.1"
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white focus:outline-none focus:border-brand font-mono text-sm"
+                    className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] focus:outline-none font-mono text-xl font-bold"
                   />
-                  <span className="absolute right-4 top-3.5 text-slate-400 font-bold text-sm">%</span>
+                  <span className="absolute right-0 top-2 text-[#7A6F69] font-mono font-bold text-base">%</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   SKU Prefix Code
                 </label>
                 <input
@@ -381,12 +369,12 @@ export function Settings() {
                   value={formData.sku_prefix}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white font-mono text-sm uppercase"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Invoice Prefix Code
                 </label>
                 <input
@@ -395,12 +383,12 @@ export function Settings() {
                   value={formData.invoice_prefix}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white font-mono text-sm uppercase"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Return Prefix Code
                 </label>
                 <input
@@ -409,40 +397,44 @@ export function Settings() {
                   value={formData.return_prefix}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/80 text-white font-mono text-sm uppercase"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
             </div>
           </div>
 
-          {/* Card 4: System Sequence Counters (Read-Only) */}
-          <div className="p-6 rounded-3xl bg-slate-900/40 border border-slate-800/80 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-slate-300 font-medium text-sm">
-                <Lock className="w-4 h-4 text-slate-500" />
-                <span>System Sequence Counters</span>
+          {/* Section 4: System Sequence Counters (Read-Only) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#2E2822] pb-4">
+              <div>
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  Auto-Managed Sequence
+                </span>
+                <h3 className="text-xl font-display font-bold text-[#2E2822]">
+                  Sequence Counters
+                </h3>
               </div>
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                Auto-Managed
+              <span className="text-[10px] uppercase tracking-[0.14em] font-bold text-[#2E2822] bg-[#EFEBE3] px-2 py-1 rounded-[2px]">
+                Locked
               </span>
             </div>
             
-            <p className="text-xs text-slate-500 leading-relaxed">
-              These transaction sequences auto-increment inside single SQLite transactions during POS sales to prevent duplicate billing.
+            <p className="text-xs font-sans text-[#7A6F69] leading-relaxed">
+              These transaction sequences auto-increment inside SQLite during sales to guarantee unique sequential identifiers.
             </p>
 
             <div className="space-y-3 pt-2 font-mono text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-400">Last SKU #</span>
-                <span className="text-brand-light font-bold">{formData.last_sku_number || '0'}</span>
+              <div className="flex items-center justify-between py-3 border-b border-[#C9C0B5]">
+                <span className="text-[#7A6F69] uppercase tracking-wider font-sans font-semibold">Last SKU #</span>
+                <span className="text-[#2E2822] font-bold text-sm">{formData.last_sku_number || '0'}</span>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-400">Last Invoice #</span>
-                <span className="text-emerald-400 font-bold">{formData.last_invoice_number || '0'}</span>
+              <div className="flex items-center justify-between py-3 border-b border-[#C9C0B5]">
+                <span className="text-[#7A6F69] uppercase tracking-wider font-sans font-semibold">Last Invoice #</span>
+                <span className="text-[#2E2822] font-bold text-sm">{formData.last_invoice_number || '0'}</span>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-slate-400">Last Return #</span>
-                <span className="text-roseaccent font-bold">{formData.last_return_number || '0'}</span>
+              <div className="flex items-center justify-between py-3 border-b border-[#C9C0B5]">
+                <span className="text-[#7A6F69] uppercase tracking-wider font-sans font-semibold">Last Return #</span>
+                <span className="text-[#2E2822] font-bold text-sm">{formData.last_return_number || '0'}</span>
               </div>
             </div>
           </div>

@@ -4,13 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── SONI FASHION POS — White Editorial Theme ──────────────────────────────
-   Canvas:    #FFFFFF (primary white)
-   Accent:    #F7F5F0 (cream ivory — structural zones only: headers, sidebars)
-   Ink:       #2E2822 (rich charcoal-taupe — all text, borders, icons)
-   Ink-muted: #8C8078 (secondary labels, metadata)
-   Hairline:  #E0DAD2 (thin dividers)
-   Parchment: #EDE8DF (button hover, table header bg)
+/* ── SONI FASHION POS — Borderless Editorial Theme ──────────────────────────
+   Canvas:    #F7F5F0 (Cream Ivory — primary canvas)
+   Zone:      #EFEBE3 (Soft Alabaster — secondary zones)
+   Ink:       #2E2822 (Rich Charcoal — all text, icons)
+   Ink-muted: #7A6F69 (Secondary labels, metadata)
+   Divider:   #C9C0B5 (Hairline — single-axis open dividers only)
+   Parchment: #E4DBC8 (Hover states, active zonation)
 ──────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
@@ -21,7 +21,7 @@
   }
 
   html, body {
-    background: #FFFFFF !important;
+    background: #F7F5F0 !important;
     color: #2E2822 !important;
     font-family: 'Lato', sans-serif !important;
     font-size: 14px;
@@ -41,26 +41,29 @@
 /* Scrollbars */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: #F7F5F0; }
-::-webkit-scrollbar-thumb { background: #D0C9C0; }
-::-webkit-scrollbar-thumb:hover { background: #8C8078; }
+::-webkit-scrollbar-thumb { background: #C9C0B5; }
+::-webkit-scrollbar-thumb:hover { background: #7A6F69; }
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 
-/* Global colour strips */
+/* Global colour overrides for un-refactored legacy classes */
 [class*="bg-slate-"], [class*="bg-gradient-"], [class*="from-slate-"],
-[class*="via-slate-"], [class*="to-slate-"], [class*="from-brand"] {
+[class*="via-slate-"], [class*="to-slate-"], [class*="from-brand"], [class*="bg-white"] {
   background: transparent !important; background-image: none !important;
 }
 [class*="text-slate-"], [class*="text-white"] {
   color: #2E2822 !important; -webkit-text-fill-color: #2E2822 !important;
 }
 [class*="text-slate-400"], [class*="text-slate-500"] {
-  color: #8C8078 !important; -webkit-text-fill-color: #8C8078 !important;
+  color: #7A6F69 !important; -webkit-text-fill-color: #7A6F69 !important;
 }
 
 /* Sidebar */
 aside {
-  background: #F7F5F0 !important;
-  border-right: 1px solid #E0DAD2 !important;
+  background: #EFEBE3 !important;
+  border-right: 1px solid #C9C0B5 !important;
+  border-left: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
   color: #2E2822 !important;
   backdrop-filter: none !important;
 }
@@ -68,41 +71,46 @@ aside {
 /* TopBar */
 header {
   background: #F7F5F0 !important;
-  border-bottom: 1px solid #E0DAD2 !important;
+  border-bottom: 1px solid #C9C0B5 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
   backdrop-filter: none !important;
   color: #2E2822 !important;
 }
 
 /* Nav links */
 nav a { color: #2E2822 !important; text-decoration: none; }
-nav a:hover { background: #EDE8DF !important; }
+nav a:hover { background: #E4DBC8 !important; }
 nav a[aria-current="page"], nav a.active {
-  background: #EDE8DF !important; color: #2E2822 !important;
+  background: #E4DBC8 !important; color: #2E2822 !important;
   font-weight: 700 !important; border-left: 2px solid #2E2822 !important;
 }
 
-/* Tables */
-table { background: #FFFFFF !important; color: #2E2822 !important; border-collapse: collapse; }
+/* Tables — strictly open dividers (bottom border only) */
+table { background: #F7F5F0 !important; color: #2E2822 !important; border-collapse: collapse; }
 thead th {
-  background: #F7F5F0 !important; color: #2E2822 !important;
+  background: #F7F5F0 !important; color: #7A6F69 !important;
   border-bottom: 1px solid #2E2822 !important;
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  border-top: none !important; border-left: none !important; border-right: none !important;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
 }
-tbody tr { background: #FFFFFF !important; border-bottom: 1px solid #E0DAD2 !important; }
-tbody tr:hover { background: #FAFAF8 !important; }
+tbody tr { background: #F7F5F0 !important; border-bottom: 1px solid #C9C0B5 !important; }
+tbody tr:hover { background: #EFEBE3 !important; }
 
-/* Inputs */
+/* Inputs — single-axis bottom border only, no closed boxes */
 input, select, textarea {
-  background: #FFFFFF !important; color: #2E2822 !important;
-  border: 1px solid #E0DAD2 !important; border-radius: 0 !important; box-shadow: none !important;
+  background: #F7F5F0 !important; color: #2E2822 !important;
+  border-top: none !important; border-left: none !important; border-right: none !important;
+  border-bottom: 1px solid #C9C0B5 !important; border-radius: 0 !important; box-shadow: none !important;
 }
-input:focus, select:focus, textarea:focus { border-color: #2E2822 !important; outline: none !important; }
+input:focus, select:focus, textarea:focus { border-bottom-color: #2E2822 !important; outline: none !important; }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
 input[type="number"] { -moz-appearance: textfield !important; appearance: textfield !important; }
 
 /* Buttons */
-button { border-radius: 0 !important; cursor: pointer; transition: background 0.12s, color 0.12s !important; transform: none !important; }
+button { border-radius: 0 !important; cursor: pointer; transition: background 0.12s, color 0.12s !important; transform: none !important; box-shadow: none !important; }
 
 /* Animations */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -113,6 +121,6 @@ button { border-radius: 0 !important; cursor: pointer; transition: background 0.
 @media print {
   body * { visibility: hidden; }
   #report-root, #report-root * { visibility: visible; }
-  #report-root { position: fixed; top: 0; left: 0; width: 100%; background: #fff !important; }
+  #report-root { position: fixed; top: 0; left: 0; width: 100%; background: #F7F5F0 !important; }
   @page { margin: 0.5cm; }
 }

@@ -135,7 +135,7 @@ export function Reports() {
   }
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-12 pb-16 text-[#2E2822] animate-fade-in">
       {/* Print Specific CSS Injector */}
       <style>{`
         @media print {
@@ -144,7 +144,7 @@ export function Reports() {
           .print\\:block { display: block !important; }
           .print\\:shadow-none { box-shadow: none !important; }
           .print\\:border-black { border-color: black !important; }
-          .glass-card, div { background: transparent !important; border-color: #ddd !important; color: black !important; }
+          div { background: transparent !important; border-color: #ddd !important; color: black !important; }
           table { width: 100% !important; border-collapse: collapse !important; }
           th, td { border: 1px solid #ccc !important; padding: 8px !important; color: black !important; }
           h1, h2, h3, h4, span, div { color: black !important; }
@@ -153,46 +153,52 @@ export function Reports() {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl border transition-all print:hidden animate-slide-up ${
-          toast.type === 'success' 
-            ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-200' 
-            : 'bg-rose-950/90 border-rose-500/30 text-rose-200'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
-          <span className="text-sm font-medium">{toast.message}</span>
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in print:hidden">
+          <div
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
+              toast.type === 'success'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
         </div>
       )}
 
-      {/* Page Header (Hidden when printing) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6 print:hidden">
+      {/* Page Header — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8 print:hidden">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand via-brand-light to-roseaccent flex items-center justify-center text-white shadow-lg shadow-brand/20">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <h1 className="font-display font-bold text-2xl text-white tracking-tight">
-              Reports & Financial Analytics Hub
-            </h1>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Intelligence & Audit
           </div>
-          <p className="text-slate-400 text-sm mt-1">
-            Real-time business performance intelligence, audit-ready statements, and stock valuation ledgers
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
+            Reports & Analytics Hub
+          </h1>
+          <p className="text-[#7A6F69] font-sans text-sm mt-2">
+            Real-time business performance intelligence, audit-ready statements, and stock valuation ledgers.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 shrink-0">
           <button
             onClick={fetchReportData}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-sm flex items-center gap-2 transition-all active:scale-95"
+            className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.12em] flex items-center gap-2 transition-all"
             title="Refresh Report Data"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
           <button
             onClick={handlePrint}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-brand/30 transition-all active:scale-95"
+            className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] flex items-center gap-2.5 transition-all"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3.5 h-3.5" />
             <span>Print Report</span>
           </button>
         </div>
@@ -208,75 +214,73 @@ export function Reports() {
         </div>
       </div>
 
-      {/* Controls Toolbar (Tabs & Date Range) */}
-      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex flex-col lg:flex-row items-center justify-between gap-4 print:hidden backdrop-blur-md">
+      {/* Controls Toolbar (Tabs & Date Range) — Open Spatial Toolbar */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5] print:hidden">
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-6">
           {[
-            { id: 'sales', label: 'Sales Summary', icon: FileText },
-            { id: 'profit', label: 'Profit & Loss', icon: TrendingUp },
-            { id: 'inventory', label: 'Stock Valuation', icon: Package },
-            { id: 'top', label: 'Top Articles', icon: Award },
-            { id: 'expenses', label: 'Expense Breakdown', icon: PieChart }
+            { id: 'sales', label: 'Sales Summary' },
+            { id: 'profit', label: 'Profit & Loss' },
+            { id: 'inventory', label: 'Stock Valuation' },
+            { id: 'top', label: 'Top Articles' },
+            { id: 'expenses', label: 'Expense Breakdown' }
           ].map(tab => {
-            const Icon = tab.icon
             const isActive = activeTab === tab.id
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                className={`pb-2 text-xs font-sans font-bold uppercase tracking-[0.14em] transition-all relative ${
                   isActive
-                    ? 'bg-gradient-to-r from-brand to-brand-dark text-white shadow-md shadow-brand/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                    ? 'text-[#2E2822] border-b-2 border-[#2E2822]'
+                    : 'text-[#7A6F69] hover:text-[#2E2822]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
+                {tab.label}
               </button>
             )
           })}
         </div>
 
         {/* Date Filters & Options */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-6 justify-end">
           {activeTab !== 'inventory' ? (
-            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-white">
-              <Calendar className="w-4 h-4 text-brand-light" />
-              <span className="text-slate-400">From</span>
+            <div className="flex items-center gap-2 py-1 text-xs font-sans font-semibold text-[#2E2822]">
+              <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
+              <span className="text-[#7A6F69] uppercase tracking-wider font-bold">From</span>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent text-white focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
               />
-              <span className="text-slate-400">to</span>
+              <span className="text-[#7A6F69] uppercase tracking-wider font-bold">to</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent text-white focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
               />
             </div>
           ) : (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-xs font-medium text-emerald-400 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Live Inventory Snapshot</span>
+            <div className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#2E2822]" />
+              <span>Live Snapshot</span>
             </div>
           )}
 
           {activeTab === 'top' && (
-            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-white">
-              <span className="text-slate-400">Limit:</span>
+            <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#2E2822]">
+              <span className="text-[#7A6F69] uppercase tracking-wider font-bold">Limit:</span>
               <select
                 value={topLimit}
                 onChange={(e) => setTopLimit(Number(e.target.value))}
-                className="bg-transparent text-white focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#2E2822] focus:outline-none cursor-pointer border-b border-[#C9C0B5] font-mono text-xs font-bold"
               >
-                <option value={5} className="bg-slate-900 text-white">Top 5</option>
-                <option value={10} className="bg-slate-900 text-white">Top 10</option>
-                <option value={25} className="bg-slate-900 text-white">Top 25</option>
-                <option value={50} className="bg-slate-900 text-white">Top 50</option>
+                <option value={5}>Top 5</option>
+                <option value={10}>Top 10</option>
+                <option value={25}>Top 25</option>
+                <option value={50}>Top 50</option>
               </select>
             </div>
           )}
@@ -285,203 +289,188 @@ export function Reports() {
 
       {/* Loading Indicator */}
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center text-slate-400 glass-card rounded-3xl border border-slate-800">
-          <RefreshCw className="w-10 h-10 animate-spin text-brand mb-4" />
-          <p className="text-base font-semibold text-white">Compiling Financial Ledger Data...</p>
-          <p className="text-xs text-slate-500 mt-1">Aggregating database transactions and computing KPIs</p>
+        <div className="py-24 flex flex-col items-center justify-center text-[#7A6F69]">
+          <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+          <p className="font-sans text-xs tracking-[0.18em] uppercase font-bold text-[#2E2822]">Compiling Financial Ledger Data...</p>
+          <p className="text-xs text-[#7A6F69] mt-1 font-sans">Aggregating database transactions and computing KPIs</p>
         </div>
       ) : (
         <>
           {/* TAB 1: SALES SUMMARY */}
           {activeTab === 'sales' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Sales KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 print:grid-cols-3">
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Completed Invoices</span>
-                  <h3 className="text-3xl font-display font-bold text-white mt-2">
+            <div className="space-y-12 animate-fade-in">
+              {/* Sales KPIs — Open Spatial Blocks */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
+                <div className="space-y-1">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Completed Invoices</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
                     {salesData.summary.total_sales}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Total customer checkouts</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Total customer checkouts</span>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Units Dispatched</span>
-                  <h3 className="text-3xl font-display font-bold text-blue-400 mt-2">
+                <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Units Dispatched</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
                     {salesData.summary.total_items}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Physical garment volume sold</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Garment volume sold</span>
                 </div>
 
-                <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gross Sales Revenue</span>
-                  <h3 className="text-3xl font-display font-bold text-emerald-400 mt-2 font-mono">
+                <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Gross Sales Revenue</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     Rs. {Number(salesData.summary.total_revenue).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Total revenue inclusive of discounts</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Inclusive of discounts</span>
                 </div>
               </div>
 
-              {/* Sales Table */}
-              <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
-                  <h4 className="font-semibold text-white text-sm">Detailed Sales Register</h4>
-                  <span className="text-xs text-slate-400">{salesData.sales.length} transactions recorded</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3.5 px-4">Invoice #</th>
-                        <th className="py-3.5 px-4">Date & Time</th>
-                        <th className="py-3.5 px-4">Salesperson</th>
-                        <th className="py-3.5 px-4">Payment Method</th>
-                        <th className="py-3.5 px-4 text-center">Items</th>
-                        <th className="py-3.5 px-4 text-right">Subtotal</th>
-                        <th className="py-3.5 px-4 text-right">Discount</th>
-                        <th className="py-3.5 px-4 text-right">Grand Total</th>
+              {/* Sales Table — Open Layout */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                      <th className="py-4 pr-4">Invoice #</th>
+                      <th className="py-4 px-4">Date & Time</th>
+                      <th className="py-4 px-4">Salesperson</th>
+                      <th className="py-4 px-4">Payment Method</th>
+                      <th className="py-4 px-4 text-center">Items</th>
+                      <th className="py-4 px-4 text-right">Subtotal</th>
+                      <th className="py-4 px-4 text-right">Discount</th>
+                      <th className="py-4 pl-4 text-right">Grand Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                    {salesData.sales.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-[#7A6F69] text-xs">
+                          No sales records found within this date range.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {salesData.sales.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="py-12 text-center text-slate-500">
-                            No sales records found within this date range.
+                    ) : (
+                      salesData.sales.map(s => (
+                        <tr key={s.id} className="hover:bg-[#EFEBE3] transition-colors">
+                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-xs">{s.invoice_number}</td>
+                          <td className="py-5 px-4 text-[#7A6F69] font-mono text-xs">{s.sale_date}</td>
+                          <td className="py-5 px-4 text-[#2E2822] font-semibold">{s.salesperson_name || 'Counter Staff'}</td>
+                          <td className="py-5 px-4">
+                            <span className="font-mono text-xs uppercase tracking-wider font-bold text-[#2E2822]">
+                              {s.payment_method || 'Cash'}
+                            </span>
                           </td>
+                          <td className="py-5 px-4 text-center font-mono font-bold">{s.total_items}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">Rs. {Number(s.subtotal || 0).toLocaleString()}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">
+                            {Number(s.total_discount || 0) > 0 ? `- Rs. ${Number(s.total_discount).toLocaleString()}` : '—'}
+                          </td>
+                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
                         </tr>
-                      ) : (
-                        salesData.sales.map(s => (
-                          <tr key={s.id} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4 font-mono font-bold text-white text-xs">{s.invoice_number}</td>
-                            <td className="py-3 px-4 text-slate-300 font-mono text-xs">{s.sale_date}</td>
-                            <td className="py-3 px-4 text-slate-300">{s.salesperson_name || 'Counter Staff'}</td>
-                            <td className="py-3 px-4">
-                              <span className="inline-block px-2 py-0.5 rounded text-xs bg-slate-800 text-slate-300 border border-slate-700">
-                                {s.payment_method || 'Cash'}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-center font-mono">{s.total_items}</td>
-                            <td className="py-3 px-4 text-right font-mono text-slate-400">Rs. {Number(s.subtotal || 0).toLocaleString()}</td>
-                            <td className="py-3 px-4 text-right font-mono text-rose-400">
-                              {Number(s.total_discount || 0) > 0 ? `- Rs. ${Number(s.total_discount).toLocaleString()}` : '—'}
-                            </td>
-                            <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {/* TAB 2: PROFIT & LOSS STATEMENT */}
           {activeTab === 'profit' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Hero Net Profit Banner */}
-              <div className={`p-8 rounded-3xl border shadow-2xl relative overflow-hidden backdrop-blur-xl transition-all ${
-                Number(profitData.net_profit) >= 0
-                  ? 'bg-gradient-to-br from-emerald-950/80 via-slate-900/90 to-slate-950 border-emerald-500/40 shadow-emerald-950/50'
-                  : 'bg-gradient-to-br from-rose-950/80 via-slate-900/90 to-slate-950 border-rose-500/40 shadow-rose-950/50'
-              }`}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 text-white backdrop-blur-md border border-white/10">
-                      Accounting Period Result
-                    </span>
-                    <h2 className="text-4xl md:text-5xl font-display font-black text-white mt-4 tracking-tight">
-                      Rs. {Number(profitData.net_profit).toLocaleString()}
-                    </h2>
-                    <p className={`text-sm font-medium mt-2 flex items-center gap-2 ${Number(profitData.net_profit) >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                      {Number(profitData.net_profit) >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-                      <span>{Number(profitData.net_profit) >= 0 ? 'Net Profitable Performance' : 'Net Deficit / Loss Recorded'}</span>
-                    </p>
-                  </div>
+            <div className="space-y-12 animate-fade-in">
+              {/* Hero Net Profit Banner — Clean Editorial Zonation */}
+              <div className="p-8 border-y-2 border-[#2E2822] bg-[#EFEBE3] flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div>
+                  <span className="text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-[#7A6F69] block mb-2">
+                    Accounting Period Result
+                  </span>
+                  <h2 className="text-5xl md:text-6xl font-display font-bold text-[#2E2822] tracking-tight">
+                    Rs. {Number(profitData.net_profit).toLocaleString()}
+                  </h2>
+                  <p className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#7A6F69] mt-3">
+                    {Number(profitData.net_profit) >= 0 ? 'Net Profitable Performance' : 'Net Deficit / Loss Recorded'}
+                  </p>
+                </div>
 
-                  <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 min-w-[260px]">
-                    <div className="flex justify-between text-xs text-slate-400">
-                      <span>Formula Verification:</span>
-                      <span className="font-mono text-white">Rev - COGS - Exp</span>
-                    </div>
-                    <div className="h-px bg-slate-800" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-300 font-medium">Gross Profit Margin:</span>
-                      <span className="font-mono font-bold text-blue-400">
-                        {profitData.revenue > 0 ? `${((profitData.gross_profit / profitData.revenue) * 100).toFixed(1)}%` : '0%'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-300 font-medium">Net Profit Margin:</span>
-                      <span className={`font-mono font-bold ${Number(profitData.net_profit) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {profitData.revenue > 0 ? `${((profitData.net_profit / profitData.revenue) * 100).toFixed(1)}%` : '0%'}
-                      </span>
-                    </div>
+                <div className="space-y-3 min-w-[260px] text-xs font-sans md:border-l md:border-[#C9C0B5] md:pl-8">
+                  <div className="flex justify-between text-[#7A6F69]">
+                    <span>Formula:</span>
+                    <span className="font-mono font-bold text-[#2E2822]">Rev - COGS - Exp</span>
+                  </div>
+                  <div className="h-px bg-[#C9C0B5]" />
+                  <div className="flex justify-between">
+                    <span className="text-[#7A6F69] font-medium">Gross Profit Margin:</span>
+                    <span className="font-mono font-bold text-[#2E2822]">
+                      {profitData.revenue > 0 ? `${((profitData.gross_profit / profitData.revenue) * 100).toFixed(1)}%` : '0%'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#7A6F69] font-medium">Net Profit Margin:</span>
+                    <span className="font-mono font-bold text-[#2E2822]">
+                      {profitData.revenue > 0 ? `${((profitData.net_profit / profitData.revenue) * 100).toFixed(1)}%` : '0%'}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Waterfall Breakdown Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 print:grid-cols-4">
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">1. Gross Revenue</span>
-                  <h3 className="text-2xl font-display font-bold text-emerald-400 mt-2 font-mono">
+              {/* Waterfall Breakdown Cards — Open Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-[#C9C0B5]">
+                <div className="space-y-1">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">1. Gross Revenue</span>
+                  <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     Rs. {Number(profitData.revenue).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Total customer collections</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Total collections</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">2. Cost of Goods Sold</span>
-                  <h3 className="text-2xl font-display font-bold text-amber-400 mt-2 font-mono">
+                <div className="space-y-1 sm:border-l sm:border-[#C9C0B5] sm:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">2. Cost of Goods</span>
+                  <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     - Rs. {Number(profitData.cogs).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Wholesale purchase costs</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Wholesale purchase cost</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">3. Gross Profit</span>
-                  <h3 className="text-2xl font-display font-bold text-blue-400 mt-2 font-mono">
+                <div className="space-y-1 lg:border-l lg:border-[#C9C0B5] lg:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">3. Gross Profit</span>
+                  <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     = Rs. {Number(profitData.gross_profit).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Revenue minus COGS</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Revenue minus COGS</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">4. Store Overhead Expenses</span>
-                  <h3 className="text-2xl font-display font-bold text-rose-400 mt-2 font-mono">
+                <div className="space-y-1 sm:border-l sm:border-[#C9C0B5] sm:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">4. Overheads</span>
+                  <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     - Rs. {Number(profitData.total_expenses).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Utilities, staff, rent, vendors</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Operating expenses</span>
                 </div>
               </div>
 
-              {/* P&L Statement Table */}
-              <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/40">
-                  <h4 className="font-semibold text-white text-sm">Formal P&L Reconciliation Ledger</h4>
-                </div>
-                <div className="p-6 space-y-4 max-w-2xl mx-auto font-mono text-sm">
-                  <div className="flex justify-between py-2 border-b border-slate-800">
-                    <span className="text-slate-300 font-sans font-semibold">Gross Sales Revenue</span>
-                    <span className="text-white font-bold">Rs. {Number(profitData.revenue).toLocaleString()}</span>
+              {/* P&L Statement Table — Open Zonation */}
+              <div className="max-w-2xl mx-auto space-y-6">
+                <h4 className="font-display font-bold text-2xl text-[#2E2822] border-b border-[#2E2822] pb-4">
+                  Formal P&L Reconciliation Ledger
+                </h4>
+                <div className="space-y-4 font-mono text-sm">
+                  <div className="flex justify-between py-2 border-b border-[#C9C0B5]">
+                    <span className="text-[#2E2822] font-sans font-semibold">Gross Sales Revenue</span>
+                    <span className="text-[#2E2822] font-bold">Rs. {Number(profitData.revenue).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-slate-800 text-amber-400">
+                  <div className="flex justify-between py-2 border-b border-[#C9C0B5] text-[#7A6F69]">
                     <span className="font-sans">Less: Cost of Goods Sold (COGS)</span>
                     <span>({Number(profitData.cogs).toLocaleString()})</span>
                   </div>
-                  <div className="flex justify-between py-3 border-b-2 border-slate-700 bg-slate-950/50 px-3 rounded-lg font-bold text-blue-400">
-                    <span className="font-sans uppercase tracking-wider">Gross Operating Profit</span>
+                  <div className="flex justify-between py-4 border-b-2 border-[#2E2822] bg-[#EFEBE3] px-4 font-bold text-[#2E2822]">
+                    <span className="font-sans uppercase tracking-wider text-xs">Gross Operating Profit</span>
                     <span>Rs. {Number(profitData.gross_profit).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-slate-800 text-rose-400">
+                  <div className="flex justify-between py-2 border-b border-[#C9C0B5] text-[#7A6F69]">
                     <span className="font-sans">Less: Store Overheads & Operating Expenses</span>
                     <span>({Number(profitData.total_expenses).toLocaleString()})</span>
                   </div>
-                  <div className={`flex justify-between py-4 px-4 rounded-xl font-bold text-lg ${
-                    Number(profitData.net_profit) >= 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                  }`}>
-                    <span className="font-sans uppercase tracking-wider">Net Profit / (Loss)</span>
+                  <div className="flex justify-between py-6 px-4 border-y-2 border-[#2E2822] font-bold text-xl text-[#2E2822]">
+                    <span className="font-sans uppercase tracking-wider text-sm">Net Profit / (Loss)</span>
                     <span>Rs. {Number(profitData.net_profit).toLocaleString()}</span>
                   </div>
                 </div>
@@ -491,220 +480,188 @@ export function Reports() {
 
           {/* TAB 3: STOCK VALUATION */}
           {activeTab === 'inventory' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Valuation KPIs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 print:grid-cols-3">
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active SKU Count</span>
-                  <h3 className="text-3xl font-display font-bold text-white mt-2">
+            <div className="space-y-12 animate-fade-in">
+              {/* Valuation KPIs — Open Blocks */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
+                <div className="space-y-1">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Active SKU Count</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
                     {inventoryData.summary.total_articles}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Registered product lines</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Registered product lines</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Units in Stock</span>
-                  <h3 className="text-3xl font-display font-bold text-blue-400 mt-2">
+                <div className="space-y-1 sm:border-l sm:border-[#C9C0B5] sm:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Units in Stock</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
                     {inventoryData.summary.total_units}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Physical inventory count</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Physical inventory count</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Wholesale Cost Valuation</span>
-                  <h3 className="text-2xl font-display font-bold text-amber-400 mt-2 font-mono">
+                <div className="space-y-1 sm:border-l sm:border-[#C9C0B5] sm:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Wholesale Valuation</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     Rs. {Number(inventoryData.summary.grand_total_cost).toLocaleString()}
                   </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Capital invested in inventory</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Capital invested</span>
                 </div>
               </div>
 
-              {/* Valuation Table */}
-              <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
-                  <h4 className="font-semibold text-white text-sm">Stock Valuation Audit Sheet</h4>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3.5 px-4">SKU</th>
-                        <th className="py-3.5 px-4">Article Name</th>
-                        <th className="py-3.5 px-4">Category</th>
-                        <th className="py-3.5 px-4 text-center">Stock Qty</th>
-                        <th className="py-3.5 px-4 text-right">Unit Cost</th>
-                        <th className="py-3.5 px-4 text-right">Total Cost Value</th>
+              {/* Valuation Table — Open Layout */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                      <th className="py-4 pr-4">SKU</th>
+                      <th className="py-4 px-4">Article Name</th>
+                      <th className="py-4 px-4">Category</th>
+                      <th className="py-4 px-4 text-center">Stock Qty</th>
+                      <th className="py-4 px-4 text-right">Unit Cost</th>
+                      <th className="py-4 pl-4 text-right">Total Cost Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                    {inventoryData.articles.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-xs">
+                          No active articles found in catalog.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {inventoryData.articles.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-500">
-                            No active articles found in catalog.
-                          </td>
+                    ) : (
+                      inventoryData.articles.map(art => (
+                        <tr key={art.id} className="hover:bg-[#EFEBE3] transition-colors">
+                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-xs">{art.sku}</td>
+                          <td className="py-5 px-4 font-bold text-[#2E2822]">{art.name}</td>
+                          <td className="py-5 px-4 text-[#7A6F69] text-xs">{art.category}</td>
+                          <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822]">{art.quantity}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">Rs. {Number(art.wholesale_price || 0).toLocaleString()}</td>
+                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(art.total_cost_value || 0).toLocaleString()}</td>
                         </tr>
-                      ) : (
-                        inventoryData.articles.map(art => (
-                          <tr key={art.id} className="hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4 font-mono font-bold text-brand-light text-xs">{art.sku}</td>
-                            <td className="py-3 px-4 font-medium text-white">{art.name}</td>
-                            <td className="py-3 px-4 text-slate-400 text-xs">{art.category}</td>
-                            <td className="py-3 px-4 text-center font-mono font-bold text-white">{art.quantity}</td>
-                            <td className="py-3 px-4 text-right font-mono text-slate-400">Rs. {Number(art.wholesale_price || 0).toLocaleString()}</td>
-                            <td className="py-3 px-4 text-right font-mono font-bold text-amber-400">Rs. {Number(art.total_cost_value || 0).toLocaleString()}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {/* TAB 4: TOP ARTICLES */}
           {activeTab === 'top' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* #1 Best Seller Banner */}
+            <div className="space-y-12 animate-fade-in">
+              {/* #1 Best Seller Banner — Editorial Zonation */}
               {topArticlesData.length > 0 && (
-                <div className="p-6 rounded-3xl bg-gradient-to-r from-brand/20 via-slate-900 to-amber-500/10 border border-brand/30 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 shadow-lg shadow-amber-500/10">
-                      <Award className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold uppercase tracking-wider text-amber-400">🏆 Period Best Seller #1</span>
-                      <h3 className="text-2xl font-display font-bold text-white mt-0.5">{topArticlesData[0].name}</h3>
-                      <span className="text-xs text-slate-400 font-mono">SKU: {topArticlesData[0].sku} | Category: {topArticlesData[0].category}</span>
-                    </div>
+                <div className="p-8 border-y-2 border-[#2E2822] bg-[#EFEBE3] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <span className="text-[10px] font-sans font-bold uppercase tracking-[0.18em] text-[#7A6F69] block mb-1">Period Best Seller #1</span>
+                    <h3 className="text-3xl font-display font-bold text-[#2E2822]">{topArticlesData[0].name}</h3>
+                    <span className="text-xs text-[#7A6F69] font-mono mt-1 block">SKU: {topArticlesData[0].sku} | Category: {topArticlesData[0].category}</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-slate-400 uppercase tracking-wider">Revenue Generated</span>
-                    <h4 className="text-2xl font-mono font-bold text-emerald-400 mt-0.5">Rs. {Number(topArticlesData[0].total_revenue).toLocaleString()}</h4>
-                    <span className="text-xs font-semibold text-blue-400">{topArticlesData[0].total_quantity_sold} Units Dispatched</span>
+                  <div className="md:text-right font-sans">
+                    <span className="text-[10px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] block">Revenue Generated</span>
+                    <h4 className="text-3xl font-mono font-bold text-[#2E2822] mt-1">Rs. {Number(topArticlesData[0].total_revenue).toLocaleString()}</h4>
+                    <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#7A6F69] block mt-1">{topArticlesData[0].total_quantity_sold} Units Dispatched</span>
                   </div>
                 </div>
               )}
 
-              {/* Top Articles Table */}
-              <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
-                  <h4 className="font-semibold text-white text-sm">Top Performing Articles Ranking (Top {topLimit})</h4>
-                  <span className="text-xs text-slate-400">Ranked by volume & sales contribution</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3.5 px-4 text-center w-16">Rank</th>
-                        <th className="py-3.5 px-4">SKU</th>
-                        <th className="py-3.5 px-4">Article Name</th>
-                        <th className="py-3.5 px-4">Category</th>
-                        <th className="py-3.5 px-4 text-center">Units Sold</th>
-                        <th className="py-3.5 px-4 text-right">Total Revenue Contribution</th>
+              {/* Top Articles Table — Open Layout */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                      <th className="py-4 pr-4 text-center w-16">Rank</th>
+                      <th className="py-4 px-4">SKU</th>
+                      <th className="py-4 px-4">Article Name</th>
+                      <th className="py-4 px-4">Category</th>
+                      <th className="py-4 px-4 text-center">Units Sold</th>
+                      <th className="py-4 pl-4 text-right">Revenue Contribution</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                    {topArticlesData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-xs">
+                          No article sales recorded in this period.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {topArticlesData.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-500">
-                            No article sales recorded in this period.
-                          </td>
-                        </tr>
-                      ) : (
-                        topArticlesData.map((art, idx) => {
-                          const rank = idx + 1
-                          return (
-                            <tr key={art.id} className="hover:bg-slate-800/40 transition-colors">
-                              <td className="py-3.5 px-4 text-center">
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                                  rank === 1 ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' :
-                                  rank === 2 ? 'bg-slate-300 text-slate-950' :
-                                  rank === 3 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-400'
-                                }`}>
-                                  {rank}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 font-mono font-bold text-brand-light text-xs">{art.sku}</td>
-                              <td className="py-3.5 px-4 font-semibold text-white">{art.name}</td>
-                              <td className="py-3.5 px-4 text-slate-400 text-xs">{art.category}</td>
-                              <td className="py-3.5 px-4 text-center font-mono font-bold text-blue-400">{art.total_quantity_sold}</td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-400">Rs. {Number(art.total_revenue || 0).toLocaleString()}</td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                    ) : (
+                      topArticlesData.map((art, idx) => {
+                        const rank = idx + 1
+                        return (
+                          <tr key={art.id} className="hover:bg-[#EFEBE3] transition-colors">
+                            <td className="py-5 pr-4 text-center font-mono font-bold text-[#2E2822]">
+                              #{rank}
+                            </td>
+                            <td className="py-5 px-4 font-mono font-bold text-[#2E2822] text-xs">{art.sku}</td>
+                            <td className="py-5 px-4 font-bold text-[#2E2822]">{art.name}</td>
+                            <td className="py-5 px-4 text-[#7A6F69] text-xs">{art.category}</td>
+                            <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822]">{art.total_quantity_sold}</td>
+                            <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(art.total_revenue || 0).toLocaleString()}</td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {/* TAB 5: EXPENSE BREAKDOWN */}
           {activeTab === 'expenses' && (
-            <div className="space-y-6 animate-fade-in">
-              {/* Expense Total Card */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Store Overheads</span>
-                  <h3 className="text-3xl font-display font-bold text-rose-400 mt-1 font-mono">
-                    Rs. {Number(expenseData.summary.grand_total).toLocaleString()}
-                  </h3>
-                  <span className="text-xs text-slate-500 mt-1 block">Aggregated overhead expenditures for selected period</span>
-                </div>
-                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                  <PieChart className="w-8 h-8" />
-                </div>
+            <div className="space-y-12 animate-fade-in">
+              {/* Expense Total Block */}
+              <div className="pb-8 border-b border-[#C9C0B5]">
+                <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Total Store Overheads</span>
+                <h3 className="text-5xl font-display font-bold text-[#2E2822] mt-2 font-mono tracking-tight">
+                  Rs. {Number(expenseData.summary.grand_total).toLocaleString()}
+                </h3>
+                <span className="text-xs font-sans text-[#7A6F69] mt-2 block">Aggregated expenditures for selected period</span>
               </div>
 
-              {/* Expense Breakdown Matrix */}
-              <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-                <div className="p-4 border-b border-slate-800 bg-slate-950/40">
-                  <h4 className="font-semibold text-white text-sm">Overhead Category Distribution</h4>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3.5 px-6">Expense Category</th>
-                        <th className="py-3.5 px-6 text-center">Transaction Count</th>
-                        <th className="py-3.5 px-6 text-right">Total Amount Disbursed</th>
-                        <th className="py-3.5 px-6 w-64">Share of Total Overheads</th>
+              {/* Expense Breakdown Matrix — Open Layout */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                      <th className="py-4 pr-6">Expense Category</th>
+                      <th className="py-4 px-6 text-center">Count</th>
+                      <th className="py-4 px-6 text-right">Amount Disbursed</th>
+                      <th className="py-4 pl-6 w-64">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                    {expenseData.categories.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-[#7A6F69] text-xs">
+                          No expense disbursements recorded in this period.
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {expenseData.categories.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="py-12 text-center text-slate-500">
-                            No expense disbursements recorded in this period.
-                          </td>
-                        </tr>
-                      ) : (
-                        expenseData.categories.map(cat => {
-                          const percentage = expenseData.summary.grand_total > 0
-                            ? ((cat.total_amount / expenseData.summary.grand_total) * 100).toFixed(1)
-                            : 0
-                          return (
-                            <tr key={cat.category} className="hover:bg-slate-800/40 transition-colors">
-                              <td className="py-4 px-6 font-semibold text-white">{cat.category}</td>
-                              <td className="py-4 px-6 text-center font-mono text-slate-300">{cat.expense_count}</td>
-                              <td className="py-4 px-6 text-right font-mono font-bold text-rose-400">Rs. {Number(cat.total_amount || 0).toLocaleString()}</td>
-                              <td className="py-4 px-6">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex-1 h-2.5 rounded-full bg-slate-800 overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full transition-all" style={{ width: `${percentage}%` }} />
-                                  </div>
-                                  <span className="font-mono text-xs text-slate-300 w-12 text-right">{percentage}%</span>
+                    ) : (
+                      expenseData.categories.map(cat => {
+                        const percentage = expenseData.summary.grand_total > 0
+                          ? ((cat.total_amount / expenseData.summary.grand_total) * 100).toFixed(1)
+                          : 0
+                        return (
+                          <tr key={cat.category} className="hover:bg-[#EFEBE3] transition-colors">
+                            <td className="py-5 pr-6 font-bold text-[#2E2822]">{cat.category}</td>
+                            <td className="py-5 px-6 text-center font-mono text-[#7A6F69]">{cat.expense_count}</td>
+                            <td className="py-5 px-6 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(cat.total_amount || 0).toLocaleString()}</td>
+                            <td className="py-5 pl-6">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 h-1 bg-[#C9C0B5] overflow-hidden">
+                                  <div className="h-full bg-[#2E2822] transition-all" style={{ width: `${percentage}%` }} />
                                 </div>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                                <span className="font-mono text-xs font-bold text-[#2E2822] w-12 text-right">{percentage}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

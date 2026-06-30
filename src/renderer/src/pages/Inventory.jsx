@@ -218,80 +218,78 @@ export function Inventory() {
   const isPriceWarning = Number(formData.retail_price) > 0 && Number(formData.retail_price) < Number(formData.wholesale_price)
 
   return (
-    <div className="space-y-8 pb-12 relative animate-fade-in">
+    <div className="space-y-8 pb-16 relative animate-fade-in text-[#2E2822]">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-bounce">
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
           <div
-            className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border font-medium text-sm ${
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
-                : 'bg-rose-950/90 border-rose-500/50 text-rose-200'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
             }`}
           >
             {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
             )}
             <span>{toast.message}</span>
           </div>
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      {/* Header Bar — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
         <div>
-          <div className="flex items-center gap-2 text-brand-light font-medium text-sm mb-1">
-            <Package className="w-4 h-4" />
-            <span>Catalog & Stock Management</span>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Catalog & Stock Management
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
             Article Inventory
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[#7A6F69] font-sans text-sm mt-2">
             Browse auto-generated SKUs and set wholesale/retail pricing tiers.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-
+        <div className="flex items-center gap-4">
           <button
             onClick={() => setIsStockInOpen(true)}
-            className="px-5 py-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-medium flex items-center justify-center gap-2 shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+            className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
           >
-            <Truck className="w-5 h-5 text-emerald-400" />
+            <Truck className="w-4 h-4 text-[#2E2822]" />
             <span>Receive Shipment</span>
           </button>
 
           <button
             onClick={() => handleOpenDrawer()}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium flex items-center justify-center gap-2 shadow-lg shadow-brand/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+            className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
           >
-            <Plus className="w-5 h-5" />
-            <span>Register New Article</span>
+            <Plus className="w-4 h-4" />
+            <span>Register Article</span>
           </button>
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/80 backdrop-blur-md">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+      {/* Filter & Search Toolbar — Borderless Spatial Row */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search SKU (SF-00001), article name, or vendor code..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+            className="w-full pl-7 pr-4 py-2 bg-transparent border-b border-[#C9C0B5] text-sm text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-colors font-sans"
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-6">
           <select
             value={selectedSupplier}
             onChange={(e) => setSelectedSupplier(e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-medium text-slate-300 focus:outline-none focus:border-brand"
+            className="py-2 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-semibold uppercase tracking-[0.1em] text-[#2E2822] focus:outline-none focus:border-[#2E2822]"
           >
             <option value="">All Suppliers</option>
             {suppliers.map((sup) => (
@@ -304,7 +302,7 @@ export function Inventory() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-medium text-slate-300 focus:outline-none focus:border-brand"
+            className="py-2 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-semibold uppercase tracking-[0.1em] text-[#2E2822] focus:outline-none focus:border-[#2E2822]"
           >
             <option value="">All Categories</option>
             {categories.map((cat) => (
@@ -316,10 +314,10 @@ export function Inventory() {
 
           <button
             onClick={() => setFilterActiveOnly(!filterActiveOnly)}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[2px] text-xs font-sans font-bold tracking-[0.12em] uppercase transition-all ${
               filterActiveOnly
-                ? 'bg-brand/20 border-brand/40 text-brand-light'
-                : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800'
+                ? 'bg-[#EFEBE3] text-[#2E2822] font-bold'
+                : 'bg-transparent text-[#7A6F69] hover:text-[#2E2822]'
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -328,7 +326,7 @@ export function Inventory() {
 
           <button
             onClick={fetchArticles}
-            className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
+            className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
             title="Refresh Catalog"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -336,22 +334,22 @@ export function Inventory() {
         </div>
       </div>
 
-      {/* Articles Table */}
-      <div className="glass-card rounded-3xl border border-slate-800/80 overflow-hidden shadow-2xl">
+      {/* Articles Table — Strictly Open Single-Axis Rules */}
+      <div className="w-full overflow-x-auto">
         {loading && articles.length === 0 ? (
-          <div className="p-16 flex flex-col items-center justify-center text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-brand mb-3" />
-            <span>Loading catalog from SQLite...</span>
+          <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <span className="font-sans text-xs tracking-[0.18em] uppercase">Synchronizing Catalog...</span>
           </div>
         ) : articles.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mx-auto mb-4">
-              <Package className="w-8 h-8" />
+          <div className="py-20 text-center">
+            <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
+              <Package className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-display font-semibold text-white mb-1">
+            <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
               No Articles Found
             </h3>
-            <p className="text-sm text-slate-400 max-w-sm mx-auto mb-6">
+            <p className="text-sm font-sans text-[#7A6F69] max-w-sm mx-auto mb-6">
               {searchTerm || selectedSupplier || selectedCategory
                 ? 'No catalog items match your active search filters.'
                 : 'Register your first article to auto-generate SKUs and start tracking inventory.'}
@@ -359,7 +357,7 @@ export function Inventory() {
             {!searchTerm && !selectedSupplier && !selectedCategory && (
               <button
                 onClick={() => handleOpenDrawer()}
-                className="px-5 py-2.5 rounded-xl bg-brand/20 border border-brand/40 text-brand-light font-medium text-sm hover:bg-brand/30 transition-all inline-flex items-center gap-2"
+                className="px-6 py-3 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase hover:bg-[#4A423A] transition-all inline-flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>Register First Article</span>
@@ -367,157 +365,138 @@ export function Inventory() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800/80 bg-slate-900/60 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                  <th className="py-4 px-6">SKU / Tag</th>
-                  <th className="py-4 px-6">Supplier & Code</th>
-                  <th className="py-4 px-6">Article Name & Category</th>
-                  <th className="py-4 px-6 text-right">Wholesale</th>
-                  <th className="py-4 px-6 text-right">Retail Price</th>
-                  <th className="py-4 px-6 text-center">In Stock</th>
-                  <th className="py-4 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50 text-sm">
-                {articles.map((art) => {
-                  const isOutOfStock = art.quantity === 0
-                  return (
-                    <tr
-                      key={art.id}
-                      className={`transition-colors hover:bg-slate-900/40 ${
-                        !art.is_active ? 'opacity-50 bg-slate-950/60' : ''
-                      }`}
-                    >
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <span className="font-mono text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 text-brand-light tracking-wider shadow-md inline-flex items-center gap-1.5">
-                          <Tag className="w-3 h-3 text-roseaccent" />
-                          <span>{art.sku}</span>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.18em] text-[#7A6F69] font-bold font-sans">
+                <th className="py-4 pr-6">SKU / Tag</th>
+                <th className="py-4 px-6">Supplier & Code</th>
+                <th className="py-4 px-6">Article Name & Category</th>
+                <th className="py-4 px-6 text-right">Wholesale</th>
+                <th className="py-4 px-6 text-right">Retail Price</th>
+                <th className="py-4 px-6 text-center">In Stock</th>
+                <th className="py-4 pl-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+              {articles.map((art) => {
+                const isOutOfStock = art.quantity === 0
+                return (
+                  <tr
+                    key={art.id}
+                    className={`transition-colors hover:bg-[#EFEBE3] ${
+                      !art.is_active ? 'opacity-40' : ''
+                    }`}
+                  >
+                    <td className="py-5 pr-6 whitespace-nowrap">
+                      <span className="font-mono text-xs font-bold text-[#2E2822] tracking-wider inline-flex items-center gap-2">
+                        <Tag className="w-3.5 h-3.5 text-[#7A6F69]" />
+                        <span>{art.sku}</span>
+                      </span>
+                    </td>
+                    <td className="py-5 px-6 whitespace-nowrap">
+                      <div className="font-bold text-[#2E2822] text-xs flex items-center gap-2">
+                        <span className="font-mono text-[11px] text-[#7A6F69] uppercase tracking-wider">
+                          {art.supplier_code}
                         </span>
-                      </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <div className="font-medium text-white text-xs flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
-                            {art.supplier_code}
-                          </span>
-                          <span>{art.supplier_name}</span>
-                        </div>
-                        <div className="text-slate-400 text-xs font-mono mt-0.5">
-                          #{art.supplier_article_code}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-semibold text-white truncate max-w-xs">
-                          {art.name}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                          <span className="px-2 py-0.5 rounded-full bg-slate-800/80 text-brand-light text-[11px] font-medium border border-slate-700/50">
-                            {art.category}
-                          </span>
-                          {art.colour && <span>• {art.colour}</span>}
-                          {art.size && <span>• Size: {art.size}</span>}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-right font-mono text-slate-400 text-xs">
-                        Rs. {Number(art.wholesale_price).toLocaleString()}
-                      </td>
-                      <td className="py-4 px-6 text-right font-mono font-bold text-emerald-400 text-sm">
-                        Rs. {Number(art.retail_price).toLocaleString()}
-                      </td>
-                      <td className="py-4 px-6 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
-                            isOutOfStock
-                              ? 'bg-rose-500/10 border-rose-500/40 text-rose-400 animate-pulse'
-                              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isOutOfStock ? 'bg-rose-500' : 'bg-emerald-400'
-                            }`}
-                          />
-                          <span>{art.quantity} Units</span>
+                        <span>{art.supplier_name}</span>
+                      </div>
+                      <div className="text-[#7A6F69] text-xs font-mono mt-0.5">
+                        #{art.supplier_article_code}
+                      </div>
+                    </td>
+                    <td className="py-5 px-6">
+                      <div className="font-bold text-[#2E2822] text-base font-display">
+                        {art.name}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-[#7A6F69] mt-1 uppercase tracking-wider">
+                        <span className="font-semibold text-[#2E2822]">
+                          {art.category}
                         </span>
-                      </td>
-                      <td className="py-4 px-6 text-right whitespace-nowrap space-x-2">
-                        <button
-                          onClick={() => setHistoryArticle(art)}
-                          className="p-2 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-light border border-brand/30 transition-all"
-                          title="View Stock Movement Ledger"
-                        >
-                          <History className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenDrawer(art)}
-                          className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/60"
-                          title="Edit Article & Pricing"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(art)}
-                          className={`p-2 rounded-xl transition-all border ${
-                            art.is_active
-                              ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30'
-                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          }`}
-                          title={art.is_active ? 'Archive Article' : 'Activate Article'}
-                        >
-                          {art.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {art.colour && <span>· {art.colour}</span>}
+                        {art.size && <span>· Size: {art.size}</span>}
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-xs">
+                      Rs. {Number(art.wholesale_price).toLocaleString()}
+                    </td>
+                    <td className="py-5 px-6 text-right font-mono font-bold text-[#2E2822] text-base">
+                      Rs. {Number(art.retail_price).toLocaleString()}
+                    </td>
+                    <td className="py-5 px-6 text-center whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1.5 font-mono text-xs font-bold ${
+                          isOutOfStock ? 'text-[#7A6F69]' : 'text-[#2E2822]'
+                        }`}
+                      >
+                        <span>{art.quantity} Units</span>
+                      </span>
+                    </td>
+                    <td className="py-5 pl-6 text-right whitespace-nowrap space-x-3">
+                      <button
+                        onClick={() => setHistoryArticle(art)}
+                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                        title="View Stock Movement Ledger"
+                      >
+                        <History className="w-4 h-4 inline" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenDrawer(art)}
+                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                        title="Edit Article & Pricing"
+                      >
+                        <Edit2 className="w-4 h-4 inline" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(art)}
+                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                        title={art.is_active ? 'Archive Article' : 'Activate Article'}
+                      >
+                        {art.is_active ? <PowerOff className="w-4 h-4 inline" /> : <Power className="w-4 h-4 inline" />}
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Slide-Over Drawer Modal */}
+      {/* Slide-Over Drawer Modal — Borderless Editorial */}
       {isDrawerOpen && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border-l border-slate-800 h-full flex flex-col justify-between shadow-2xl animate-slide-left">
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in">
+          <div className="w-full max-w-lg bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+            <div className="p-8 border-b border-[#C9C0B5] flex items-baseline justify-between">
               <div>
-                <h3 className="text-xl font-display font-bold text-white flex items-center gap-2">
-                  <span>{editingArticle ? `Edit SKU ${editingArticle.sku}` : 'Register New Article'}</span>
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  Catalog Registry
+                </span>
+                <h3 className="text-2xl font-display font-bold text-[#2E2822]">
+                  {editingArticle ? `Edit SKU ${editingArticle.sku}` : 'Register New Article'}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {editingArticle
-                    ? 'Modify article details, category, or pricing tiers'
-                    : 'SKU barcode will be automatically generated upon submission'}
-                </p>
               </div>
               <button
                 onClick={handleCloseDrawer}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-all"
+                className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Drawer Form Body */}
-            <form id="articleForm" onSubmit={handleSubmit} className="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
+            <form id="articleForm" onSubmit={handleSubmit} className="p-8 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
               {isPriceWarning && (
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-start gap-3 text-amber-200 text-xs">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="font-semibold block mb-0.5">Pricing Warning</strong>
-                    Retail Price (Rs. {formData.retail_price}) is lower than Wholesale Cost (Rs. {formData.wholesale_price}). You will sell at a loss!
-                  </div>
+                <div className="p-4 bg-[#EFEBE3] border-b border-[#2E2822] text-[#2E2822] text-xs font-sans">
+                  <strong className="font-bold block uppercase tracking-wider mb-1">Pricing Warning</strong>
+                  Retail Price (Rs. {formData.retail_price}) is lower than Wholesale Cost (Rs. {formData.wholesale_price}).
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                    <span>Wholesale Supplier</span>
-                    <span className="text-roseaccent">*</span>
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                    Wholesale Supplier *
                   </label>
                   <select
                     name="supplier_id"
@@ -525,7 +504,7 @@ export function Inventory() {
                     onChange={handleFormChange}
                     disabled={!!editingArticle}
                     required
-                    className="w-full px-3.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-brand disabled:opacity-50"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-semibold focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
                   >
                     <option value="" disabled>Select Supplier...</option>
                     {suppliers.map((sup) => (
@@ -537,9 +516,8 @@ export function Inventory() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                    <span>Vendor Article Code</span>
-                    <span className="text-roseaccent">*</span>
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                    Vendor Code *
                   </label>
                   <input
                     type="text"
@@ -549,15 +527,14 @@ export function Inventory() {
                     disabled={!!editingArticle}
                     placeholder="e.g. ART-101"
                     required
-                    className="w-full px-3.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-xs uppercase placeholder-slate-600 focus:outline-none focus:border-brand disabled:opacity-50"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs uppercase placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                  <span>Article Display Name</span>
-                  <span className="text-roseaccent">*</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Article Display Name *
                 </label>
                 <input
                   type="text"
@@ -566,20 +543,20 @@ export function Inventory() {
                   onChange={handleFormChange}
                   placeholder="e.g. Embroidered Chiffon Suit 3-Piece"
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-brand font-medium"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                     Category
                   </label>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-brand"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-semibold focus:outline-none focus:border-[#2E2822]"
                   >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -588,7 +565,7 @@ export function Inventory() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                     Colour
                   </label>
                   <input
@@ -597,12 +574,12 @@ export function Inventory() {
                     value={formData.colour}
                     onChange={handleFormChange}
                     placeholder="e.g. Maroon"
-                    className="w-full px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-brand"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                     Size / Fit
                   </label>
                   <input
@@ -610,21 +587,21 @@ export function Inventory() {
                     name="size"
                     value={formData.size}
                     onChange={handleFormChange}
-                    placeholder="e.g. Large / Free"
-                    className="w-full px-3 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-brand"
+                    placeholder="e.g. Free"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-4">
-                <div className="text-xs font-bold uppercase tracking-wider text-brand-light flex items-center gap-1.5">
-                  <Banknote className="w-3.5 h-3.5" />
-                  <span>Pricing & Cost Tiers (Rs.)</span>
+              {/* Subtle Zonation Shift for Pricing */}
+              <div className="p-6 bg-[#EFEBE3] space-y-6 rounded-[2px]">
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2E2822] border-b border-[#C9C0B5] pb-2">
+                  Pricing & Cost Tiers (Rs.)
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">Wholesale Cost (Min 1)</label>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">Wholesale Cost</label>
                     <input
                       type="number"
                       name="wholesale_price"
@@ -634,12 +611,12 @@ export function Inventory() {
                       min="1"
                       step="any"
                       required
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-brand"
+                      className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-base focus:outline-none focus:border-[#2E2822]"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-emerald-400">Retail Sale Price</label>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-[#2E2822] uppercase tracking-[0.14em] block">Retail Sale Price</label>
                     <input
                       type="number"
                       name="retail_price"
@@ -649,55 +626,50 @@ export function Inventory() {
                       min="0"
                       step="any"
                       required
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-emerald-500/50 text-white font-mono text-sm font-bold focus:outline-none focus:border-emerald-400"
+                      className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono text-base font-bold focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    {editingArticle ? 'Current Stock Count' : 'Initial Stock Quantity'}
-                  </label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleFormChange}
-                    disabled={!!editingArticle}
-                    min="0"
-                    required
-                    className="w-full px-3.5 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-brand disabled:opacity-50"
-                  />
-                  {editingArticle && (
-                    <p className="text-[10px] text-slate-500">Use Stock IN or adjustment batch to modify count.</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  {editingArticle ? 'Current Stock Count' : 'Initial Stock Quantity'}
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleFormChange}
+                  disabled={!!editingArticle}
+                  min="0"
+                  required
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
+                />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Internal Notes / Description
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Internal Notes
                 </label>
                 <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleFormChange}
                   rows={2}
-                  placeholder="e.g. Spring collection fabric specifications."
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-600 focus:outline-none focus:border-brand resize-none"
+                  placeholder="Specifications or remarks..."
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>
             </form>
 
             {/* Drawer Footer Buttons */}
-            <div className="p-6 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-3">
+            <div className="p-8 border-t border-[#C9C0B5] bg-[#EFEBE3] flex items-center justify-end gap-4">
               <button
                 type="button"
                 onClick={handleCloseDrawer}
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all"
+                className="px-6 py-3 rounded-[2px] bg-transparent text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
               >
                 Cancel
               </button>
@@ -705,9 +677,9 @@ export function Inventory() {
                 type="submit"
                 form="articleForm"
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-brand/30 transition-all disabled:opacity-50"
+                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>{submitting ? 'Saving...' : editingArticle ? 'Update Article' : 'Register Article'}</span>
               </button>
             </div>

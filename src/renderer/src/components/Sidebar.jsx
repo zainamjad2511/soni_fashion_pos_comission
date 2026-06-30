@@ -2,14 +2,14 @@ import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import logoImg from '../assets/logo.jpg'
 
-// ── Colour tokens (white theme, cream ivory accents) ──────────────────────────
+// ── Colour tokens (Borderless Editorial zonation) ──────────────────────────
 const C = {
-  bg:      '#F7F5F0', // cream ivory sidebar
-  hover:   '#EDE8DF', // parchment hover
-  active:  '#EDE8DF', // parchment active state
-  border:  '#E0DAD2', // hairline
+  bg:      '#EFEBE3', // soft alabaster sidebar (zonation shift)
+  hover:   '#E4DBC8', // parchment hover
+  active:  '#E4DBC8', // parchment active state
+  border:  '#C9C0B5', // hairline single-axis rule
   ink:     '#2E2822', // primary ink
-  muted:   '#8C8078', // secondary labels
+  muted:   '#7A6F69', // secondary labels
 }
 
 // ── Blueprint SVG Icons — thin-stroke, technical line-drawing ─────────────────
@@ -114,11 +114,11 @@ export function Sidebar() {
         }}
       >
         {/* Brand */}
-        <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 10px', display: 'flex', alignItems: 'center', gap: 10, minHeight: 60 }}>
-          <img src={logoImg} alt="SF" style={{ width: 34, height: 34, objectFit: 'cover', border: `1px solid ${C.border}`, flexShrink: 0 }} />
+        <div style={{ borderBottom: `1px solid ${C.border}`, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 12, minHeight: 64 }}>
+          <img src={logoImg} alt="SF" style={{ width: 34, height: 34, objectFit: 'cover', flexShrink: 0 }} />
           <div style={{ overflow: 'hidden', opacity: expanded ? 1 : 0, transition: 'opacity 0.15s ease', whiteSpace: 'nowrap' }}>
-            <div style={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, fontSize: '0.85rem', color: C.ink }}>Soni Fashion</div>
-            <div style={{ fontFamily: '"Lato", sans-serif', fontSize: '0.58rem', color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 2 }}>POS Unlimited</div>
+            <div style={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, fontSize: '0.95rem', color: C.ink, letterSpacing: '-0.01em' }}>Soni Fashion</div>
+            <div style={{ fontFamily: '"Lato", sans-serif', fontSize: '0.58rem', color: C.muted, letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 2 }}>POS Catalog</div>
           </div>
         </div>
 

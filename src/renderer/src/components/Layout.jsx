@@ -9,14 +9,14 @@ export function Layout() {
   const isPos = location.pathname === '/sale'
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-white font-sans text-[#2E2822] antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F7F5F0] font-sans text-[#2E2822] antialiased">
       <Sidebar />
 
       {/* Main Content Area — full width, no max-width cap */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-white">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#F7F5F0]">
         {!isPos && <TopBar />}
 
-        <main className={`flex-1 overflow-y-auto custom-scrollbar ${isPos ? 'p-0 flex flex-col' : 'p-6'}`}>
+        <main className={`flex-1 overflow-y-auto custom-scrollbar ${isPos ? 'p-0 flex flex-col' : 'p-8 md:p-12'}`}>
           <ErrorBoundary>
             <div className={isPos ? 'w-full flex-1 flex flex-col animate-fade-in' : 'w-full animate-fade-in'}>
               <Outlet />

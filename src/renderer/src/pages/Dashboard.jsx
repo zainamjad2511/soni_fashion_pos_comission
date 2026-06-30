@@ -113,169 +113,155 @@ export function Dashboard() {
   const totalStockUnits = articles.reduce((sum, art) => sum + (Number(art.quantity) || 0), 0)
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-in">
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+    <div className="space-y-12 pb-20 animate-fade-in text-[#2E2822]">
+      {/* Header Bar — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
         <div>
-          <div className="flex items-center gap-2 text-brand-light font-medium text-sm mb-1">
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Executive Overview & Analytics</span>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Executive Overview & Analytics
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">
-            Live Intelligence Dashboard
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
+            Live Intelligence
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[#7A6F69] font-sans text-sm mt-2 max-w-2xl">
             Real-time telemetry on daily cash flows, active catalog articles, and retail checkout performance.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-6">
           <div className="text-right hidden sm:block">
-            <div className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Last Synchronized</div>
-            <div className="text-xs font-mono text-slate-300">{lastRefreshed.toLocaleTimeString()}</div>
+            <div className="text-[10px] text-[#7A6F69] uppercase tracking-[0.18em] font-semibold">Last Synchronized</div>
+            <div className="text-xs font-mono text-[#2E2822] font-bold mt-0.5">{lastRefreshed.toLocaleTimeString()}</div>
           </div>
           <button
             onClick={loadDashboardMetrics}
             disabled={loading}
-            className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-2 text-xs font-semibold transition-all shadow-md active:scale-95"
+            className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] flex items-center gap-2.5 text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-brand-light' : ''}`} />
-            <span>Refresh Telemetry</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Primary Financial KPIs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Total Sales */}
-        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Total Sales</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Banknote className="w-5 h-5" />
+      {/* Primary Financial KPIs — Spatial Grouping & Typographic Scale (No Boxes) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 py-4 border-b border-[#C9C0B5]">
+        {/* Metric 1: Total Sales */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3">
+              Total Sales
+            </div>
+            <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
+              {loading ? '...' : `Rs. ${todayRevenue.toLocaleString()}`}
             </div>
           </div>
-          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {loading ? '...' : `Rs. ${todayRevenue.toLocaleString()}`}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-            <span>Today's aggregate revenue</span>
+          <div className="text-xs font-sans text-[#7A6F69] mt-3">
+            Today's aggregate revenue
           </div>
         </div>
 
-        {/* Card 2: Gross Profit */}
-        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-cyan-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-cyan-950/20 via-slate-900 to-slate-900">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Gross Profit</span>
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-              <TrendingUp className="w-5 h-5" />
+        {/* Metric 2: Gross Profit */}
+        <div className="flex flex-col justify-between border-t sm:border-t-0 sm:border-l border-[#C9C0B5] pt-6 sm:pt-0 sm:pl-10">
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3">
+              Gross Profit
+            </div>
+            <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
+              {loading ? '...' : `Rs. ${todayGrossProfit.toLocaleString()}`}
             </div>
           </div>
-          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {loading ? '...' : `Rs. ${todayGrossProfit.toLocaleString()}`}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span>Estimated margin after COGS</span>
+          <div className="text-xs font-sans text-[#7A6F69] mt-3">
+            Estimated margin after COGS
           </div>
         </div>
 
-        {/* Card 3: Customers Dealt */}
-        <div className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-rose-500/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-rose-950/20 via-slate-900 to-slate-900">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-400">Customers Dealt</span>
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <Users className="w-5 h-5" />
+        {/* Metric 3: Customers Dealt */}
+        <div className="flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-[#C9C0B5] pt-6 lg:pt-0 lg:pl-10">
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3">
+              Customers Dealt
+            </div>
+            <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
+              {loading ? '...' : todaySalesCount}
             </div>
           </div>
-          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {loading ? '...' : todaySalesCount}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <span>Completed sales checkouts</span>
+          <div className="text-xs font-sans text-[#7A6F69] mt-3">
+            Completed sales checkouts
           </div>
         </div>
 
-        {/* Card 4: Stock Count */}
+        {/* Metric 4: Stock Count */}
         <div
           onClick={() => navigate('/inventory')}
-          className="glass-card p-6 rounded-3xl border border-slate-800/80 relative overflow-hidden group hover:border-brand/40 transition-all duration-300 shadow-xl bg-gradient-to-br from-brand/10 via-slate-900 to-slate-900 cursor-pointer"
+          className="flex flex-col justify-between border-t sm:border-t-0 sm:border-l border-[#C9C0B5] pt-6 sm:pt-0 sm:pl-10 cursor-pointer group"
         >
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-light">Stock Count</span>
-            <div className="w-10 h-10 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light">
-              <Package className="w-5 h-5" />
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3 group-hover:text-[#2E2822] transition-colors">
+              Stock Count →
+            </div>
+            <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
+              {loading ? '...' : totalStockUnits}
             </div>
           </div>
-          <div className="text-3xl font-display font-bold text-white tracking-tight font-mono mb-1">
-            {loading ? '...' : totalStockUnits} <span className="text-sm font-sans font-normal text-slate-400">({totalActiveSKUs} SKUs)</span>
-          </div>
-          <div className="flex items-center justify-between text-xs text-slate-400 group-hover:text-slate-300">
-            <span>Active retail items</span>
-            <ChevronRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+          <div className="text-xs font-sans text-[#7A6F69] mt-3">
+            {totalActiveSKUs} active retail SKUs
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid: Cash Flow Breakdown */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Daily Cash Flow Breakdown Widget (1 Col) */}
-        <div className="glass-card rounded-3xl border border-slate-800/80 overflow-hidden shadow-2xl flex flex-col bg-slate-900/60 backdrop-blur-xl">
-          <div className="p-6 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Wallet className="w-5 h-5 text-cyan-400" />
-              <h3 className="text-base font-display font-bold text-white">Daily Cash Flow Breakdown</h3>
+      {/* Subtle Zonation: Cash Flow Ledger Zone */}
+      <div className="bg-[#EFEBE3] p-8 md:p-12 rounded-[2px] space-y-8">
+        <div className="border-b border-[#C9C0B5] pb-6 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+          <div>
+            <h3 className="text-2xl font-display font-bold text-[#2E2822]">
+              Daily Cash Flow Ledger
+            </h3>
+            <p className="font-sans text-xs text-[#7A6F69] mt-1">
+              Physical cash register balance & drawer reconciliation
+            </p>
+          </div>
+          <span className="font-sans text-xs tracking-[0.14em] uppercase text-[#7A6F69] font-semibold">
+            Today · {new Date().toLocaleDateString()}
+          </span>
+        </div>
+
+        {/* Open Ledger Entries */}
+        <div className="divide-y divide-[#C9C0B5]">
+          <div className="py-5 flex items-center justify-between">
+            <div>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Gross Cash Inflow</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Sales collections, advances & receipts</span>
             </div>
-            <span className="text-xs font-mono text-slate-400">Today ({new Date().toLocaleDateString()})</span>
+            <span className="font-mono font-bold text-base text-[#2E2822]">
+              + Rs. {cashFlow.cash_in.toLocaleString()}
+            </span>
           </div>
 
-          <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <ArrowUpRight className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 block font-medium">Gross Cash Inflow</span>
-                    <span className="text-[11px] text-slate-500">Sales collections & payments</span>
-                  </div>
-                </div>
-                <span className="font-mono font-bold text-emerald-400 text-base">
-                  + Rs. {cashFlow.cash_in.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                    <ArrowDownRight className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400 block font-medium">Cash Outflow</span>
-                    <span className="text-[11px] text-slate-500">Customer refunds & returns</span>
-                  </div>
-                </div>
-                <span className="font-mono font-bold text-rose-400 text-base">
-                  - Rs. {cashFlow.cash_out.toLocaleString()}
-                </span>
-              </div>
+          <div className="py-5 flex items-center justify-between">
+            <div>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Outflow</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds, vendor payouts & expenses</span>
             </div>
+            <span className="font-mono font-bold text-base text-[#7A6F69]">
+              - Rs. {cashFlow.cash_out.toLocaleString()}
+            </span>
+          </div>
+        </div>
 
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-brand/20 via-slate-900 to-slate-950 border border-brand/30">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold uppercase tracking-wider text-brand-light">Net Drawer Position</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${cashFlow.net_cash >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                  {cashFlow.net_cash >= 0 ? 'Surplus' : 'Deficit'}
-                </span>
-              </div>
-              <div className="text-2xl font-display font-bold text-white font-mono mt-2">
-                Rs. {cashFlow.net_cash.toLocaleString()}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                Net cash available in register before overhead expense deductions.
-              </p>
+        {/* Anchor Summary Block */}
+        <div className="pt-6 border-t border-[#2E2822] flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
+              Net Drawer Position ({cashFlow.net_cash >= 0 ? 'Surplus' : 'Deficit'})
+            </div>
+            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
+              Rs. {cashFlow.net_cash.toLocaleString()}
             </div>
           </div>
+          <p className="text-xs font-sans text-[#7A6F69] max-w-sm sm:text-right">
+            Net physical cash present in register before closing drawer reconciliation.
+          </p>
         </div>
       </div>
     </div>

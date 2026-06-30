@@ -145,18 +145,15 @@ export function AuditLog() {
   const getBadgeColor = (action) => {
     const act = (action || '').toUpperCase()
     if (act.includes('CREATE') || act.includes('PAYOUT') || act.includes('ADD')) {
-      return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+      return 'text-[#2E2822]'
     }
     if (act.includes('UPDATE') || act.includes('EDIT') || act.includes('RATE')) {
-      return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+      return 'text-[#2E2822]'
     }
     if (act.includes('DELETE') || act.includes('VOID') || act.includes('REMOVE') || act.includes('REVERSE')) {
-      return 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+      return 'text-[#7A6F69] underline'
     }
-    if (act.includes('RETURN') || act.includes('EXCHANGE') || act.includes('STOCK')) {
-      return 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-    }
-    return 'bg-slate-800 border-slate-700 text-slate-300'
+    return 'text-[#2E2822]'
   }
 
   // KPIs
@@ -165,140 +162,131 @@ export function AuditLog() {
   const modificationEvents = logs.filter(l => (l.action_type || '').toUpperCase().includes('UPDATE') || (l.action_type || '').toUpperCase().includes('RATE')).length
 
   return (
-    <div className="space-y-8 pb-16 animate-fade-in">
+    <div className="space-y-8 pb-16 relative animate-fade-in text-[#2E2822]">
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl border transition-all animate-slide-up ${
-          toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-200' : 'bg-rose-950/90 border-rose-500/30 text-rose-200'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
-          <span className="text-sm font-medium">{toast.message}</span>
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
+          <div
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
+              toast.type === 'success'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+      {/* Header Bar — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand via-brand-light to-amber-500 flex items-center justify-center text-white shadow-lg shadow-brand/20">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <h1 className="font-display font-bold text-2xl text-white tracking-tight">
-              System Security & Audit Log Ledger
-            </h1>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Tamper-Evident Ledger
           </div>
-          <p className="text-slate-400 text-sm mt-1 flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tamper-evident chronological recording of price edits, deletions, returns, and financial disbursements.</span>
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
+            Security & Audit Register
+          </h1>
+          <p className="text-[#7A6F69] font-sans text-sm mt-2">
+            Chronological recording of price edits, deletions, returns, and financial disbursements.
           </p>
         </div>
 
         <button
           onClick={fetchAuditLogs}
           disabled={loading}
-          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-sm flex items-center gap-2 transition-all self-start md:self-auto active:scale-95 shadow-md"
+          className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-light' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Ledger</span>
         </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="glass-card p-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 flex items-center justify-between shadow-xl">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Logged Events</span>
-            <h3 className="text-3xl font-display font-bold text-white mt-1">{totalEvents}</h3>
-            <span className="text-xs text-slate-500 mt-1 block">In current search query</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light">
-            <History className="w-6 h-6" />
-          </div>
+      {/* KPI Spatial Grouping — Borderless Open Blocks */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
+        <div className="space-y-1">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Total Logged Events</span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">{totalEvents}</h3>
+          <span className="text-xs font-sans text-[#7A6F69] block">In current search query</span>
         </div>
 
-        <div className="glass-card p-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 flex items-center justify-between shadow-xl">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Security Deletions & Voids</span>
-            <h3 className="text-3xl font-display font-bold text-rose-400 mt-1">{deletionEvents}</h3>
-            <span className="text-xs text-slate-500 mt-1 block">High scrutiny audit items</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-            <AlertCircle className="w-6 h-6" />
-          </div>
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Deletions & Voids</span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">{deletionEvents}</h3>
+          <span className="text-xs font-sans text-[#7A6F69] block">High scrutiny audit items</span>
         </div>
 
-        <div className="glass-card p-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 flex items-center justify-between shadow-xl">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Rate & Price Modifications</span>
-            <h3 className="text-3xl font-display font-bold text-blue-400 mt-1">{modificationEvents}</h3>
-            <span className="text-xs text-slate-500 mt-1 block">Updates to financial formulas</span>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-            <Database className="w-6 h-6" />
-          </div>
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Rate & Price Edits</span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">{modificationEvents}</h3>
+          <span className="text-xs font-sans text-[#7A6F69] block">Updates to financial formulas</span>
         </div>
       </div>
 
-      {/* Search and Filters Toolbar */}
-      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-4">
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full lg:w-96">
+      {/* Search and Filters Toolbar — Borderless Spatial Row */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-4 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
             <input
               type="text"
               placeholder="Search descriptions, entities, or keywords..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+              className="w-full pl-7 pr-4 py-2 bg-transparent border-b border-[#C9C0B5] text-sm text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-colors font-sans"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-all shadow-md"
+            className="px-4 py-2 bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] text-xs font-sans font-bold uppercase tracking-[0.12em] transition-all"
           >
-            Search
+            Filter
           </button>
         </form>
 
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-white">
-            <Filter className="w-3.5 h-3.5 text-brand-light" />
-            <span className="text-slate-400">Action:</span>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#2E2822]">
+            <span className="text-[#7A6F69] uppercase tracking-wider font-bold">Action:</span>
             <select
               value={actionTypeFilter}
               onChange={(e) => setActionTypeFilter(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer"
+              className="py-1 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-bold uppercase tracking-wider text-[#2E2822] focus:outline-none focus:border-[#2E2822] cursor-pointer"
             >
-              <option value="All" className="bg-slate-900 text-white">All Actions</option>
-              <option value="CREATE" className="bg-slate-900 text-white">CREATE</option>
-              <option value="UPDATE" className="bg-slate-900 text-white">UPDATE</option>
-              <option value="DELETE" className="bg-slate-900 text-white">DELETE / VOID</option>
-              <option value="PAYOUT" className="bg-slate-900 text-white">PAYOUT</option>
-              <option value="RETURN" className="bg-slate-900 text-white">RETURN / EXCHANGE</option>
+              <option value="All">All Actions</option>
+              <option value="CREATE">CREATE</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE / VOID</option>
+              <option value="PAYOUT">PAYOUT</option>
+              <option value="RETURN">RETURN / EXCHANGE</option>
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-white">
-            <Calendar className="w-3.5 h-3.5 text-brand-light" />
+          <div className="flex items-center gap-2 py-1 border-b border-[#C9C0B5] text-xs font-sans font-semibold text-[#2E2822]">
+            <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer text-xs"
+              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
             />
-            <span className="text-slate-500">to</span>
+            <span className="text-[#7A6F69]">to</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer text-xs"
+              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
             />
           </div>
 
           {(searchQuery || actionTypeFilter !== 'All' || startDate || endDate) && (
             <button
               onClick={handleResetFilters}
-              className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-all"
+              className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822] transition-colors"
             >
               Reset
             </button>
@@ -306,145 +294,130 @@ export function AuditLog() {
         </div>
       </div>
 
-      {/* Audit Log Matrix Table */}
-      <div className="glass-card rounded-3xl border border-slate-800/80 overflow-hidden shadow-2xl bg-slate-900/60 backdrop-blur-xl">
-        <div className="p-4 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
-          <h4 className="font-semibold text-white text-sm">Chronological Security Register</h4>
-          <span className="text-xs text-slate-400">Showing top 500 records</span>
-        </div>
-
+      {/* Audit Log Matrix Table — Strictly Open Single-Axis Rules */}
+      <div className="w-full overflow-x-auto">
         {loading && logs.length === 0 ? (
-          <div className="p-20 flex flex-col items-center justify-center text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-brand mb-3" />
-            <span>Scanning secure SQLite audit logs...</span>
+          <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <span className="font-sans text-xs tracking-[0.18em] uppercase">Scanning secure audit records...</span>
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mx-auto mb-4">
-              <ShieldAlert className="w-8 h-8" />
+          <div className="py-20 text-center">
+            <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
+              <ShieldAlert className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-display font-semibold text-white mb-1">
+            <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
               No Audit Records Found
             </h3>
-            <p className="text-sm text-slate-400 max-w-sm mx-auto">
+            <p className="text-sm font-sans text-[#7A6F69] max-w-sm mx-auto">
               No system activity matches the selected filter parameters or date ranges.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                  <th className="py-3.5 px-4 w-44">Timestamp</th>
-                  <th className="py-3.5 px-4 w-32 text-center">Action Type</th>
-                  <th className="py-3.5 px-4 w-40">Target Entity</th>
-                  <th className="py-3.5 px-6">Description & Details</th>
-                  <th className="py-3.5 px-4 text-center w-28">State Diff</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {logs.map((item) => {
-                  const hasDiff = item.old_value || item.new_value
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-slate-400 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                          <span>{item.performed_at}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getBadgeColor(item.action_type)}`}>
-                          {item.action_type || 'EVENT'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-white whitespace-nowrap">
-                        <span className="text-brand-light">{item.entity_type}</span>
-                        {item.entity_id && <span className="text-slate-500 font-mono text-[11px] ml-1">#{item.entity_id}</span>}
-                      </td>
-                      <td className="py-3.5 px-6 text-slate-200 font-medium leading-relaxed">
-                        {item.description}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {hasDiff ? (
-                          <button
-                            onClick={() => setSelectedLog(item)}
-                            className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-brand-light font-semibold flex items-center justify-center gap-1.5 transition-all mx-auto shadow border border-slate-700"
-                            title="Inspect Before/After Payload"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Inspect</span>
-                          </button>
-                        ) : (
-                          <span className="text-slate-600 italic">No Diff</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                <th className="py-4 pr-4 w-48">Timestamp</th>
+                <th className="py-4 px-4 w-32">Action Type</th>
+                <th className="py-4 px-4 w-44">Target Entity</th>
+                <th className="py-4 px-4">Description & Details</th>
+                <th className="py-4 pl-4 text-right w-28">State Diff</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+              {logs.map((item) => {
+                const hasDiff = item.old_value || item.new_value
+                return (
+                  <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
+                    <td className="py-5 pr-4 font-mono text-xs text-[#2E2822] whitespace-nowrap font-semibold">
+                      {item.performed_at}
+                    </td>
+                    <td className="py-5 px-4 whitespace-nowrap">
+                      <span className={`font-mono text-xs font-bold uppercase tracking-wider ${getBadgeColor(item.action_type)}`}>
+                        {item.action_type || 'EVENT'}
+                      </span>
+                    </td>
+                    <td className="py-5 px-4 font-bold text-[#2E2822] whitespace-nowrap text-xs font-sans">
+                      <span>{item.entity_type}</span>
+                      {item.entity_id && <span className="text-[#7A6F69] font-mono ml-1">#{item.entity_id}</span>}
+                    </td>
+                    <td className="py-5 px-4 text-[#2E2822] font-medium leading-relaxed text-sm font-sans">
+                      {item.description}
+                    </td>
+                    <td className="py-5 pl-4 text-right whitespace-nowrap">
+                      {hasDiff ? (
+                        <button
+                          onClick={() => setSelectedLog(item)}
+                          className="text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-wider underline transition-colors"
+                          title="Inspect Before/After Payload"
+                        >
+                          Inspect
+                        </button>
+                      ) : (
+                        <span className="text-[#7A6F69] text-xs italic">—</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* State Diff Inspection Modal */}
+      {/* State Diff Inspection Modal — Borderless Editorial */}
       {selectedLog && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl animate-scale-up max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs uppercase border ${getBadgeColor(selectedLog.action_type)}`}>
-                  {selectedLog.action_type?.substring(0, 3)}
-                </div>
-                <div>
-                  <h3 className="font-display font-bold text-lg text-white">
-                    Audit Event #{selectedLog.id} Inspection
-                  </h3>
-                  <p className="text-xs text-slate-400 font-mono">
-                    Performed at {selectedLog.performed_at} on {selectedLog.entity_type} #{selectedLog.entity_id}
-                  </p>
-                </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2E2822]/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-w-3xl w-full p-8 space-y-6 shadow-none animate-scale-up max-h-[85vh] flex flex-col text-[#2E2822]">
+            <div className="flex items-baseline justify-between border-b border-[#C9C0B5] pb-4">
+              <div>
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  Event Inspection #{selectedLog.id}
+                </span>
+                <h3 className="font-display font-bold text-2xl text-[#2E2822]">
+                  {selectedLog.action_type} — {selectedLog.entity_type}
+                </h3>
+                <p className="text-xs text-[#7A6F69] font-mono mt-1">
+                  Recorded at {selectedLog.performed_at}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
-              <span className="font-bold text-white uppercase tracking-wider text-[10px] block text-slate-500 mb-1">Event Description</span>
+            <div className="p-6 bg-[#EFEBE3] text-sm text-[#2E2822] font-sans font-medium">
+              <span className="font-bold text-[#7A6F69] uppercase tracking-wider text-[10px] block mb-1">Event Description</span>
               {selectedLog.description}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar flex-1">
-              <div className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-2 flex flex-col">
-                <div className="flex items-center justify-between border-b border-rose-500/20 pb-2">
-                  <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">Before (Old State)</span>
-                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar flex-1">
+              <div className="p-6 bg-[#EFEBE3] border-l-2 border-[#7A6F69] space-y-2 flex flex-col">
+                <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-2">
+                  <span className="text-xs font-bold text-[#2E2822] uppercase tracking-wider">Before (Old State)</span>
                 </div>
-                <pre className="font-mono text-xs text-rose-200 overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
+                <pre className="font-mono text-xs text-[#2E2822] overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
                   {formatJsonStr(selectedLog.old_value)}
                 </pre>
               </div>
 
-              <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 flex flex-col">
-                <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">After (New State)</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="p-6 bg-[#EFEBE3] border-l-2 border-[#2E2822] space-y-2 flex flex-col">
+                <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-2">
+                  <span className="text-xs font-bold text-[#2E2822] uppercase tracking-wider">After (New State)</span>
                 </div>
-                <pre className="font-mono text-xs text-emerald-200 overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
+                <pre className="font-mono text-xs text-[#2E2822] overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
                   {formatJsonStr(selectedLog.new_value)}
                 </pre>
               </div>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-800">
+            <div className="flex justify-end pt-4 border-t border-[#C9C0B5]">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all shadow-md"
+                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
               >
                 Close Inspection
               </button>

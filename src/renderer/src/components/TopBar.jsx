@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ReprintModal } from './ReprintModal.jsx'
 
-const C = { bg: '#F7F5F0', border: '#E0DAD2', ink: '#2E2822', muted: '#8C8078', hover: '#EDE8DF' }
+const C = { bg: '#F7F5F0', border: '#C9C0B5', ink: '#2E2822', muted: '#7A6F69', hover: '#E4DBC8', zone: '#EFEBE3' }
 
 // Blueprint SVG icons
 const IconClock = () => (
@@ -101,9 +101,9 @@ export function TopBar() {
           title="Lookup and reprint thermal receipt"
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '4px 12px',
-            border: `1px solid ${C.border}`,
-            background: hoveringBtn ? C.hover : 'transparent',
+            padding: '5px 14px',
+            border: 'none',
+            background: hoveringBtn ? C.hover : C.zone,
             color: C.ink,
             fontFamily: '"Lato", sans-serif',
             fontSize: '0.62rem', fontWeight: 700,

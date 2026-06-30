@@ -38,7 +38,7 @@ const CATEGORY_COLORS = {
   'Maintenance & Repairs': 'bg-rose-500/10 text-rose-400 border-rose-500/20',
   'Transportation & Freight': 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   'Marketing & Advertising': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-  'Miscellaneous': 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+  'Miscellaneous': 'bg-[#EFEBE3] text-[#7A6F69] border-[#C9C0B5]'
 }
 
 export function Expenses() {
@@ -221,103 +221,94 @@ export function Expenses() {
   const topCategoryAmount = topCategoryEntry ? topCategoryEntry[1] : 0
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-8 pb-16 relative animate-fade-in text-[#2E2822]">
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl border transition-all animate-slide-up ${
-          toast.type === 'success' 
-            ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-200' 
-            : 'bg-rose-950/80 border-rose-500/30 text-rose-200'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
-          <span className="text-sm font-medium">{toast.message}</span>
+        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
+          <div
+            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
+              toast.type === 'success'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+      {/* Page Header — Open Single-Axis Divider */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand via-brand-light to-roseaccent flex items-center justify-center text-white shadow-lg shadow-brand/20">
-              <Receipt className="w-5 h-5" />
-            </div>
-            <h1 className="font-display font-bold text-2xl text-white tracking-tight">
-              Expense Management
-            </h1>
+          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-medium mb-2">
+            Ledger & Overhead Accounting
           </div>
-          <p className="text-slate-400 text-sm mt-1">
-            Track daily store overheads, utilities, salaries, and vendor disbursements
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
+            Expense Management
+          </h1>
+          <p className="text-[#7A6F69] font-sans text-sm mt-2">
+            Track daily store overheads, utilities, salaries, and vendor disbursements.
           </p>
         </div>
 
         <button
           onClick={() => handleOpenDrawer()}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand/30 transition-all active:scale-95"
+          className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Record New Expense</span>
+          <span>Record Expense</span>
         </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Selected Period Total</span>
-            <h3 className="text-2xl font-display font-bold text-white mt-1">
-              Rs. {totalExpenditure.toLocaleString()}
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-            <TrendingDown className="w-6 h-6" />
-          </div>
+      {/* KPI Spatial Grouping — Borderless Open Blocks */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
+        <div className="space-y-1">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Selected Period Total</span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
+            Rs. {totalExpenditure.toLocaleString()}
+          </h3>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Transactions</span>
-            <h3 className="text-2xl font-display font-bold text-white mt-1">
-              {totalTransactions} <span className="text-sm font-normal text-slate-400">records</span>
-            </h3>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-            <FileText className="w-6 h-6" />
-          </div>
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Total Transactions</span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
+            {totalTransactions} <span className="text-sm font-sans font-normal text-[#7A6F69]">records</span>
+          </h3>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl flex items-center justify-between">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Top Expense Category</span>
-            <h3 className="text-lg font-display font-bold text-white mt-1 truncate max-w-[180px]">
-              {topCategoryName}
-            </h3>
-            {topCategoryAmount > 0 && (
-              <span className="text-xs text-slate-400">Rs. {topCategoryAmount.toLocaleString()}</span>
-            )}
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <Tag className="w-6 h-6" />
-          </div>
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Top Expense Category</span>
+          <h3 className="text-2xl font-display font-bold text-[#2E2822] truncate">
+            {topCategoryName}
+          </h3>
+          {topCategoryAmount > 0 && (
+            <span className="text-xs font-mono text-[#7A6F69] block">Rs. {topCategoryAmount.toLocaleString()}</span>
+          )}
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+      {/* Filters Bar — Borderless Spatial Row */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
+        <div className="flex flex-wrap items-center gap-6 flex-1">
           {/* Search */}
-          <div className="relative min-w-[240px] flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <div className="relative min-w-[260px] flex-1 max-w-md">
+            <Search className="w-4 h-4 absolute left-0 top-3 text-[#7A6F69]" />
             <input
               type="text"
               placeholder="Search description, category or notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+              className="w-full pl-7 pr-4 py-2 bg-transparent border-b border-[#C9C0B5] text-sm text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-colors font-sans"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                className="absolute right-0 top-3 text-[#7A6F69] hover:text-[#2E2822]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -325,211 +316,190 @@ export function Expenses() {
           </div>
 
           {/* Category Filter */}
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-sm">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer pr-2"
-            >
-              <option value="All" className="bg-slate-900 text-white">All Categories</option>
-              {EXPENSE_CATEGORIES.map(cat => (
-                <option key={cat} value={cat} className="bg-slate-900 text-white">{cat}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="py-2 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-semibold uppercase tracking-[0.1em] text-[#2E2822] focus:outline-none focus:border-[#2E2822] cursor-pointer"
+          >
+            <option value="All">All Categories</option>
+            {EXPENSE_CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
 
           {/* Date Range */}
-          <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1 rounded-xl text-sm">
-            <Calendar className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 py-2 border-b border-[#C9C0B5] text-xs font-sans font-semibold text-[#2E2822]">
+            <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-xs"
+              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
             />
-            <span className="text-slate-600">to</span>
+            <span className="text-[#7A6F69]">to</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-xs"
+              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
             />
           </div>
         </div>
 
         <button
           onClick={fetchExpenses}
-          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex items-center gap-2 text-xs font-medium"
+          className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
           title="Refresh List"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      {/* Expenses Table */}
-      <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl backdrop-blur-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-4">Date</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">Description</th>
-                <th className="py-3.5 px-4">Recorded By</th>
-                <th className="py-3.5 px-4 text-right">Amount (Rs.)</th>
-                <th className="py-3.5 px-4 text-center">Actions</th>
+      {/* Expenses Table — Strictly Open Single-Axis Rules */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+              <th className="py-4 pr-4">Date</th>
+              <th className="py-4 px-4">Category</th>
+              <th className="py-4 px-4">Description</th>
+              <th className="py-4 px-4">Recorded By</th>
+              <th className="py-4 px-4 text-right">Amount (Rs.)</th>
+              <th className="py-4 pl-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="py-5 pr-4"><div className="h-4 w-24 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-32 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-48 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-20 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-24 bg-[#EFEBE3] ml-auto"></div></td>
+                  <td className="py-5 pl-4"><div className="h-4 w-16 bg-[#EFEBE3] ml-auto"></div></td>
+                </tr>
+              ))
+            ) : expenseList.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-20 text-center">
+                  <div className="flex flex-col items-center justify-center text-[#7A6F69]">
+                    <Receipt className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
+                    <p className="text-base font-display font-bold text-[#2E2822]">No expenses recorded for this period</p>
+                    <p className="text-xs font-sans text-[#7A6F69] mt-1">Try adjusting your filters or click "Record Expense"</p>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-sm">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-4 px-4"><div className="h-4 w-24 bg-slate-800 rounded"></div></td>
-                    <td className="py-4 px-4"><div className="h-6 w-32 bg-slate-800 rounded-full"></div></td>
-                    <td className="py-4 px-4"><div className="h-4 w-48 bg-slate-800 rounded"></div></td>
-                    <td className="py-4 px-4"><div className="h-4 w-20 bg-slate-800 rounded"></div></td>
-                    <td className="py-4 px-4"><div className="h-4 w-24 bg-slate-800 rounded ml-auto"></div></td>
-                    <td className="py-4 px-4"><div className="h-8 w-16 bg-slate-800 rounded mx-auto"></div></td>
-                  </tr>
-                ))
-              ) : expenseList.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-500">
-                      <Receipt className="w-12 h-12 stroke-1 mb-3 text-slate-600" />
-                      <p className="text-base font-medium text-slate-400">No expenses recorded for this period</p>
-                      <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or click "Record New Expense"</p>
-                    </div>
+            ) : (
+              expenseList.map((item) => (
+                <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
+                  <td className="py-5 pr-4 font-mono text-[#2E2822] text-xs font-semibold">
+                    {item.expense_date}
+                  </td>
+                  <td className="py-5 px-4">
+                    <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#2E2822]">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="py-5 px-4">
+                    <div className="font-bold text-[#2E2822] text-base font-display">{item.description || '—'}</div>
+                    {item.notes && (
+                      <div className="text-xs font-sans text-[#7A6F69] mt-0.5 max-w-md">{item.notes}</div>
+                    )}
+                  </td>
+                  <td className="py-5 px-4 text-[#7A6F69] text-xs font-sans uppercase tracking-wider">
+                    <span className="font-semibold text-[#2E2822]">
+                      {item.recorded_by || 'Staff'}
+                    </span>
+                  </td>
+                  <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-base">
+                    Rs. {Number(item.amount).toLocaleString()}
+                  </td>
+                  <td className="py-5 pl-4 text-right space-x-3 whitespace-nowrap">
+                    <button
+                      onClick={() => handleOpenDrawer(item)}
+                      className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                      title="Edit Expense"
+                    >
+                      <Edit2 className="w-4 h-4 inline" />
+                    </button>
+                    <button
+                      onClick={() => setDeletingExpense(item)}
+                      className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                      title="Delete Expense"
+                    >
+                      <Trash2 className="w-4 h-4 inline" />
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                expenseList.map((item) => {
-                  const colorClass = CATEGORY_COLORS[item.category] || CATEGORY_COLORS['Miscellaneous']
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-800/40 transition-colors group">
-                      <td className="py-3.5 px-4 font-mono text-slate-300 text-xs">
-                        {item.expense_date}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-medium text-white">{item.description || '—'}</div>
-                        {item.notes && (
-                          <div className="text-xs text-slate-500 truncate max-w-xs">{item.notes}</div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-xs">
-                        <span className="inline-flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                          <User className="w-3 h-3 text-slate-500" />
-                          {item.recorded_by || 'Staff'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-rose-400">
-                        Rs. {Number(item.amount).toLocaleString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleOpenDrawer(item)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-brand hover:text-white text-slate-300 transition-all"
-                            title="Edit Expense"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeletingExpense(item)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-300 transition-all"
-                            title="Delete Expense"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Side Drawer for Record / Edit Expense */}
+      {/* Side Drawer for Record / Edit Expense — Borderless Editorial */}
       {isDrawerOpen && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/80 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl animate-slide-left">
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in">
+          <div className="w-full max-w-md bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand-light">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-display font-bold text-lg text-white leading-none">
-                    {editingExpense ? 'Edit Expense Record' : 'Record New Expense'}
-                  </h3>
-                  <span className="text-xs text-slate-400 mt-1 block">
-                    {editingExpense ? `ID: #${editingExpense.id}` : 'Fill details below'}
-                  </span>
-                </div>
+            <div className="p-8 border-b border-[#C9C0B5] flex items-baseline justify-between">
+              <div>
+                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                  Overhead Entry
+                </span>
+                <h3 className="font-display font-bold text-2xl text-[#2E2822]">
+                  {editingExpense ? 'Edit Expense Record' : 'Record New Expense'}
+                </h3>
               </div>
               <button
                 onClick={handleCloseDrawer}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+                className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Form Content */}
-            <form id="expenseForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+            <form id="expenseForm" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                  <span>Expense Category</span>
-                  <span className="text-roseaccent">* Required</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Expense Category *
                 </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-semibold focus:outline-none focus:border-[#2E2822] cursor-pointer"
                 >
                   {EXPENSE_CATEGORIES.map(cat => (
-                    <option key={cat} value={cat} className="bg-slate-900 text-white">{cat}</option>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                  <span>Amount (Rs.)</span>
-                  <span className="text-roseaccent">* Required</span>
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                  Amount (Rs.) *
                 </label>
-                <div className="relative">
-                  <Banknote className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="number"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleFormChange}
-                    placeholder="e.g. 1500"
-                    required
-                    min="1"
-                    step="any"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-sm placeholder-slate-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all font-bold text-rose-400"
-                  />
-                </div>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleFormChange}
+                  placeholder="0.00"
+                  required
+                  min="1"
+                  step="any"
+                  className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono text-xl font-bold focus:outline-none placeholder-[#7A6F69]"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Date
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                    Date *
                   </label>
                   <input
                     type="date"
@@ -537,12 +507,12 @@ export function Expenses() {
                     value={formData.expense_date}
                     onChange={handleFormChange}
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                     Recorded By
                   </label>
                   <input
@@ -551,13 +521,13 @@ export function Expenses() {
                     value={formData.recorded_by}
                     onChange={handleFormChange}
                     placeholder="e.g. Manager"
-                    className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Brief Description
                 </label>
                 <input
@@ -566,12 +536,12 @@ export function Expenses() {
                   value={formData.description}
                   onChange={handleFormChange}
                   placeholder="e.g. Electricity bill for shop #1"
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Additional Notes / Vendor Details
                 </label>
                 <textarea
@@ -579,19 +549,19 @@ export function Expenses() {
                   value={formData.notes}
                   onChange={handleFormChange}
                   rows={3}
-                  placeholder="e.g. Paid in cash to lineman. Receipt #4589 filed."
-                  className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all resize-none"
+                  placeholder="Remarks, receipt number, or vendor details..."
+                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>
             </form>
 
             {/* Drawer Footer */}
-            <div className="p-6 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-3">
+            <div className="p-8 border-t border-[#C9C0B5] bg-[#EFEBE3] flex items-center justify-end gap-4">
               <button
                 type="button"
                 onClick={handleCloseDrawer}
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all"
+                className="px-6 py-3 rounded-[2px] bg-transparent text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
               >
                 Cancel
               </button>
@@ -599,9 +569,9 @@ export function Expenses() {
                 type="submit"
                 form="expenseForm"
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand to-brand-dark hover:from-brand-light hover:to-brand text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-brand/30 transition-all disabled:opacity-50"
+                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>{editingExpense ? 'Update Expense' : 'Save Expense'}</span>
               </button>
             </div>
@@ -610,45 +580,43 @@ export function Expenses() {
         document.body
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal — Borderless Editorial */}
       {deletingExpense && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 animate-scale-up">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-lg text-white">Delete Expense Record?</h3>
-                <p className="text-sm text-slate-400 mt-0.5">
-                  Are you sure you want to remove this expense? This action cannot be undone.
-                </p>
-              </div>
+        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] p-8 shadow-none space-y-6 text-[#2E2822]">
+            <div>
+              <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                Confirm Deletion
+              </span>
+              <h3 className="font-display font-bold text-2xl text-[#2E2822]">Delete Expense Record?</h3>
+              <p className="text-sm font-sans text-[#7A6F69] mt-2">
+                Are you sure you want to remove this expense? This action cannot be undone.
+              </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Category:</span>
-                <span className="font-medium text-white">{deletingExpense.category}</span>
+            <div className="p-6 bg-[#EFEBE3] space-y-3 text-sm font-sans">
+              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
+                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Category:</span>
+                <span className="font-bold text-[#2E2822]">{deletingExpense.category}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Amount:</span>
-                <span className="font-mono font-bold text-rose-400">Rs. {Number(deletingExpense.amount).toLocaleString()}</span>
+              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
+                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Amount:</span>
+                <span className="font-mono font-bold text-[#2E2822]">Rs. {Number(deletingExpense.amount).toLocaleString()}</span>
               </div>
               {deletingExpense.description && (
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Description:</span>
-                  <span className="text-slate-300 truncate max-w-[200px]">{deletingExpense.description}</span>
+                  <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Description:</span>
+                  <span className="text-[#2E2822] font-semibold truncate max-w-[200px]">{deletingExpense.description}</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => setDeletingExpense(null)}
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all"
+                className="px-6 py-3 rounded-[2px] bg-transparent text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
               >
                 Cancel
               </button>
@@ -656,9 +624,9 @@ export function Expenses() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all disabled:opacity-50"
+                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-4 h-4 animate-spin" />}
+                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>Delete Permanently</span>
               </button>
             </div>
