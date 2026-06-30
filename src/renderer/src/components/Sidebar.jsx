@@ -1,124 +1,176 @@
 import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import logoImg from '../assets/logo.jpg'
-import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  RotateCcw,
-  BarChart3,
-  Receipt,
-  Users,
-  Settings,
-  ShieldAlert,
-  Truck
-} from 'lucide-react'
+
+// ── Colour tokens (white theme, cream ivory accents) ──────────────────────────
+const C = {
+  bg:      '#F7F5F0', // cream ivory sidebar
+  hover:   '#EDE8DF', // parchment hover
+  active:  '#EDE8DF', // parchment active state
+  border:  '#E0DAD2', // hairline
+  ink:     '#2E2822', // primary ink
+  muted:   '#8C8078', // secondary labels
+}
+
+// ── Blueprint SVG Icons — thin-stroke, technical line-drawing ─────────────────
+const IconDashboard = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <rect x="2" y="2" width="7" height="7"/><rect x="11" y="2" width="7" height="7"/>
+    <rect x="2" y="11" width="7" height="7"/><rect x="11" y="11" width="7" height="7"/>
+  </svg>
+)
+const IconCart = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M1 2h2.5l2 8h9l2-6H5"/>
+    <circle cx="8" cy="17.5" r="1.5"/><circle cx="14" cy="17.5" r="1.5"/>
+  </svg>
+)
+const IconInventory = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <rect x="2" y="8" width="16" height="10"/>
+    <rect x="5" y="5" width="10" height="3"/>
+    <rect x="8" y="2" width="4" height="3"/>
+    <line x1="2" y1="12" x2="18" y2="12"/>
+  </svg>
+)
+const IconTruck = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <rect x="1" y="5" width="11" height="10"/>
+    <path d="M12 8h4l3 4v3h-7V8z"/>
+    <circle cx="5" cy="17" r="1.5"/><circle cx="15" cy="17" r="1.5"/>
+  </svg>
+)
+const IconReturn = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M4 8H14a4 4 0 0 1 0 8H8"/>
+    <polyline points="4,5 4,11 7,8"/>
+  </svg>
+)
+const IconReceipt = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M4 2v16l2-2 2 2 2-2 2 2 2-2 2 2V2z"/>
+    <line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/>
+    <line x1="7" y1="13" x2="10" y2="13"/>
+  </svg>
+)
+const IconBarChart = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <line x1="2" y1="18" x2="18" y2="18"/>
+    <rect x="3" y="10" width="3" height="8"/>
+    <rect x="8.5" y="6" width="3" height="12"/>
+    <rect x="14" y="3" width="3" height="15"/>
+  </svg>
+)
+const IconUsers = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <circle cx="7.5" cy="6" r="2.5"/>
+    <path d="M2 18c0-3.5 2.5-5.5 5.5-5.5S13 14.5 13 18"/>
+    <circle cx="15" cy="6" r="2"/>
+    <path d="M18 18c0-3-1.5-4.5-3-4.5"/>
+  </svg>
+)
+const IconSettings = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <circle cx="10" cy="10" r="3"/>
+    <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.6 4.6l1.4 1.4M14 14l1.4 1.4M4.6 15.4l1.4-1.4M14 6l1.4-1.4"/>
+  </svg>
+)
+const IconAudit = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="square" strokeLinejoin="miter">
+    <path d="M10 2L4 5v5c0 3.5 2.5 6 6 7.5C16 16 18 13.5 18 10V5z"/>
+    <polyline points="7,10 9,12 13,8"/>
+  </svg>
+)
 
 const navItems = [
-  { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { name: 'New Sale (POS)', path: '/sale', icon: ShoppingCart, highlight: true },
-  { name: 'Inventory & Stock', path: '/inventory', icon: Package },
-  { name: 'Wholesale Suppliers', path: '/suppliers', icon: Truck },
-  { name: 'Returns & Exchanges', path: '/returns', icon: RotateCcw },
-  { name: 'Expenses', path: '/expenses', icon: Receipt },
-  { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
-  { name: 'Salespersons & Comm.', path: '/salespersons', icon: Users },
-  { name: 'Store Settings', path: '/settings', icon: Settings },
-  { name: 'System Audit Log', path: '/audit', icon: ShieldAlert }
+  { name: 'Dashboard',            path: '/',             Icon: IconDashboard },
+  { name: 'New Sale (POS)',        path: '/sale',         Icon: IconCart },
+  { name: 'Inventory & Stock',    path: '/inventory',    Icon: IconInventory },
+  { name: 'Wholesale Suppliers',  path: '/suppliers',    Icon: IconTruck },
+  { name: 'Returns & Exchanges',  path: '/returns',      Icon: IconReturn },
+  { name: 'Expenses',             path: '/expenses',     Icon: IconReceipt },
+  { name: 'Reports & Analytics',  path: '/reports',      Icon: IconBarChart },
+  { name: 'Salespersons & Comm.', path: '/salespersons', Icon: IconUsers },
+  { name: 'Store Settings',       path: '/settings',     Icon: IconSettings },
+  { name: 'System Audit Log',     path: '/audit',        Icon: IconAudit },
 ]
 
 export function Sidebar() {
-  const [isHovered, setIsHovered] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   return (
-    <div className="w-20 shrink-0 relative z-30">
+    <div style={{ width: expanded ? 200 : 56, flexShrink: 0, transition: 'width 0.22s ease', position: 'relative', zIndex: 30 }}>
       <aside
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`fixed left-0 top-0 bottom-0 bg-slate-900/95 border-r border-slate-800/80 backdrop-blur-2xl flex flex-col justify-between z-50 select-none shadow-2xl shadow-black transition-all duration-300 ease-in-out ${
-          isHovered ? 'w-64' : 'w-20'
-        }`}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        style={{
+          position: 'fixed', top: 0, left: 0, bottom: 0,
+          width: expanded ? 200 : 56,
+          background: C.bg,
+          borderRight: `1px solid ${C.border}`,
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          zIndex: 50, overflow: 'hidden',
+          transition: 'width 0.22s ease',
+        }}
       >
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-800/80 bg-slate-950/40 flex items-center min-h-[81px]">
-          <div className={`flex items-center transition-all duration-300 ${isHovered ? 'gap-3.5 w-full' : 'justify-center w-full'}`}>
-            <img
-              src={logoImg}
-              alt="Soni Fashion Logo"
-              className="w-11 h-11 rounded-2xl object-cover border border-brand/40 shadow-lg shadow-brand/20 shrink-0"
-            />
-            <div className={`overflow-hidden transition-all duration-300 ${isHovered ? 'w-auto opacity-100 ml-1' : 'w-0 opacity-0 m-0'}`}>
-              <div className="flex items-center gap-1.5 justify-between whitespace-nowrap">
-                <h1 className="font-display font-bold text-base tracking-tight text-white leading-none">
-                  Soni Fashion
-                </h1>
-                <span className="text-xs font-semibold text-brand-light font-sans" dir="rtl">
-                  سونی فیشن
-                </span>
-              </div>
-              <span className="text-[10px] font-medium tracking-wide text-slate-400 block mt-1 truncate italic whitespace-nowrap">
-                Jahan Fashion enters your life
-              </span>
-            </div>
+        {/* Brand */}
+        <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 10px', display: 'flex', alignItems: 'center', gap: 10, minHeight: 60 }}>
+          <img src={logoImg} alt="SF" style={{ width: 34, height: 34, objectFit: 'cover', border: `1px solid ${C.border}`, flexShrink: 0 }} />
+          <div style={{ overflow: 'hidden', opacity: expanded ? 1 : 0, transition: 'opacity 0.15s ease', whiteSpace: 'nowrap' }}>
+            <div style={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, fontSize: '0.85rem', color: C.ink }}>Soni Fashion</div>
+            <div style={{ fontFamily: '"Lato", sans-serif', fontSize: '0.58rem', color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 2 }}>POS Unlimited</div>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                title={!isHovered ? item.name : undefined}
-                className={({ isActive }) =>
-                  `flex items-center rounded-xl font-medium text-sm transition-all duration-200 group relative ${
-                    isHovered ? 'px-4 py-3 gap-3.5' : 'justify-center py-3'
-                  } ${
-                    isActive
-                      ? 'bg-gradient-to-r from-brand to-brand-dark text-white shadow-lg shadow-brand/30 font-semibold'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <div className="absolute left-0 top-2 bottom-2 w-1 bg-roseaccent rounded-r-full shadow-sm shadow-roseaccent" />
-                    )}
-                    <Icon
-                      className={`w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                        isActive ? 'text-white' : 'text-slate-500 group-hover:text-brand-light'
-                      }`}
-                    />
-                    <span
-                      className={`whitespace-nowrap transition-all duration-300 overflow-hidden ${
-                        isHovered ? 'w-auto opacity-100 ml-1' : 'w-0 opacity-0 m-0'
-                      }`}
-                    >
-                      {item.name}
-                    </span>
-                  </>
-                )}
-              </NavLink>
-            )
-          })}
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '10px 6px', overflowY: 'auto', overflowX: 'hidden' }}>
+          {navItems.map(({ name, path, Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              title={!expanded ? name : undefined}
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: expanded ? 10 : 0,
+                justifyContent: expanded ? 'flex-start' : 'center',
+                padding: '9px 8px', marginBottom: 1,
+                textDecoration: 'none',
+                color: isActive ? C.ink : C.muted,
+                background: isActive ? C.active : 'transparent',
+                borderLeft: `2px solid ${isActive ? C.ink : 'transparent'}`,
+                fontFamily: '"Lato", sans-serif',
+                fontSize: '0.68rem', fontWeight: isActive ? 700 : 400,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                transition: 'background 0.1s, border-color 0.1s',
+              })}
+            >
+              {({ isActive }) => (
+                <>
+                  <span style={{ flexShrink: 0, color: isActive ? C.ink : C.muted, display: 'flex' }}>
+                    <Icon />
+                  </span>
+                  <span style={{
+                    overflow: 'hidden', maxWidth: expanded ? 160 : 0,
+                    opacity: expanded ? 1 : 0,
+                    transition: 'max-width 0.22s ease, opacity 0.15s ease',
+                    whiteSpace: 'nowrap', color: isActive ? C.ink : C.muted,
+                  }}>
+                    {name}
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
 
-        {/* Footer System Status */}
-        <div className={`p-3 mx-3 mb-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center transition-all duration-300 ${isHovered ? 'justify-between' : 'justify-center'}`}>
-          <div className="flex items-center gap-2.5" title="SQLite Connected (WAL Mode)">
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span className={`text-xs font-medium text-slate-300 whitespace-nowrap overflow-hidden transition-all duration-300 ${isHovered ? 'w-auto opacity-100' : 'w-0 opacity-0 m-0'}`}>
-              SQLite Connected
-            </span>
-          </div>
-          <span className={`text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 whitespace-nowrap overflow-hidden transition-all duration-300 ${isHovered ? 'w-auto opacity-100' : 'w-0 opacity-0 m-0 border-0 p-0'}`}>
-            WAL Mode
+        {/* Footer */}
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4A6050', flexShrink: 0, display: 'block' }} />
+          <span style={{
+            fontFamily: '"Lato", sans-serif', fontSize: '0.6rem', color: C.muted,
+            letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+            overflow: 'hidden', opacity: expanded ? 1 : 0, transition: 'opacity 0.15s ease',
+          }}>
+            DB Connected
           </span>
         </div>
       </aside>

@@ -1,302 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Playfair+Display:wght@600;700;900&family=Lato:wght@300;400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;900&family=Lato:wght@300;400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── SONI FASHION POS — White Editorial Theme ──────────────────────────────
+   Canvas:    #FFFFFF (primary white)
+   Accent:    #F7F5F0 (cream ivory — structural zones only: headers, sidebars)
+   Ink:       #2E2822 (rich charcoal-taupe — all text, borders, icons)
+   Ink-muted: #8C8078 (secondary labels, metadata)
+   Hairline:  #E0DAD2 (thin dividers)
+   Parchment: #EDE8DF (button hover, table header bg)
+──────────────────────────────────────────────────────────────────────────── */
+
 @layer base {
-  :root {
-    --bg-canvas: #FCFBFA;
-    --bg-panel: #F5F2EC;
-    --text-primary: #332822;
-    --text-muted: #7A6F69;
-    --border-color: #D3C9BC;
-  }
-
-  * {
-    border-radius: 0px !important;
+  *, *::before, *::after {
+    border-radius: 0 !important;
     box-shadow: none !important;
-    font-family: 'Optima', 'Lato', sans-serif;
+    font-family: 'Lato', 'Optima', sans-serif;
   }
 
-  html {
-    font-size: 112.5% !important;
-  }
-
-  body {
-    background: var(--bg-canvas) !important;
-    color: var(--text-primary) !important;
-    font-family: 'Optima', 'Lato', sans-serif !important;
-    min-height: 100vh;
-    overflow-x: hidden;
+  html, body {
+    background: #FFFFFF !important;
+    color: #2E2822 !important;
+    font-family: 'Lato', sans-serif !important;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    color: var(--text-primary) !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    color: #2E2822 !important;
   }
 
-  .font-display {
-    font-family: 'Cinzel', 'Playfair Display', Georgia, serif !important;
-  }
-
-  .font-sans, .font-mono, [class*="font-mono"] {
-    font-family: 'Optima', 'Lato', sans-serif !important;
-    font-variant-numeric: tabular-nums;
-  }
+  .font-display { font-family: 'Playfair Display', Georgia, serif !important; }
+  .font-sans, .font-mono { font-family: 'Lato', sans-serif !important; font-variant-numeric: tabular-nums; }
 }
 
-/* Custom Sleek Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Scrollbars */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #F7F5F0; }
+::-webkit-scrollbar-thumb { background: #D0C9C0; }
+::-webkit-scrollbar-thumb:hover { background: #8C8078; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+
+/* Global colour strips */
+[class*="bg-slate-"], [class*="bg-gradient-"], [class*="from-slate-"],
+[class*="via-slate-"], [class*="to-slate-"], [class*="from-brand"] {
+  background: transparent !important; background-image: none !important;
+}
+[class*="text-slate-"], [class*="text-white"] {
+  color: #2E2822 !important; -webkit-text-fill-color: #2E2822 !important;
+}
+[class*="text-slate-400"], [class*="text-slate-500"] {
+  color: #8C8078 !important; -webkit-text-fill-color: #8C8078 !important;
 }
 
-::-webkit-scrollbar-track {
-  background: #EFEBE3;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #C4BDB7;
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #7A6F69;
-}
-
-/* GLOBAL OVERRIDES FOR PROFESSIONAL CLEAN WINDOW / EDITORIAL THEME (DESIGN.MD) */
-
-/* 1. Remove Glassmorphism & Dark Gradients */
-.glass-card, .glass-panel, [class*="glass-"] {
-  background: #FFFFFF !important;
+/* Sidebar */
+aside {
+  background: #F7F5F0 !important;
+  border-right: 1px solid #E0DAD2 !important;
+  color: #2E2822 !important;
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 1px solid #D1D5DB !important;
-  box-shadow: none !important;
-  color: #332822 !important;
-  transform: none !important;
 }
 
-.glass-card:hover, .glass-panel:hover {
-  border-color: #332822 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* Modal Overlay Dimming */
-.fixed.inset-0[class*="bg-"] {
-  background: rgba(0, 0, 0, 0.35) !important;
+/* TopBar */
+header {
+  background: #F7F5F0 !important;
+  border-bottom: 1px solid #E0DAD2 !important;
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  color: #2E2822 !important;
 }
 
-/* Strip dark backgrounds & gradients from containers */
-[class*="bg-slate-"], [class*="bg-gradient-"], [class*="from-slate-"], [class*="via-slate-"], [class*="to-slate-"], [class*="from-emerald-"], [class*="from-blue-"], [class*="from-cyan-"], [class*="from-amber-"], [class*="from-brand"] {
-  background: #FFFFFF !important;
-  background-image: none !important;
+/* Nav links */
+nav a { color: #2E2822 !important; text-decoration: none; }
+nav a:hover { background: #EDE8DF !important; }
+nav a[aria-current="page"], nav a.active {
+  background: #EDE8DF !important; color: #2E2822 !important;
+  font-weight: 700 !important; border-left: 2px solid #2E2822 !important;
 }
 
-/* Sidebar, Header & Secondary Panels background override */
-aside, header, nav[class*="bg-"] {
-  background: #F4EFE6 !important;
-  border-color: #D6CDBF !important;
-  color: #332822 !important;
+/* Tables */
+table { background: #FFFFFF !important; color: #2E2822 !important; border-collapse: collapse; }
+thead th {
+  background: #F7F5F0 !important; color: #2E2822 !important;
+  border-bottom: 1px solid #2E2822 !important;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
 }
+tbody tr { background: #FFFFFF !important; border-bottom: 1px solid #E0DAD2 !important; }
+tbody tr:hover { background: #FAFAF8 !important; }
 
-/* Table styling */
-table {
-  background: #FFFFFF !important;
-  color: #332822 !important;
-}
-
-thead, tr[class*="bg-slate-950"], th {
-  background: #F4EFE6 !important;
-  color: #332822 !important;
-  border-bottom: 2px solid #C4B8A5 !important;
-}
-
-tbody tr {
-  background: #FFFFFF !important;
-  color: #332822 !important;
-  border-bottom: 1px solid #E6DFD5 !important;
-}
-
-tbody tr:hover {
-  background: #FAF6EE !important;
-}
-
-/* 2. Override Text Colors */
-[class*="text-slate-"], [class*="text-emerald-"], [class*="text-cyan-"], [class*="text-blue-"], [class*="text-amber-"], [class*="text-rose-"], [class*="gradient-text"], [class*="text-white"] {
-  color: #332822 !important;
-  background-image: none !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-[class*="text-brand"] {
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-/* Keep secondary text muted taupe */
-[class*="text-slate-400"], [class*="text-slate-500"], [class*="opacity-70"], [class*="opacity-80"] {
-  color: #7A6F69 !important;
-  -webkit-text-fill-color: #7A6F69 !important;
-}
-
-/* Specific status/alert utilities based on Design.md */
-.text-success {
-  color: #4A5D4E !important;
-  -webkit-text-fill-color: #4A5D4E !important;
-}
-
-.text-error, [class*="text-red-"] {
-  color: #8C3A3A !important;
-  -webkit-text-fill-color: #8C3A3A !important;
-}
-
-/* 3. Strip Pill Effects & Overly Rounded Corners (Design.md: max 2px) */
-*, [class*="rounded-"] {
-  border-radius: 2px !important;
-}
-
-/* 4. Remove Hover Shadows and Transformations */
-*, [class*="hover:shadow-"], [class*="hover:scale-"], [class*="hover:-translate-"], [class*="shadow-"] {
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-/* Buttons Styling per Design.md */
-button, a[class*="rounded-"] {
-  border-radius: 2px !important;
-  font-weight: 500 !important;
-  transition: background-color 0.15s ease, color 0.15s ease !important;
-}
-
-/* Active navigation links in Sidebar */
-a[aria-current="page"], a.active {
-  background: #E6DFD5 !important;
-  color: #332822 !important;
-  border: 1px solid #C4B8A5 !important;
-  font-weight: 600 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-/* Primary action buttons */
-button[class*="bg-brand"], button[class*="bg-emerald-"], button[class*="bg-blue-"], button[class*="bg-rose-"], button[class*="bg-gradient-"], button[class*="bg-teal-"], button[class*="bg-amber-"] {
-  background: #E6DFD5 !important;
-  color: #332822 !important;
-  border: 1px solid #C4B8A5 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-button[class*="bg-brand"]:hover, button[class*="bg-emerald-"]:hover, button[class*="bg-blue-"]:hover, button[class*="bg-rose-"]:hover, button[class*="bg-teal-"]:hover, button[class*="bg-amber-"]:hover {
-  background: #DFD5C6 !important;
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-/* Inputs & Selects */
+/* Inputs */
 input, select, textarea {
-  background: #FFFFFF !important;
-  color: #332822 !important;
-  border: 1px solid #C4BDB7 !important;
-  border-radius: 2px !important;
-  box-shadow: none !important;
+  background: #FFFFFF !important; color: #2E2822 !important;
+  border: 1px solid #E0DAD2 !important; border-radius: 0 !important; box-shadow: none !important;
 }
-
-input:focus, select:focus, textarea:focus {
-  border-color: #332822 !important;
-  outline: none !important;
-}
-
-/* ----------------------------------------------------
-   TOAST NOTIFICATION OVERRIDE (Ivory Canvas System)
----------------------------------------------------- */
-/* Stop distracting bouncy animations */
-div[class*="fixed"][class*="bottom-"][class*="animate-bounce"] {
-  animation: none !important;
-}
-
-/* Success Toast Styling */
-div[class*="fixed"][class*="bottom-"][class*="bg-emerald-"],
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-emerald-"] {
-  background: #FFFFFF !important;
-  border: 1px solid #C89B3C !important;
-  border-left: 6px solid #10B981 !important;
-  box-shadow: 0 12px 30px -5px rgba(51, 40, 34, 0.2), 0 4px 10px -2px rgba(51, 40, 34, 0.1) !important;
-  border-radius: 12px !important;
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-  font-family: 'Outfit', sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  padding: 14px 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-}
-
-div[class*="fixed"][class*="bottom-"][class*="bg-emerald-"] *,
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-emerald-"] * {
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-div[class*="fixed"][class*="bottom-"][class*="bg-emerald-"] svg,
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-emerald-"] svg {
-  color: #10B981 !important;
-  stroke: #10B981 !important;
-  width: 22px !important;
-  height: 22px !important;
-}
-
-/* Error Toast Styling */
-div[class*="fixed"][class*="bottom-"][class*="bg-rose-"],
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-rose-"] {
-  background: #FFFFFF !important;
-  border: 1px solid #C89B3C !important;
-  border-left: 6px solid #E11D48 !important;
-  box-shadow: 0 12px 30px -5px rgba(51, 40, 34, 0.2), 0 4px 10px -2px rgba(51, 40, 34, 0.1) !important;
-  border-radius: 12px !important;
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-  font-family: 'Outfit', sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  padding: 14px 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-}
-
-div[class*="fixed"][class*="bottom-"][class*="bg-rose-"] *,
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-rose-"] * {
-  color: #332822 !important;
-  -webkit-text-fill-color: #332822 !important;
-}
-
-div[class*="fixed"][class*="bottom-"][class*="bg-rose-"] svg,
-div[class*="fixed"][class*="bottom-"] > div[class*="bg-rose-"] svg {
-  color: #E11D48 !important;
-  stroke: #E11D48 !important;
-  width: 22px !important;
-  height: 22px !important;
-}
-
-/* Hide native up/down spinner arrows on number inputs so users enter values manually */
+input:focus, select:focus, textarea:focus { border-color: #2E2822 !important; outline: none !important; }
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none !important;
-  margin: 0 !important;
-}
-input[type="number"] {
-  -moz-appearance: textfield !important;
-  appearance: textfield !important;
-}
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
+input[type="number"] { -moz-appearance: textfield !important; appearance: textfield !important; }
 
-/* Report Print Styles */
+/* Buttons */
+button { border-radius: 0 !important; cursor: pointer; transition: background 0.12s, color 0.12s !important; transform: none !important; }
+
+/* Animations */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-slide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.animate-fade-in { animation: fade-in 0.22s ease forwards; }
+
+/* Print */
 @media print {
   body * { visibility: hidden; }
   #report-root, #report-root * { visibility: visible; }
-  #report-root { position: fixed; top: 0; left: 0; width: 100%; background: white !important; color: black !important; }
+  #report-root { position: fixed; top: 0; left: 0; width: 100%; background: #fff !important; }
   @page { margin: 0.5cm; }
 }
