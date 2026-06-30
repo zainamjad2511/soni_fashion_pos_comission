@@ -114,8 +114,12 @@ button { border-radius: 0 !important; cursor: pointer; transition: background 0.
 
 /* Animations */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes toast-slide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes toast-slide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .animate-fade-in { animation: fade-in 0.22s ease forwards; }
+.animate-toast   { animation: toast-slide 0.3s ease-in-out forwards; }
 
 /* Print */
 @media print {

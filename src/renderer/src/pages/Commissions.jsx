@@ -15,6 +15,7 @@ import {
   FileText,
   Check
 } from 'lucide-react'
+import { Toast } from '../components/Toast.jsx'
 
 export function Commissions() {
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7))
@@ -194,24 +195,7 @@ export function Commissions() {
   return (
     <div className="space-y-12 animate-fade-in pb-16 text-[#2E2822]">
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
-          <div
-            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
-              toast.type === 'success'
-                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
-                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
-            )}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      {toast && <Toast type={toast.type} message={toast.message} />}
 
       {/* KPI Cards Panel — Open Spatial Blocks */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">

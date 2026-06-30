@@ -14,8 +14,8 @@ export function formatCode(input, type) {
 
   const PREFIX_MAP = {
     SKU: 'SF-',
-    INV: 'SNF-INV-',
-    RET: 'SNF-RET-'
+    INV: 'SF-INV-',
+    RET: 'SF-RET-'
   }
 
   const prefix = PREFIX_MAP[type]

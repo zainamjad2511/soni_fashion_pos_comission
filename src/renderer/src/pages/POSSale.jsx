@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useCartStore } from '../store/cartStore.js'
 import { ReprintModal } from '../components/ReprintModal.jsx'
+import { Toast } from '../components/Toast.jsx'
 
 export function POSSale() {
   const [salespersons, setSalespersons] = useState([])
@@ -248,24 +249,7 @@ export function POSSale() {
   return (
     <div className="flex-1 flex flex-col w-full h-full min-h-[calc(100vh-100px)] bg-[#FAF6EE] text-[#332822] select-none">
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-bounce">
-          <div
-            className={`flex items-center gap-3 px-5 py-4 rounded shadow-2xl font-bold text-sm ${
-              toast.type === 'success'
-                ? 'bg-emerald-900 text-white'
-                : 'bg-rose-900 text-white'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-            )}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      {toast && <Toast type={toast.type} message={toast.message} />}
 
       {/* Edge-to-Edge Top Header Bar (Soft Cream #F7F5F0) */}
       <div className="bg-[#F7F5F0] px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -28,6 +28,7 @@ import {
   Filter,
   X
 } from 'lucide-react'
+import { Toast } from '../components/Toast.jsx'
 
 export function Returns() {
   const [activeTab, setActiveTab] = useState('invoice')
@@ -519,24 +520,7 @@ export function Returns() {
   return (
     <div className="p-8 w-full space-y-8 relative font-sans text-[#2E2822]">
       {/* Floating Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
-          <div
-            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-bold text-xs uppercase tracking-[0.12em] shadow-none ${
-              toast.type === 'success'
-                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
-                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
-            )}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      {toast && <Toast type={toast.type} message={toast.message} />}
 
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#2E2822]">

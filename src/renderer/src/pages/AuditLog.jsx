@@ -17,6 +17,7 @@ import {
   ArrowRight,
   History
 } from 'lucide-react'
+import { Toast } from '../components/Toast.jsx'
 
 export function AuditLog() {
   const [logs, setLogs] = useState([])
@@ -164,24 +165,7 @@ export function AuditLog() {
   return (
     <div className="space-y-8 pb-16 relative animate-fade-in text-[#2E2822]">
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
-          <div
-            className={`flex items-center gap-3 px-6 py-4 rounded-[2px] border font-sans text-sm font-semibold shadow-none ${
-              toast.type === 'success'
-                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
-                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
-            }`}
-          >
-            {toast.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-[#7A6F69] shrink-0" />
-            )}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      {toast && <Toast type={toast.type} message={toast.message} />}
 
       {/* Header Bar — Open Single-Axis Divider */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[#C9C0B5] pb-8">
