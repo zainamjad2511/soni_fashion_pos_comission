@@ -359,7 +359,7 @@ export function Expenses() {
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+            <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
               <th className="py-4 pr-4">Date</th>
               <th className="py-4 px-4">Category</th>
               <th className="py-4 px-4">Description</th>
@@ -368,7 +368,7 @@ export function Expenses() {
               <th className="py-4 pl-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+          <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
@@ -386,33 +386,33 @@ export function Expenses() {
                   <div className="flex flex-col items-center justify-center text-[#7A6F69]">
                     <Receipt className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
                     <p className="text-base font-display font-bold text-[#2E2822]">No expenses recorded for this period</p>
-                    <p className="text-xs font-sans text-[#7A6F69] mt-1">Try adjusting your filters or click "Record Expense"</p>
+                    <p className="text-sm font-sans text-[#7A6F69] mt-1">Try adjusting your filters or click "Record Expense"</p>
                   </div>
                 </td>
               </tr>
             ) : (
               expenseList.map((item) => (
                 <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
-                  <td className="py-5 pr-4 font-mono text-[#2E2822] text-xs font-semibold">
+                  <td className="py-5 pr-4 font-mono text-[#2E2822] text-sm font-semibold">
                     {item.expense_date}
                   </td>
                   <td className="py-5 px-4">
-                    <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#2E2822]">
+                    <span className="font-sans text-sm font-bold uppercase tracking-wider text-[#2E2822]">
                       {item.category}
                     </span>
                   </td>
                   <td className="py-5 px-4">
-                    <div className="font-bold text-[#2E2822] text-base font-display">{item.description || '—'}</div>
+                    <div className="font-bold text-[#2E2822] text-lg font-display">{item.description || '—'}</div>
                     {item.notes && (
-                      <div className="text-xs font-sans text-[#7A6F69] mt-0.5 max-w-md">{item.notes}</div>
+                      <div className="text-sm font-sans text-[#7A6F69] mt-0.5 max-w-md">{item.notes}</div>
                     )}
                   </td>
-                  <td className="py-5 px-4 text-[#7A6F69] text-xs font-sans uppercase tracking-wider">
+                  <td className="py-5 px-4 text-[#7A6F69] text-sm font-sans uppercase tracking-wider">
                     <span className="font-semibold text-[#2E2822]">
                       {item.recorded_by || 'Staff'}
                     </span>
                   </td>
-                  <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-base">
+                  <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-lg">
                     Rs. {Number(item.amount).toLocaleString()}
                   </td>
                   <td className="py-5 pl-4 text-right space-x-3 whitespace-nowrap">

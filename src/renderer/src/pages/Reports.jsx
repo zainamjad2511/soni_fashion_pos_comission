@@ -330,7 +330,7 @@ export function Reports() {
               <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                    <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                       <th className="py-4 pr-4">Invoice #</th>
                       <th className="py-4 px-4">Date & Time</th>
                       <th className="py-4 px-4">Salesperson</th>
@@ -341,30 +341,30 @@ export function Reports() {
                       <th className="py-4 pl-4 text-right">Grand Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                  <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                     {salesData.sales.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-[#7A6F69] text-xs">
+                        <td colSpan={8} className="py-12 text-center text-[#7A6F69] text-sm">
                           No sales records found within this date range.
                         </td>
                       </tr>
                     ) : (
                       salesData.sales.map(s => (
                         <tr key={s.id} className="hover:bg-[#EFEBE3] transition-colors">
-                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-xs">{s.invoice_number}</td>
-                          <td className="py-5 px-4 text-[#7A6F69] font-mono text-xs">{s.sale_date}</td>
-                          <td className="py-5 px-4 text-[#2E2822] font-semibold">{s.salesperson_name || 'Counter Staff'}</td>
+                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-sm">{s.invoice_number}</td>
+                          <td className="py-5 px-4 text-[#7A6F69] font-mono text-sm">{s.sale_date}</td>
+                          <td className="py-5 px-4 text-[#2E2822] font-semibold text-base">{s.salesperson_name || 'Counter Staff'}</td>
                           <td className="py-5 px-4">
-                            <span className="font-mono text-xs uppercase tracking-wider font-bold text-[#2E2822]">
+                            <span className="font-mono text-sm uppercase tracking-wider font-bold text-[#2E2822]">
                               {s.payment_method || 'Cash'}
                             </span>
                           </td>
-                          <td className="py-5 px-4 text-center font-mono font-bold">{s.total_items}</td>
-                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">Rs. {Number(s.subtotal || 0).toLocaleString()}</td>
-                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">
+                          <td className="py-5 px-4 text-center font-mono font-bold text-base">{s.total_items}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69] text-base">Rs. {Number(s.subtotal || 0).toLocaleString()}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69] text-base">
                             {Number(s.total_discount || 0) > 0 ? `- Rs. ${Number(s.total_discount).toLocaleString()}` : '—'}
                           </td>
-                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
+                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
                         </tr>
                       ))
                     )}
@@ -512,7 +512,7 @@ export function Reports() {
               <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                    <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                       <th className="py-4 pr-4">SKU</th>
                       <th className="py-4 px-4">Article Name</th>
                       <th className="py-4 px-4">Category</th>
@@ -521,22 +521,22 @@ export function Reports() {
                       <th className="py-4 pl-4 text-right">Total Cost Value</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                  <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                     {inventoryData.articles.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-xs">
+                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-sm">
                           No active articles found in catalog.
                         </td>
                       </tr>
                     ) : (
                       inventoryData.articles.map(art => (
                         <tr key={art.id} className="hover:bg-[#EFEBE3] transition-colors">
-                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-xs">{art.sku}</td>
-                          <td className="py-5 px-4 font-bold text-[#2E2822]">{art.name}</td>
-                          <td className="py-5 px-4 text-[#7A6F69] text-xs">{art.category}</td>
-                          <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822]">{art.quantity}</td>
-                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69]">Rs. {Number(art.wholesale_price || 0).toLocaleString()}</td>
-                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(art.total_cost_value || 0).toLocaleString()}</td>
+                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-sm">{art.sku}</td>
+                          <td className="py-5 px-4 font-bold text-[#2E2822] text-lg font-display">{art.name}</td>
+                          <td className="py-5 px-4 text-[#7A6F69] text-sm">{art.category}</td>
+                          <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822] text-base">{art.quantity}</td>
+                          <td className="py-5 px-4 text-right font-mono text-[#7A6F69] text-sm">Rs. {Number(art.wholesale_price || 0).toLocaleString()}</td>
+                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(art.total_cost_value || 0).toLocaleString()}</td>
                         </tr>
                       ))
                     )}
@@ -569,7 +569,7 @@ export function Reports() {
               <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                    <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                       <th className="py-4 pr-4 text-center w-16">Rank</th>
                       <th className="py-4 px-4">SKU</th>
                       <th className="py-4 px-4">Article Name</th>
@@ -578,10 +578,10 @@ export function Reports() {
                       <th className="py-4 pl-4 text-right">Revenue Contribution</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                  <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                     {topArticlesData.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-xs">
+                        <td colSpan={6} className="py-12 text-center text-[#7A6F69] text-sm">
                           No article sales recorded in this period.
                         </td>
                       </tr>
@@ -590,14 +590,14 @@ export function Reports() {
                         const rank = idx + 1
                         return (
                           <tr key={art.id} className="hover:bg-[#EFEBE3] transition-colors">
-                            <td className="py-5 pr-4 text-center font-mono font-bold text-[#2E2822]">
+                            <td className="py-5 pr-4 text-center font-mono font-bold text-[#2E2822] text-base">
                               #{rank}
                             </td>
-                            <td className="py-5 px-4 font-mono font-bold text-[#2E2822] text-xs">{art.sku}</td>
-                            <td className="py-5 px-4 font-bold text-[#2E2822]">{art.name}</td>
-                            <td className="py-5 px-4 text-[#7A6F69] text-xs">{art.category}</td>
-                            <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822]">{art.total_quantity_sold}</td>
-                            <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(art.total_revenue || 0).toLocaleString()}</td>
+                            <td className="py-5 px-4 font-mono font-bold text-[#2E2822] text-sm">{art.sku}</td>
+                            <td className="py-5 px-4 font-bold text-[#2E2822] text-lg font-display">{art.name}</td>
+                            <td className="py-5 px-4 text-[#7A6F69] text-sm">{art.category}</td>
+                            <td className="py-5 px-4 text-center font-mono font-bold text-[#2E2822] text-base">{art.total_quantity_sold}</td>
+                            <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(art.total_revenue || 0).toLocaleString()}</td>
                           </tr>
                         )
                       })
@@ -624,17 +624,17 @@ export function Reports() {
               <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                    <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                       <th className="py-4 pr-6">Expense Category</th>
                       <th className="py-4 px-6 text-center">Count</th>
                       <th className="py-4 px-6 text-right">Amount Disbursed</th>
                       <th className="py-4 pl-6 w-64">Share</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                  <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                     {expenseData.categories.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="py-12 text-center text-[#7A6F69] text-xs">
+                        <td colSpan={4} className="py-12 text-center text-[#7A6F69] text-sm">
                           No expense disbursements recorded in this period.
                         </td>
                       </tr>
@@ -645,15 +645,15 @@ export function Reports() {
                           : 0
                         return (
                           <tr key={cat.category} className="hover:bg-[#EFEBE3] transition-colors">
-                            <td className="py-5 pr-6 font-bold text-[#2E2822]">{cat.category}</td>
-                            <td className="py-5 px-6 text-center font-mono text-[#7A6F69]">{cat.expense_count}</td>
-                            <td className="py-5 px-6 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(cat.total_amount || 0).toLocaleString()}</td>
+                            <td className="py-5 pr-6 font-bold text-[#2E2822] text-lg font-display">{cat.category}</td>
+                            <td className="py-5 px-6 text-center font-mono text-[#7A6F69] text-base">{cat.expense_count}</td>
+                            <td className="py-5 px-6 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(cat.total_amount || 0).toLocaleString()}</td>
                             <td className="py-5 pl-6">
                               <div className="flex items-center gap-3">
-                                <div className="flex-1 h-1 bg-[#C9C0B5] overflow-hidden">
+                                <div className="flex-1 h-1.5 bg-[#C9C0B5] overflow-hidden">
                                   <div className="h-full bg-[#2E2822] transition-all" style={{ width: `${percentage}%` }} />
                                 </div>
-                                <span className="font-mono text-xs font-bold text-[#2E2822] w-12 text-right">{percentage}%</span>
+                                <span className="font-mono text-sm font-bold text-[#2E2822] w-12 text-right">{percentage}%</span>
                               </div>
                             </td>
                           </tr>

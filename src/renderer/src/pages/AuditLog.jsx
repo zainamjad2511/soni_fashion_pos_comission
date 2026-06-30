@@ -316,7 +316,7 @@ export function AuditLog() {
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+              <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                 <th className="py-4 pr-4 w-48">Timestamp</th>
                 <th className="py-4 px-4 w-32">Action Type</th>
                 <th className="py-4 px-4 w-44">Target Entity</th>
@@ -324,37 +324,37 @@ export function AuditLog() {
                 <th className="py-4 pl-4 text-right w-28">State Diff</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+            <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
               {logs.map((item) => {
                 const hasDiff = item.old_value || item.new_value
                 return (
                   <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
-                    <td className="py-5 pr-4 font-mono text-xs text-[#2E2822] whitespace-nowrap font-semibold">
+                    <td className="py-5 pr-4 font-mono text-sm text-[#2E2822] whitespace-nowrap font-semibold">
                       {item.performed_at}
                     </td>
                     <td className="py-5 px-4 whitespace-nowrap">
-                      <span className={`font-mono text-xs font-bold uppercase tracking-wider ${getBadgeColor(item.action_type)}`}>
+                      <span className={`font-mono text-sm font-bold uppercase tracking-wider ${getBadgeColor(item.action_type)}`}>
                         {item.action_type || 'EVENT'}
                       </span>
                     </td>
-                    <td className="py-5 px-4 font-bold text-[#2E2822] whitespace-nowrap text-xs font-sans">
+                    <td className="py-5 px-4 font-bold text-[#2E2822] whitespace-nowrap text-sm font-sans">
                       <span>{item.entity_type}</span>
                       {item.entity_id && <span className="text-[#7A6F69] font-mono ml-1">#{item.entity_id}</span>}
                     </td>
-                    <td className="py-5 px-4 text-[#2E2822] font-medium leading-relaxed text-sm font-sans">
+                    <td className="py-5 px-4 text-[#2E2822] font-medium leading-relaxed text-base font-sans">
                       {item.description}
                     </td>
                     <td className="py-5 pl-4 text-right whitespace-nowrap">
                       {hasDiff ? (
                         <button
                           onClick={() => setSelectedLog(item)}
-                          className="text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-wider underline transition-colors"
+                          className="text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-sm uppercase tracking-wider underline transition-colors"
                           title="Inspect Before/After Payload"
                         >
                           Inspect
                         </button>
                       ) : (
-                        <span className="text-[#7A6F69] text-xs italic">—</span>
+                        <span className="text-[#7A6F69] text-sm italic">—</span>
                       )}
                     </td>
                   </tr>

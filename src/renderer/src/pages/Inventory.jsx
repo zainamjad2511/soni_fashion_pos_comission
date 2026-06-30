@@ -367,17 +367,17 @@ export function Inventory() {
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.18em] text-[#7A6F69] font-bold font-sans">
-                <th className="py-4 pr-6">SKU / Tag</th>
-                <th className="py-4 px-6">Supplier & Code</th>
-                <th className="py-4 px-6">Article Name & Category</th>
-                <th className="py-4 px-6 text-right">Wholesale</th>
-                <th className="py-4 px-6 text-right">Retail Price</th>
-                <th className="py-4 px-6 text-center">In Stock</th>
-                <th className="py-4 pl-6 text-right">Actions</th>
+              <tr className="border-b border-[#2E2822] text-xs md:text-sm uppercase tracking-[0.14em] text-[#7A6F69] font-bold font-sans">
+                <th className="py-4 pr-4">SKU / Tag</th>
+                <th className="py-4 px-4">Supplier & Code</th>
+                <th className="py-4 px-4">Article Name & Category</th>
+                <th className="py-4 px-4 text-right">Wholesale</th>
+                <th className="py-4 px-4 text-right">Retail Price</th>
+                <th className="py-4 px-4 text-center">In Stock</th>
+                <th className="py-4 pl-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+            <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
               {articles.map((art) => {
                 const isOutOfStock = art.quantity === 0
                 return (
@@ -387,15 +387,15 @@ export function Inventory() {
                       !art.is_active ? 'opacity-40' : ''
                     }`}
                   >
-                    <td className="py-5 pr-6 whitespace-nowrap">
-                      <span className="font-mono text-xs font-bold text-[#2E2822] tracking-wider inline-flex items-center gap-2">
-                        <Tag className="w-3.5 h-3.5 text-[#7A6F69]" />
+                    <td className="py-5 pr-4 whitespace-nowrap">
+                      <span className="font-mono text-sm font-bold text-[#2E2822] tracking-wider inline-flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-[#7A6F69]" />
                         <span>{art.sku}</span>
                       </span>
                     </td>
-                    <td className="py-5 px-6 whitespace-nowrap">
-                      <div className="font-bold text-[#2E2822] text-xs flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-[#7A6F69] uppercase tracking-wider">
+                    <td className="py-5 px-4 whitespace-nowrap">
+                      <div className="font-bold text-[#2E2822] text-sm flex items-center gap-2">
+                        <span className="font-mono text-xs text-[#7A6F69] uppercase tracking-wider">
                           {art.supplier_code}
                         </span>
                         <span>{art.supplier_name}</span>
@@ -404,8 +404,8 @@ export function Inventory() {
                         #{art.supplier_article_code}
                       </div>
                     </td>
-                    <td className="py-5 px-6">
-                      <div className="font-bold text-[#2E2822] text-base font-display">
+                    <td className="py-5 px-4">
+                      <div className="font-bold text-[#2E2822] text-lg font-display">
                         {art.name}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-[#7A6F69] mt-1 uppercase tracking-wider">
@@ -416,22 +416,22 @@ export function Inventory() {
                         {art.size && <span>· Size: {art.size}</span>}
                       </div>
                     </td>
-                    <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-xs">
+                    <td className="py-5 px-4 text-right font-mono text-[#7A6F69] text-sm">
                       Rs. {Number(art.wholesale_price).toLocaleString()}
                     </td>
-                    <td className="py-5 px-6 text-right font-mono font-bold text-[#2E2822] text-base">
+                    <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-lg">
                       Rs. {Number(art.retail_price).toLocaleString()}
                     </td>
-                    <td className="py-5 px-6 text-center whitespace-nowrap">
+                    <td className="py-5 px-4 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1.5 font-mono text-xs font-bold ${
+                        className={`inline-flex items-center gap-1.5 font-mono text-sm font-bold ${
                           isOutOfStock ? 'text-[#7A6F69]' : 'text-[#2E2822]'
                         }`}
                       >
                         <span>{art.quantity} Units</span>
                       </span>
                     </td>
-                    <td className="py-5 pl-6 text-right whitespace-nowrap space-x-3">
+                    <td className="py-5 pl-4 text-right whitespace-nowrap space-x-3">
                       <button
                         onClick={() => setHistoryArticle(art)}
                         className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"

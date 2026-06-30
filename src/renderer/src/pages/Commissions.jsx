@@ -295,7 +295,7 @@ export function Commissions() {
           <div className="w-full overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.18em] text-[#7A6F69] font-bold font-sans">
+                <tr className="border-b border-[#2E2822] text-xs md:text-sm uppercase tracking-[0.14em] text-[#7A6F69] font-bold font-sans">
                   <th className="py-4 px-4 w-10"></th>
                   <th className="py-4 pr-6">Staff Member</th>
                   <th className="py-4 px-6 text-center">Status</th>
@@ -306,7 +306,7 @@ export function Commissions() {
                   <th className="py-4 pl-6 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+              <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                 {listData.map((item) => {
                   const currentRateVal = rateInputs[item.salesperson_id] !== undefined
                     ? rateInputs[item.salesperson_id]
@@ -329,18 +329,18 @@ export function Commissions() {
                         </td>
                         <td className="py-5 pr-6 font-bold text-[#2E2822]">
                           <div>
-                            <div>{item.name}</div>
-                            {item.contact && <div className="text-xs text-[#7A6F69] font-normal">{item.contact}</div>}
+                            <div className="text-lg font-display">{item.name}</div>
+                            {item.contact && <div className="text-sm text-[#7A6F69] font-normal">{item.contact}</div>}
                           </div>
                         </td>
                         <td className="py-5 px-6 text-center whitespace-nowrap">
-                          <span className="font-mono text-xs uppercase tracking-wider font-bold text-[#2E2822]">
+                          <span className="font-mono text-sm uppercase tracking-wider font-bold text-[#2E2822]">
                             {item.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="py-5 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="relative w-24">
+                            <div className="relative w-28">
                               <input
                                 type="number"
                                 step="0.1"
@@ -348,7 +348,7 @@ export function Commissions() {
                                 max="100"
                                 value={currentRateVal}
                                 onChange={(e) => handleRateChange(item.salesperson_id, e.target.value)}
-                                className="w-full py-1 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:border-[#2E2822] transition-all"
+                                className="w-full py-1 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm font-bold focus:outline-none focus:border-[#2E2822] transition-all"
                               />
                               <span className="absolute right-1 top-1 text-xs text-[#7A6F69] font-bold">%</span>
                             </div>
@@ -356,7 +356,7 @@ export function Commissions() {
                               <button
                                 onClick={() => handleSaveRate(item.salesperson_id, item.name)}
                                 disabled={savingRateId === item.salesperson_id}
-                                className="px-3 py-1 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-[10px] uppercase tracking-[0.12em] flex items-center gap-1 transition-all"
+                                className="px-3 py-1 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.12em] flex items-center gap-1 transition-all"
                                 title="Save New Rate"
                               >
                                 {savingRateId === item.salesperson_id ? (
@@ -369,13 +369,13 @@ export function Commissions() {
                             )}
                           </div>
                         </td>
-                        <td className="py-5 px-6 text-right font-mono text-[#7A6F69]">
+                        <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-base">
                           Rs. {(item.total_sales || 0).toLocaleString()}
                         </td>
-                        <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-bold">
+                        <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-bold text-base">
                           Rs. {(item.total_commission || 0).toLocaleString()}
                         </td>
-                        <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-semibold">
+                        <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-semibold text-base">
                           Rs. {(item.pending_commission || 0).toLocaleString()}
                         </td>
                         <td className="py-5 pl-6 text-center whitespace-nowrap">
@@ -383,7 +383,7 @@ export function Commissions() {
                             <button
                               onClick={() => handleMarkPaid(item.salesperson_id, item.name)}
                               disabled={markingPaidId === item.salesperson_id}
-                              className="px-3 py-1.5 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] text-[11px] font-sans font-bold uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 transition-all mx-auto disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] text-xs font-sans font-bold uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 transition-all mx-auto disabled:opacity-50"
                               title="Mark Pending Commissions as Paid"
                             >
                               {markingPaidId === item.salesperson_id ? (
@@ -394,7 +394,7 @@ export function Commissions() {
                               <span>Mark Paid</span>
                             </button>
                           ) : (
-                            <span className="text-xs text-[#7A6F69] font-bold uppercase tracking-wider">Settled</span>
+                            <span className="text-sm text-[#7A6F69] font-bold uppercase tracking-wider">Settled</span>
                           )}
                         </td>
                       </tr>
@@ -405,27 +405,27 @@ export function Commissions() {
                           <td colSpan={8} className="p-8">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-3">
-                                <div className="flex items-center gap-2 text-sm font-bold text-[#2E2822]">
+                                <div className="flex items-center gap-2 text-base font-bold text-[#2E2822]">
                                   <FileText className="w-4 h-4" />
                                   <span>Individual Sale Attributions for {item.name} ({selectedMonth})</span>
                                 </div>
-                                <span className="text-xs text-[#7A6F69]">
+                                <span className="text-sm text-[#7A6F69]">
                                   Showing records contributing to monthly payout
                                 </span>
                               </div>
 
                               {drillDownLoading ? (
-                                <div className="py-8 flex items-center justify-center gap-2 text-[#7A6F69] text-xs font-bold uppercase tracking-wider">
+                                <div className="py-8 flex items-center justify-center gap-2 text-[#7A6F69] text-sm font-bold uppercase tracking-wider">
                                   <RefreshCw className="w-4 h-4 animate-spin text-[#2E2822]" />
                                   <span>Loading commission items...</span>
                                 </div>
                               ) : drillDownItems.length === 0 ? (
-                                <div className="py-6 text-center text-[#7A6F69] text-xs">
+                                <div className="py-6 text-center text-[#7A6F69] text-sm">
                                   No individual commission transactions found for this period.
                                 </div>
                               ) : (
                                 <div className="overflow-x-auto max-h-64">
-                                  <table className="w-full text-left text-xs border-collapse font-sans">
+                                  <table className="w-full text-left text-sm border-collapse font-sans">
                                     <thead>
                                       <tr className="border-b border-[#C9C0B5] text-[#7A6F69] uppercase tracking-wider font-bold">
                                         <th className="py-2.5 pr-4">Invoice #</th>
@@ -451,7 +451,7 @@ export function Commissions() {
                                             Rs. {Number(sub.commission_amount || 0).toLocaleString()}
                                           </td>
                                           <td className="py-3 pl-4 text-center">
-                                            <span className="font-mono text-[10px] uppercase font-bold text-[#2E2822]">
+                                            <span className="font-mono text-xs uppercase font-bold text-[#2E2822]">
                                               {sub.status || 'pending'}
                                             </span>
                                           </td>

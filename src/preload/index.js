@@ -1,5 +1,13 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import { electronAPI as toolkitElectronAPI } from '@electron-toolkit/preload'
+
+// Apply Global UI Scaling (Option B: Electron Native Zoom)
+// Uniformly scale the entire Chromium renderer instance by 18% for improved desktop legibility
+try {
+  webFrame.setZoomFactor(1.18)
+} catch (err) {
+  console.warn('[Preload] Could not apply initial zoom factor:', err)
+}
 
 // Soni Fashion POS Domain IPC Bridge Contract
 const customElectronAPI = {
@@ -95,6 +103,11 @@ const customElectronAPI = {
 
   audit: {
     list: (filters) => ipcRenderer.invoke('audit:list', filters)
+  },
+
+  ui: {
+    setZoomFactor: (factor) => webFrame.setZoomFactor(factor),
+    getZoomFactor: () => webFrame.getZoomFactor()
   }
 }
 

@@ -368,13 +368,13 @@ export function POSSale() {
               <thead>
                 {/* Darker Cream Table Header (#E4DBC8) */}
                 <tr className="bg-[#E4DBC8] text-[#332822] text-xs font-semibold uppercase tracking-wider sticky top-0 z-10">
-                  <th className="py-3.5 px-6 font-semibold">SKU / ITEM ID</th>
-                  <th className="py-3.5 px-6 font-semibold">DESCRIPTION</th>
-                  <th className="py-3.5 px-4 text-center w-36 font-semibold">QUANTITY</th>
-                  <th className="py-3.5 px-6 text-right font-semibold">PRICE</th>
-                  <th className="py-3.5 px-6 text-right w-48 font-semibold">FINAL AMOUNT</th>
-                  <th className="py-3.5 px-6 text-right font-semibold">DISCOUNT</th>
-                  <th className="py-3.5 px-6 text-center w-24 font-semibold">TOTAL</th>
+                  <th className="py-3.5 px-4 font-semibold">SKU / ITEM ID</th>
+                  <th className="py-3.5 px-4 font-semibold">DESCRIPTION</th>
+                  <th className="py-3.5 px-3 text-center w-28 font-semibold">QUANTITY</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">PRICE</th>
+                  <th className="py-3.5 px-3 text-right w-36 font-semibold">FINAL AMOUNT</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">DISCOUNT</th>
+                  <th className="py-3.5 px-4 text-right w-28 font-semibold">TOTAL</th>
                 </tr>
               </thead>
               <tbody className="text-sm md:text-base font-normal text-[#332822]">
@@ -391,13 +391,13 @@ export function POSSale() {
                       key={item.article_id}
                       className="bg-white hover:bg-[#F7F5F0] transition-colors"
                     >
-                      <td className="py-3.5 px-6 font-mono text-sm font-normal text-[#332822]">
+                      <td className="py-3.5 px-4 font-mono text-sm font-normal text-[#332822]">
                         {item.sku}
                       </td>
-                      <td className="py-3.5 px-6 font-normal text-[#332822]">
+                      <td className="py-3.5 px-4 font-normal text-[#332822]">
                         {item.name}
                       </td>
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-2.5 px-3 text-center">
                         <input
                           type="number"
                           min="1"
@@ -414,10 +414,10 @@ export function POSSale() {
                           className="w-full py-1.5 px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                         />
                       </td>
-                      <td className="py-3.5 px-6 text-right font-mono font-normal text-[#332822]">
+                      <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
                         {item.retail_price_snapshot.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-4 text-right">
+                      <td className="py-2.5 px-3 text-right">
                         <input
                           type="number"
                           min="0"
@@ -431,21 +431,23 @@ export function POSSale() {
                               showToast('error', err.message)
                             }
                           }}
-                          className="w-full py-1.5 px-3 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
+                          className="w-full py-1.5 px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                         />
                       </td>
-                      <td className="py-3.5 px-6 text-right font-mono font-normal text-[#332822]">
+                      <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
                         {item.discount_amount > 0 ? `${item.discount_amount.toLocaleString()}` : '0'}
                       </td>
-                      <td className="py-3.5 px-6 text-center font-mono font-normal text-[#332822] flex items-center justify-between gap-2">
-                        <span>{(item.retail_price_snapshot * item.quantity - (item.discount_amount || 0)).toLocaleString()}</span>
-                        <button
-                          onClick={() => removeItem(item.article_id)}
-                          className="text-[#7A6F69] hover:text-rose-700 p-1"
-                          title="Delete Row"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
+                        <div className="flex items-center justify-end gap-3">
+                          <span>{(item.retail_price_snapshot * item.quantity - (item.discount_amount || 0)).toLocaleString()}</span>
+                          <button
+                            onClick={() => removeItem(item.article_id)}
+                            className="text-[#7A6F69] hover:text-rose-700 p-1"
+                            title="Delete Row"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

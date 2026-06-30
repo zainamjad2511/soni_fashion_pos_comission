@@ -292,7 +292,7 @@ export function Salespersons() {
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#2E2822] text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.18em] font-sans">
+                  <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
                     <th className="py-4 pr-6">ID</th>
                     <th className="py-4 px-6">Staff Member Name</th>
                     <th className="py-4 px-6">Contact Number</th>
@@ -301,7 +301,7 @@ export function Salespersons() {
                     <th className="py-4 pl-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+                <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                   {salespersons.map((staff) => (
                     <tr
                       key={staff.id}
@@ -310,39 +310,39 @@ export function Salespersons() {
                       }`}
                     >
                       <td className="py-5 pr-6 whitespace-nowrap">
-                        <span className="font-mono text-xs font-bold text-[#2E2822]">
+                        <span className="font-mono text-sm font-bold text-[#2E2822]">
                           #{staff.id}
                         </span>
                       </td>
-                      <td className="py-5 px-6 font-bold text-[#2E2822] text-base font-display flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#2E2822] font-mono text-xs font-bold">
+                      <td className="py-5 px-6 font-bold text-[#2E2822] text-lg font-display flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#2E2822] font-mono text-sm font-bold">
                           {staff.name.substring(0, 2).toUpperCase()}
                         </div>
                         <span>{staff.name}</span>
                       </td>
                       <td className="py-5 px-6 text-[#2E2822]">
                         {staff.contact ? (
-                          <div className="flex items-center gap-2 text-xs font-mono font-medium">
-                            <Phone className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
+                          <div className="flex items-center gap-2 text-sm font-mono font-medium">
+                            <Phone className="w-4 h-4 text-[#7A6F69] shrink-0" />
                             <span>{staff.contact}</span>
                           </div>
                         ) : (
-                          <span className="text-[#7A6F69] text-xs italic">No number provided</span>
+                          <span className="text-[#7A6F69] text-sm italic">No number provided</span>
                         )}
                       </td>
-                      <td className="py-5 px-6 text-[#7A6F69] max-w-xs truncate text-xs">
+                      <td className="py-5 px-6 text-[#7A6F69] max-w-xs truncate text-sm">
                         {staff.notes ? (
                           <div className="flex items-center gap-2 text-[#2E2822] truncate">
-                            <FileText className="w-3 h-3 text-[#7A6F69] shrink-0" />
+                            <FileText className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
                             <span className="truncate">{staff.notes}</span>
                           </div>
                         ) : (
-                          <span className="text-[#7A6F69] text-xs">—</span>
+                          <span className="text-[#7A6F69] text-sm">—</span>
                         )}
                       </td>
                       <td className="py-5 px-6 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1.5 font-mono text-xs font-bold ${
+                          className={`inline-flex items-center gap-1.5 font-mono text-sm font-bold ${
                             staff.is_active ? 'text-[#2E2822]' : 'text-[#7A6F69]'
                           }`}
                         >

@@ -267,16 +267,16 @@ export function Suppliers() {
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.18em] text-[#7A6F69] font-bold font-sans">
-                <th className="py-4 pr-6">Vendor Code</th>
-                <th className="py-4 px-6">Supplier Name</th>
-                <th className="py-4 px-6">Contact Directory</th>
-                <th className="py-4 px-6">Notes / Address</th>
-                <th className="py-4 px-6 text-center">Status</th>
-                <th className="py-4 pl-6 text-right">Actions</th>
+              <tr className="border-b border-[#2E2822] text-xs md:text-sm uppercase tracking-[0.14em] text-[#7A6F69] font-bold font-sans">
+                <th className="py-4 pr-4">Vendor Code</th>
+                <th className="py-4 px-4">Supplier Name</th>
+                <th className="py-4 px-4">Contact Directory</th>
+                <th className="py-4 px-4">Notes / Address</th>
+                <th className="py-4 px-4 text-center">Status</th>
+                <th className="py-4 pl-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#C9C0B5] text-sm font-sans">
+            <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
               {suppliers.map((sup) => (
                 <tr
                   key={sup.id}
@@ -284,48 +284,48 @@ export function Suppliers() {
                     !sup.is_active ? 'opacity-40' : ''
                   }`}
                 >
-                  <td className="py-5 pr-6 whitespace-nowrap">
-                    <span className="font-mono text-xs font-bold text-[#2E2822] tracking-wider">
+                  <td className="py-5 pr-4 whitespace-nowrap">
+                    <span className="font-mono text-sm font-bold text-[#2E2822] tracking-wider">
                       {sup.code}
                     </span>
                   </td>
-                  <td className="py-5 px-6 font-bold text-[#2E2822] text-base font-display">
+                  <td className="py-5 px-4 font-bold text-[#2E2822] text-lg font-display">
                     {sup.name}
                   </td>
-                  <td className="py-5 px-6 text-[#2E2822]">
+                  <td className="py-5 px-4 text-[#2E2822]">
                     {sup.contact ? (
-                      <div className="flex items-center gap-2 text-xs font-mono font-medium">
-                        <Phone className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
+                      <div className="flex items-center gap-2 text-sm font-mono font-medium">
+                        <Phone className="w-4 h-4 text-[#7A6F69] shrink-0" />
                         <span>{sup.contact}</span>
                       </div>
                     ) : (
-                      <span className="text-[#7A6F69] text-xs italic">No phone provided</span>
+                      <span className="text-[#7A6F69] text-sm italic">No phone provided</span>
                     )}
                   </td>
-                  <td className="py-5 px-6 text-[#7A6F69] max-w-xs truncate text-xs">
+                  <td className="py-5 px-4 text-[#7A6F69] max-w-xs truncate text-sm">
                     {sup.address && (
                       <div className="flex items-center gap-2 text-[#2E2822] mb-1 truncate">
-                        <MapPin className="w-3 h-3 text-[#7A6F69] shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
                         <span className="truncate">{sup.address}</span>
                       </div>
                     )}
                     {sup.notes && (
                       <div className="flex items-center gap-2 text-[#7A6F69] truncate">
-                        <FileText className="w-3 h-3 shrink-0" />
+                        <FileText className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{sup.notes}</span>
                       </div>
                     )}
                   </td>
-                  <td className="py-5 px-6 text-center whitespace-nowrap">
+                  <td className="py-5 px-4 text-center whitespace-nowrap">
                     <span
-                      className={`inline-flex items-center gap-1.5 font-mono text-xs font-bold ${
+                      className={`inline-flex items-center gap-1.5 font-mono text-sm font-bold ${
                         sup.is_active ? 'text-[#2E2822]' : 'text-[#7A6F69]'
                       }`}
                     >
                       <span>{sup.is_active ? 'Active' : 'Deactivated'}</span>
                     </span>
                   </td>
-                  <td className="py-5 pl-6 text-right whitespace-nowrap space-x-3">
+                  <td className="py-5 pl-4 text-right whitespace-nowrap space-x-3">
                     <button
                       onClick={() => handleOpenDrawer(sup)}
                       className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
