@@ -13,6 +13,7 @@ export function registerArticlesHandlers() {
     `
     const params = []
 
+    let exactSku = null
     if (filters) {
       if (filters.supplier_id) {
         query += ' AND articles.supplier_id = ?'
@@ -29,7 +30,6 @@ export function registerArticlesHandlers() {
         query += ' AND articles.is_active = ?'
         params.push(Number(filters.is_active))
       }
-      let exactSku = null
       if (filters.search) {
         const queryStr = filters.search.trim()
         const term = `%${queryStr}%`

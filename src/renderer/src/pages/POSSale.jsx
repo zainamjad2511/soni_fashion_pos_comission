@@ -45,6 +45,7 @@ export function POSSale() {
     removeItem,
     updateQuantity,
     updateItemDiscount,
+    updateItemFinalAmount,
     setOrderDiscount,
     setPaymentMethod,
     setNotes,
@@ -136,6 +137,20 @@ export function POSSale() {
     if (items.length === 0) {
       showToast('error', 'Cart is empty! Add articles to proceed.')
       return
+    }
+
+    for (const item of items) {
+      const subtotal = item.retail_price_snapshot * item.quantity
+      const finalVal = item.final_amount_input !== undefined ? item.final_amount_input : (subtotal - (item.discount_amount || 0))
+      if (finalVal === '' || Number(finalVal) <= 0) {
+        showToast('error', `Cannot finalize sale: Final amount for "${item.name}" cannot be empty or zero.`)
+        return
+      }
+      const finalAmount = Number(finalVal)
+      if (finalAmount > subtotal) {
+        showToast('error', `Cannot finalize sale: Final amount for "${item.name}" (Rs. ${finalAmount.toLocaleString()}) cannot exceed retail subtotal (Rs. ${subtotal.toLocaleString()}).`)
+        return
+      }
     }
 
     setProcessing(true)
@@ -384,7 +399,7 @@ export function POSSale() {
                 <span>Active Cart Items ({items.length})</span>
               </span>
               <span className="text-xs text-slate-500">
-                Click quantity or discount fields to adjust values directly
+                Click quantity or final amount fields to adjust values directly
               </span>
             </div>
 
@@ -408,8 +423,8 @@ export function POSSale() {
                       <th className="py-3.5 px-5">SKU & Article</th>
                       <th className="py-3.5 px-4 text-right">Retail Price</th>
                       <th className="py-3.5 px-4 text-center">Qty</th>
-                      <th className="py-3.5 px-4 text-right">Line Discount</th>
-                      <th className="py-3.5 px-5 text-right">Line Total</th>
+                      <th className="py-3.5 px-4 text-right">Final Amount</th>
+                      <th className="py-3.5 px-5 text-right">Calculated Disc.</th>
                       <th className="py-3.5 px-4 text-center">Action</th>
                     </tr>
                   </thead>
@@ -442,6 +457,7 @@ export function POSSale() {
                               min="1"
                               max={item.max_stock}
                               value={item.quantity}
+                              onFocus={(e) => e.target.select()}
                               onChange={(e) => {
                                 try {
                                   updateQuantity(item.article_id, e.target.value)
@@ -471,11 +487,12 @@ export function POSSale() {
                             <input
                               type="number"
                               min="0"
-                              step="10"
-                              value={item.discount_amount}
+                              value={item.final_amount_input !== undefined ? item.final_amount_input : (item.retail_price_snapshot * item.quantity - (item.discount_amount || 0))}
+                              onFocus={(e) => e.target.select()}
+                              onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                               onChange={(e) => {
                                 try {
-                                  updateItemDiscount(item.article_id, e.target.value)
+                                  updateItemFinalAmount(item.article_id, e.target.value)
                                 } catch (err) {
                                   showToast('error', err.message)
                                 }
@@ -484,8 +501,8 @@ export function POSSale() {
                             />
                           </div>
                         </td>
-                        <td className="py-3.5 px-5 text-right font-mono font-bold text-white">
-                          Rs. {(item.retail_price_snapshot * item.quantity - item.discount_amount).toLocaleString()}
+                        <td className="py-3.5 px-5 text-right font-mono font-bold text-emerald-400">
+                          {item.discount_amount > 0 ? `- Rs. ${item.discount_amount.toLocaleString()}` : 'Rs. 0'}
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <button
@@ -532,8 +549,9 @@ export function POSSale() {
                   <input
                     type="number"
                     min="0"
-                    step="50"
                     value={orderDiscount}
+                    onFocus={(e) => e.target.select()}
+                    onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                     onChange={(e) => setOrderDiscount(e.target.value)}
                     className="w-full text-right bg-transparent text-amber-400 font-mono text-sm font-bold focus:outline-none"
                   />

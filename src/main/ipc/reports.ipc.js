@@ -7,9 +7,9 @@ export function registerReportsHandlers() {
   const unpackDates = (arg1, arg2) => {
     if (arg1 && typeof arg1 === 'object') {
       return {
-        startDate: arg1.startDate || arg1.start || '2000-01-01',
-        endDate: arg1.endDate || arg1.end || '2100-12-31',
-        salespersonId: arg1.salespersonId || null,
+        startDate: arg1.startDate || arg1.start_date || arg1.start || '2000-01-01',
+        endDate: arg1.endDate || arg1.end_date || arg1.end || '2100-12-31',
+        salespersonId: arg1.salespersonId || arg1.salesperson_id || null,
         limit: arg1.limit || 10,
         month: arg1.month || new Date().toISOString().slice(0, 7),
         date: arg1.date || new Date().toISOString().slice(0, 10)

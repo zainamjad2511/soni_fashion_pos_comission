@@ -1222,6 +1222,8 @@ export function Returns() {
                               type="number"
                               min="0"
                               value={item.refund_per_unit}
+                              onFocus={(e) => e.target.select()}
+                              onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                               onChange={(e) => updateManualPrice(item.article_id, e.target.value)}
                               className="w-28 text-right bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white focus:outline-none focus:border-amber-400 font-mono text-xs"
                             />

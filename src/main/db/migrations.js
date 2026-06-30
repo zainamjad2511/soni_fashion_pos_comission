@@ -105,7 +105,7 @@ export function runMigrations(db) {
           subtotal           REAL    NOT NULL,
           total_discount     REAL    NOT NULL DEFAULT 0,
           grand_total        REAL    NOT NULL,
-          payment_method     TEXT    NOT NULL DEFAULT 'cash' CHECK (payment_method IN ('cash','exchange_customer_pays','exchange_store_refunds','exchange_even')),
+          payment_method     TEXT    NOT NULL DEFAULT 'cash',
           notes              TEXT,
           status             TEXT    NOT NULL DEFAULT 'completed' CHECK (status IN ('completed','voided')),
           exchange_return_id INTEGER REFERENCES returns(id),
@@ -221,12 +221,55 @@ export function runMigrations(db) {
       // Update schema_version
       db.prepare(`
         INSERT INTO settings (key, value, updated_at) 
-        VALUES ('schema_version', '1', CURRENT_TIMESTAMP)
-        ON CONFLICT(key) DO UPDATE SET value = '1', updated_at = CURRENT_TIMESTAMP
+        VALUES ('schema_version', '2', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '2', updated_at = CURRENT_TIMESTAMP
       `).run()
     })
 
     migrateV1()
     console.log('[Migrations] Successfully applied V1 Migration.')
+  }
+
+  if (currentVersion < 2) {
+    console.log('[Migrations] Applying V2 Migration (relaxing payment_method check constraint)...')
+    db.pragma('foreign_keys = OFF')
+    try {
+      const migrateV2 = db.transaction(() => {
+        db.exec('DROP TABLE IF EXISTS sales_v2;')
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS sales_v2 (
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            invoice_number     TEXT    NOT NULL UNIQUE,
+            salesperson_id     INTEGER REFERENCES salespersons(id) ON DELETE SET NULL,
+            sale_date          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            subtotal           REAL    NOT NULL,
+            total_discount     REAL    NOT NULL DEFAULT 0,
+            grand_total        REAL    NOT NULL,
+            payment_method     TEXT    NOT NULL DEFAULT 'cash',
+            notes              TEXT,
+            status             TEXT    NOT NULL DEFAULT 'completed' CHECK (status IN ('completed','voided')),
+            exchange_return_id INTEGER REFERENCES returns(id),
+            created_at         DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+
+          INSERT INTO sales_v2 (id, invoice_number, salesperson_id, sale_date, subtotal, total_discount, grand_total, payment_method, notes, status, exchange_return_id, created_at)
+          SELECT id, invoice_number, salesperson_id, sale_date, subtotal, total_discount, grand_total, payment_method, notes, status, exchange_return_id, created_at FROM sales;
+
+          DROP TABLE sales;
+          ALTER TABLE sales_v2 RENAME TO sales;
+
+          CREATE INDEX IF NOT EXISTS idx_sales_date        ON sales(sale_date);
+          CREATE INDEX IF NOT EXISTS idx_sales_salesperson ON sales(salesperson_id);
+
+          INSERT INTO settings (key, value, updated_at) 
+          VALUES ('schema_version', '2', CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = '2', updated_at = CURRENT_TIMESTAMP;
+        `)
+      })
+      migrateV2()
+      console.log('[Migrations] Successfully applied V2 Migration.')
+    } finally {
+      db.pragma('foreign_keys = ON')
+    }
   }
 }

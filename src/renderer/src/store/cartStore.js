@@ -45,6 +45,7 @@ export const useCartStore = create((set, get) => ({
         retail_price_snapshot: Number(article.retail_price || 0),
         quantity: 1,
         discount_amount: 0,
+        final_amount_input: Number(article.retail_price || 0),
         max_stock: Number(article.quantity || 0)
       }
       set({ items: [...items, newItem] })
@@ -70,7 +71,9 @@ export const useCartStore = create((set, get) => ({
           if (qty > item.max_stock) {
             throw new Error(`Quantity exceeds available stock (${item.max_stock}).`)
           }
-          return { ...item, quantity: qty }
+          const subtotal = item.retail_price_snapshot * qty
+          const newFinal = item.final_amount_input === '' ? '' : (subtotal - (item.discount_amount || 0))
+          return { ...item, quantity: qty, final_amount_input: newFinal }
         }
         return item
       })
@@ -78,15 +81,32 @@ export const useCartStore = create((set, get) => ({
   },
 
   updateItemDiscount: (articleId, discountAmount) => {
-    const disc = Math.max(0, Number(discountAmount) || 0)
+    const disc = Number(discountAmount) || 0
     set((state) => ({
       items: state.items.map((item) => {
         if (item.article_id === articleId) {
-          const maxDisc = item.retail_price_snapshot * item.quantity
-          if (disc > maxDisc) {
-            throw new Error(`Line discount cannot exceed line subtotal (Rs. ${maxDisc}).`)
+          const subtotal = item.retail_price_snapshot * item.quantity
+          return { ...item, discount_amount: disc, final_amount_input: subtotal - disc }
+        }
+        return item
+      })
+    }))
+  },
+
+  updateItemFinalAmount: (articleId, finalAmountInput) => {
+    set((state) => ({
+      items: state.items.map((item) => {
+        if (item.article_id === articleId) {
+          const subtotal = item.retail_price_snapshot * item.quantity
+          if (finalAmountInput === '' || finalAmountInput === null || finalAmountInput === undefined) {
+            return { ...item, final_amount_input: '', discount_amount: 0 }
           }
-          return { ...item, discount_amount: disc }
+          const target = Number(finalAmountInput)
+          if (isNaN(target)) {
+            return item
+          }
+          const disc = subtotal - target
+          return { ...item, final_amount_input: finalAmountInput, discount_amount: disc }
         }
         return item
       })
@@ -94,7 +114,7 @@ export const useCartStore = create((set, get) => ({
   },
 
   setOrderDiscount: (amount) => {
-    const disc = Math.max(0, Number(amount) || 0)
+    const disc = amount === '' ? '' : Math.max(0, Number(amount) || 0)
     set({ orderDiscount: disc })
   },
 
