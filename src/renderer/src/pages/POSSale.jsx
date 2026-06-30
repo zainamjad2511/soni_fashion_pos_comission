@@ -64,6 +64,8 @@ export function POSSale() {
     }
   }, [])
 
+  // TASK 3: onChange only triggers search (populates dropdown).
+  // Actual cart insertion only happens on Enter key (handleSearchKeyDown).
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim().length > 0) {
@@ -72,9 +74,23 @@ export function POSSale() {
         setSearchResults([])
       }
     }, 250)
-
     return () => clearTimeout(delayDebounceFn)
   }, [searchTerm])
+
+  // TASK 3: Enter key handler — adds the top result (or exact SKU match) to cart.
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (searchResults.length > 0) {
+        handleAddToCart(searchResults[0])
+        setSearchTerm('')
+        setSearchResults([])
+      }
+    } else if (e.key === 'Escape') {
+      setSearchTerm('')
+      setSearchResults([])
+    }
+  }
 
   const showToast = (type, message) => {
     setToast({ type, message })
@@ -106,13 +122,7 @@ export function POSSale() {
         if (res.success && res.data) {
           const availableList = res.data.filter((a) => a.quantity > 0)
           setSearchResults(availableList)
-
-          // Auto-add if exact SKU match found
-          if (availableList.length === 1 && availableList[0].sku.toLowerCase() === query.toLowerCase()) {
-            handleAddToCart(availableList[0])
-            setSearchTerm('')
-            setSearchResults([])
-          }
+          // TASK 3: No auto-insert on onChange. User must press Enter to confirm.
         }
       }
     } catch (err) {
@@ -252,7 +262,8 @@ export function POSSale() {
       <div className="bg-[#F7F5F0] px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3.5 pr-6">
-            <div className="w-11 h-11 bg-[#332822] text-[#F7F5F0] font-bold text-lg flex items-center justify-center font-display shadow-sm">
+            {/* TASK 4: Logo block — Cream Ivory bg, deep accent border + text */}
+            <div className="w-11 h-11 bg-[#F7F5F0] border border-[#C9B99A] text-[#332822] font-bold text-lg flex items-center justify-center font-display shadow-sm">
               SF
             </div>
             <div>
@@ -301,31 +312,46 @@ export function POSSale() {
 
       {/* Main Split Content Area */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 bg-[#FCFBFA]">
-        {/* Left Area: Search Bar, Flat Table & Bottom Status Bar */}
+        {/* Left Area: Search Bar (relocated above table), Ledger Table & Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#FCFBFA]">
-          {/* Top Search Box (Darker Cream Shade #E4DBC8) */}
-          <div className="bg-[#E4DBC8] p-4 relative z-40">
+          {/* TASK 2 & 3: Search bar relocated here, directly above the ledger table.
+               Positioned relative on outer wrapper for correct dropdown anchor.
+               Dropdown has solid bg, border, and high z-index to strictly overlay table. */}
+          <div className="bg-[#F7F5F0] border-b border-[#E4DBC8] px-4 py-3 relative z-50">
             <div className="relative">
-              <Search className="w-5 h-5 text-[#7A6F69] absolute left-4 top-3.5" />
+              <Search className="w-4 h-4 text-[#7A6F69] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 ref={searchInputRef}
+                autoFocus
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Scan Barcode or Search SKU / Article Name..."
-                className="w-full pl-12 pr-12 py-2.5 bg-white text-[#332822] font-normal text-base placeholder-[#7A6F69] focus:outline-none border-0 shadow-sm"
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Scan Barcode or type SKU / Name — press Enter to add..."
+                className="w-full pl-10 pr-10 py-2 bg-white text-[#332822] font-normal text-sm placeholder-[#7A6F69] focus:outline-none border border-[#D8CBB6] focus:border-[#B09A7A] shadow-none"
               />
               {searching ? (
-                <RefreshCw className="w-5 h-5 text-[#332822] animate-spin absolute right-4 top-3.5" />
+                <RefreshCw className="w-4 h-4 text-[#7A6F69] animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />
               ) : searchTerm ? (
-                <Barcode className="w-5 h-5 text-[#7A6F69] absolute right-4 top-3.5" />
+                <Barcode className="w-4 h-4 text-[#7A6F69] absolute right-3.5 top-1/2 -translate-y-1/2" />
               ) : null}
             </div>
 
-            {/* Instant Search Dropdown */}
+            {/* TASK 2: Dropdown — solid white bg, definite border, z-50 strictly above table thead (z-10) */}
             {searchResults.length > 0 && (
-              <div className="absolute left-4 right-4 top-full mt-1 bg-white shadow-2xl z-[100] max-h-80 overflow-y-auto border-0">
-                {searchResults.map((art) => (
+              <div className="absolute left-0 right-0 top-full mt-0 bg-[#FFFFFF] border border-[#D8CBB6] shadow-xl z-50 max-h-72 overflow-y-auto">
+                <div className="px-3 py-1.5 bg-[#F7F5F0] border-b border-[#E4DBC8] flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7A6F69]">
+                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} — Press Enter to add top result
+                  </span>
+                  <button
+                    onClick={() => { setSearchTerm(''); setSearchResults([]); }}
+                    className="text-[10px] text-[#7A6F69] hover:text-[#332822] uppercase tracking-wide"
+                  >
+                    ✕ Clear
+                  </button>
+                </div>
+                {searchResults.map((art, idx) => (
                   <div
                     key={art.id}
                     onClick={() => {
@@ -333,28 +359,29 @@ export function POSSale() {
                       setSearchTerm('')
                       setSearchResults([])
                     }}
-                    className="p-3.5 hover:bg-[#F7F5F0] cursor-pointer flex items-center justify-between"
+                    className={`px-4 py-3 cursor-pointer flex items-center justify-between border-b border-[#F0EBE3] last:border-0 transition-colors ${
+                      idx === 0 ? 'bg-[#FAF6EE] hover:bg-[#F0EBE3]' : 'bg-white hover:bg-[#FAF6EE]'
+                    }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#E4DBC8] text-[#332822] flex items-center justify-center font-mono font-medium text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-[#E4DBC8] text-[#332822] flex items-center justify-center font-mono font-semibold text-[10px] shrink-0">
                         {art.sku}
                       </div>
                       <div>
-                        <div className="font-medium text-[#332822] text-base">
+                        <div className="font-medium text-[#332822] text-sm leading-tight">
                           {art.name}
+                          {idx === 0 && <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-[#B09A7A] bg-[#E4DBC8] px-1.5 py-0.5">↵ Enter</span>}
                         </div>
-                        <div className="text-xs text-[#7A6F69] mt-0.5 font-normal">
-                          Stock: <span className="text-emerald-700 font-medium">{art.quantity}</span> • Category: {art.category || 'General'}
+                        <div className="text-[11px] text-[#7A6F69] mt-0.5">
+                          Stock: <span className="text-emerald-700 font-semibold">{art.quantity}</span> · {art.category || 'General'}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-mono font-semibold text-[#332822] text-base">
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-semibold text-[#332822] text-sm">
                         Rs. {Number(art.retail_price || 0).toLocaleString()}
                       </div>
-                      <span className="text-xs font-medium text-[#332822] uppercase tracking-wider">
-                        + Add to Worksheet
-                      </span>
+                      <span className="text-[10px] text-[#7A6F69] uppercase tracking-wide">click to add</span>
                     </div>
                   </div>
                 ))}
@@ -397,7 +424,10 @@ export function POSSale() {
                       <td className="py-3.5 px-4 font-normal text-[#332822]">
                         {item.name}
                       </td>
-                      <td className="py-2.5 px-3 text-center">
+                      {/* FIX 2: `p-0 h-px` on the <td> makes the cell height collapse to the
+                           row height set by adjacent cells. The input then fills with `h-full min-h-[46px]`
+                           so it stretches to exactly match the row height, preventing float/misalignment. */}
+                      <td className="p-0 h-px text-center w-28">
                         <input
                           type="number"
                           min="1"
@@ -411,13 +441,13 @@ export function POSSale() {
                               showToast('error', err.message)
                             }
                           }}
-                          className="w-full py-1.5 px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
+                          className="w-full h-full min-h-[46px] px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                         />
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
                         {item.retail_price_snapshot.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="p-0 h-px text-right w-36">
                         <input
                           type="number"
                           min="0"
@@ -431,7 +461,7 @@ export function POSSale() {
                               showToast('error', err.message)
                             }
                           }}
-                          className="w-full py-1.5 px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
+                          className="w-full h-full min-h-[46px] px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                         />
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
@@ -478,16 +508,18 @@ export function POSSale() {
         <div className="w-full lg:w-80 bg-[#FCFBFA] p-5 flex flex-col gap-3 shrink-0 select-none">
           {/* Action Grid with gap-3 between buttons */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Primary Checkout Action (Spans 2 columns, Solid Sleek Slate/Charcoal) */}
+            {/* TASK 1: Checkout — Deep Slate (#1E2832) bg, Cream Ivory (#F7F5F0) text.
+                 High-contrast, squared, no rounded corners, strictly branded. */}
             <button
               onClick={handleCompleteSale}
               disabled={processing || items.length === 0}
-              className="col-span-2 py-5 px-4 bg-[#332822] hover:bg-[#45372F] text-white font-display font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-3 transition-all disabled:opacity-40 border-0 shadow-sm"
+              className="col-span-2 py-5 px-4 bg-[#1E2832] hover:bg-[#2C3A47] text-[#F7F5F0] font-display font-bold text-xl uppercase tracking-[0.12em] flex items-center justify-center gap-3 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-md"
+              style={{ borderRadius: 0 }}
             >
               {processing ? (
-                <RefreshCw className="w-5 h-5 animate-spin text-white" />
+                <RefreshCw className="w-5 h-5 animate-spin text-[#C9B99A]" />
               ) : (
-                <CheckCircle2 className="w-5 h-5 text-white" />
+                <CheckCircle2 className="w-5 h-5 text-[#C9B99A]" />
               )}
               <span>Checkout [F12]</span>
             </button>
