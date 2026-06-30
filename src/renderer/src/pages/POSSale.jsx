@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { formatCode } from '../utils/formatCode.js'
 import {
   ShoppingCart,
   Search,
@@ -77,10 +78,18 @@ export function POSSale() {
     return () => clearTimeout(delayDebounceFn)
   }, [searchTerm])
 
-  // TASK 3: Enter key handler — adds the top result (or exact SKU match) to cart.
+  // TASK 3: Enter key handler — formats SKU code then adds the top result to cart.
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
+      // Auto-format: if input is a bare number, pad to SF-XXXXX before searching
+      const formatted = formatCode(searchTerm.trim(), 'SKU')
+      if (formatted !== searchTerm.trim()) {
+        // Prefix was applied — update the input and let the debounced search re-fire
+        setSearchTerm(formatted)
+        return
+      }
+      // Input is already formatted or non-numeric — add top result
       if (searchResults.length > 0) {
         handleAddToCart(searchResults[0])
         setSearchTerm('')

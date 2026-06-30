@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { formatCode } from '../utils/formatCode.js'
 import { createPortal } from 'react-dom'
 import {
   RotateCcw,
@@ -606,7 +607,22 @@ export function Returns() {
                   type="text"
                   value={invoiceQuery}
                   onChange={(e) => setInvoiceQuery(e.target.value)}
-                  placeholder="Enter invoice number (e.g., INV-20260628-0001)..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      // Auto-format bare numbers to SNF-INV-XXXXX before lookup fires
+                      // Uses SNF-RET- prefix if returnType context is 'exchange', otherwise SNF-INV-
+                      const codeType = returnType === 'exchange' ? 'RET' : 'INV'
+                      const formatted = formatCode(invoiceQuery.trim(), codeType)
+                      if (formatted !== invoiceQuery.trim()) {
+                        // Update state and immediately pass the formatted value to the lookup
+                        setInvoiceQuery(formatted)
+                        handleInvoiceLookup(null, formatted)
+                        e.preventDefault() // prevent the form's own onSubmit from double-firing
+                      }
+                      // else: form onSubmit will handle normally
+                    }
+                  }}
+                  placeholder="Enter invoice number (e.g., SNF-INV-00024) or type a bare number..."
                   className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>

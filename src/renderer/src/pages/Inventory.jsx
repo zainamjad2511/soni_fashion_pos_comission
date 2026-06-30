@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { formatCode } from '../utils/formatCode.js'
 import { createPortal } from 'react-dom'
 import {
   Package,
@@ -280,6 +281,22 @@ export function Inventory() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                // Auto-format bare numbers to SF-XXXXX on Enter
+                const formatted = formatCode(searchTerm.trim(), 'SKU')
+                if (formatted !== searchTerm.trim()) {
+                  setSearchTerm(formatted)
+                }
+              }
+            }}
+            onBlur={() => {
+              // Also format on blur so pasted/typed raw numbers are corrected
+              const formatted = formatCode(searchTerm.trim(), 'SKU')
+              if (formatted !== searchTerm.trim()) {
+                setSearchTerm(formatted)
+              }
+            }}
             placeholder="Search SKU (SF-00001), article name, or vendor code..."
             className="w-full pl-7 pr-4 py-2 bg-transparent border-b border-[#C9C0B5] text-sm text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-colors font-sans"
           />
