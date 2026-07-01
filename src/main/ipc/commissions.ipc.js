@@ -1,7 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
-import { resolveCommissionRate } from '../services/commission.service.js'
+import { resolveCommissionRate, recordCommissionPayout, getPendingCommissionBalance } from '../services/commission.service.js'
 
 export function registerCommissionsHandlers() {
   handleIpc('commissions:setRate', (_, data) => {
@@ -66,8 +66,14 @@ export function registerCommissionsHandlers() {
         SELECT 
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN sale_amount ELSE 0 END), 0) as total_sales,
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN commission_amount ELSE 0 END), 0) as total_commission,
-          COALESCE(SUM(CASE WHEN status = 'pending' THEN commission_amount ELSE 0 END), 0) as pending_commission,
-          COALESCE(SUM(CASE WHEN status = 'paid' THEN commission_amount ELSE 0 END), 0) as paid_commission
+          COALESCE(SUM(
+            CASE
+              WHEN status != 'reversed' AND (commission_amount - paid_amount) > 0.0001
+              THEN commission_amount - paid_amount
+              ELSE 0
+            END
+          ), 0) as pending_commission,
+          COALESCE(SUM(CASE WHEN status != 'reversed' THEN paid_amount ELSE 0 END), 0) as paid_commission
         FROM commissions
         WHERE salesperson_id = ? AND month = ?
       `).get(staff.id, targetMonth)
@@ -150,6 +156,43 @@ export function registerCommissionsHandlers() {
     )
 
     return newRow
+  })
+
+  handleIpc('commissions:recordPayout', (_, data) => {
+    const db = getDb()
+    const salespersonId = Number(data?.salesperson_id)
+    const month = data?.month?.trim()
+    const amount = Number(data?.amount)
+    const notes = data?.notes?.trim() || null
+
+    const result = recordCommissionPayout(db, {
+      salespersonId,
+      month,
+      amount,
+      notes
+    })
+
+    auditLog(
+      db,
+      'COMMISSION_PAYOUT',
+      'commission_payouts',
+      result.payout_id,
+      `Paid Rs. ${result.amount_paid.toLocaleString()} commission to "${result.salesperson_name}" for ${month}. Remaining pending: Rs. ${result.remaining_pending.toLocaleString()}. Expense #${result.expense_id} auto-recorded.`,
+      null,
+      JSON.stringify(result)
+    )
+
+    auditLog(
+      db,
+      'EXPENSE_CREATE',
+      'expenses',
+      result.expense_id,
+      `Auto-recorded Staff Commissions expense of Rs. ${result.amount_paid.toLocaleString()} for payout to "${result.salesperson_name}" (${month})`,
+      null,
+      JSON.stringify({ expense_id: result.expense_id, payout_id: result.payout_id })
+    )
+
+    return result
   })
 
   console.log('[IPC] Registered Commissions handlers.')

@@ -16,6 +16,23 @@ import {
   CheckMarkIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
+import {
+  StandardModal,
+  StandardModalAction,
+  StandardModalInput,
+  StandardModalLabel,
+} from '../components/StandardModal.jsx'
+
+function formatCommissionStatus(sub) {
+  const total = Number(sub.commission_amount || 0)
+  const paid = Number(sub.paid_amount || 0)
+  const unpaid = Math.max(0, total - paid)
+
+  if (sub.status === 'reversed') return 'Reversed'
+  if (unpaid <= 0.0001) return 'Paid'
+  if (paid > 0.0001) return `Partial · Pending Rs. ${unpaid.toLocaleString()}`
+  return 'Pending'
+}
 
 export function Commissions() {
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7))
@@ -30,6 +47,8 @@ export function Commissions() {
   const [drillDownLoading, setDrillDownLoading] = useState(false)
   const [drillDownItems, setDrillDownItems] = useState([])
   const [markingPaidId, setMarkingPaidId] = useState(null)
+  const [payoutModal, setPayoutModal] = useState(null)
+  const [payoutAmount, setPayoutAmount] = useState('')
 
   useEffect(() => {
     fetchSummary(selectedMonth)
@@ -122,13 +141,7 @@ export function Commissions() {
     }
   }
 
-  const handleToggleExpand = async (salespersonId) => {
-    if (expandedRowId === salespersonId) {
-      setExpandedRowId(null)
-      setDrillDownItems([])
-      return
-    }
-    setExpandedRowId(salespersonId)
+  const loadDrillDownItems = async (salespersonId) => {
     setDrillDownLoading(true)
     try {
       if (window.electronAPI && window.electronAPI.commissions) {
@@ -141,11 +154,10 @@ export function Commissions() {
           : (Array.isArray(res) ? res : [])
         setDrillDownItems(items)
       } else {
-        // Mock drill down items
         setDrillDownItems([
-          { id: 101, invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-05 14:22`, sale_amount: 50000, commission_amount: 2500, status: 'pending' },
-          { id: 102, invoice_number: 'INV-2026-008', created_at: `${selectedMonth}-12 18:45`, sale_amount: 40000, commission_amount: 2000, status: 'pending' },
-          { id: 103, invoice_number: 'INV-2026-015', created_at: `${selectedMonth}-18 11:10`, sale_amount: 60000, commission_amount: 3000, status: 'paid' }
+          { id: 101, invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-05 14:22`, sale_amount: 50000, commission_amount: 2500, paid_amount: 0, status: 'pending' },
+          { id: 102, invoice_number: 'INV-2026-008', created_at: `${selectedMonth}-12 18:45`, sale_amount: 40000, commission_amount: 2000, paid_amount: 500, status: 'pending' },
+          { id: 103, invoice_number: 'INV-2026-015', created_at: `${selectedMonth}-18 11:10`, sale_amount: 60000, commission_amount: 3000, paid_amount: 3000, status: 'paid' }
         ])
       }
     } catch (err) {
@@ -157,30 +169,82 @@ export function Commissions() {
     }
   }
 
-  const handleMarkPaid = async (salespersonId, staffName) => {
-    setMarkingPaidId(salespersonId)
+  const handleToggleExpand = async (salespersonId) => {
+    if (expandedRowId === salespersonId) {
+      setExpandedRowId(null)
+      setDrillDownItems([])
+      return
+    }
+    setExpandedRowId(salespersonId)
+    await loadDrillDownItems(salespersonId)
+  }
+
+  const openPayoutModal = (item) => {
+    const pending = Number(item.pending_commission || 0)
+    setPayoutModal({
+      salesperson_id: item.salesperson_id,
+      name: item.name,
+      pending_commission: pending,
+      paid_commission: Number(item.paid_commission || 0),
+    })
+    setPayoutAmount(pending > 0 ? String(pending) : '')
+  }
+
+  const closePayoutModal = () => {
+    if (markingPaidId) return
+    setPayoutModal(null)
+    setPayoutAmount('')
+  }
+
+  const handleProcessPayout = async () => {
+    if (!payoutModal) return
+
+    const amount = Number(payoutAmount)
+    if (Number.isNaN(amount) || amount <= 0) {
+      showToast('error', 'Enter a valid payment amount greater than zero.')
+      return
+    }
+
+    if (amount > payoutModal.pending_commission + 0.0001) {
+      showToast('error', `Payment cannot exceed pending balance of Rs. ${payoutModal.pending_commission.toLocaleString()}.`)
+      return
+    }
+
+    setMarkingPaidId(payoutModal.salesperson_id)
     try {
-      if (window.electronAPI && window.electronAPI.reports) {
-        const res = await window.electronAPI.reports.markCommissionPaid({
+      if (window.electronAPI && window.electronAPI.commissions) {
+        const res = await window.electronAPI.commissions.recordPayout({
+          salesperson_id: payoutModal.salesperson_id,
           month: selectedMonth,
-          salespersonId: salespersonId
+          amount,
         })
-        if (res && res.success) {
-          showToast('success', `Marked pending commissions as PAID for ${staffName}!`)
+
+        if (res?.success) {
+          const remaining = Number(res.data?.remaining_pending ?? 0)
+          showToast(
+            'success',
+            remaining > 0
+              ? `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Remaining pending: Rs. ${remaining.toLocaleString()}. Expense recorded in Staff Commissions.`
+              : `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Commission fully settled for ${selectedMonth}. Expense recorded in Staff Commissions.`
+          )
+          const paidStaffId = payoutModal.salesperson_id
+          setPayoutModal(null)
+          setPayoutAmount('')
           fetchSummary(selectedMonth)
-          if (expandedRowId === salespersonId) {
-            handleToggleExpand(salespersonId) // re-fetch drill down
+          if (expandedRowId === paidStaffId) {
+            loadDrillDownItems(paidStaffId)
           }
         } else {
-          showToast('error', (res && res.error) || 'Failed to mark commissions paid.')
+          showToast('error', (res && res.error) || 'Failed to process commission payment.')
         }
       } else {
-        showToast('success', `Marked PAID (Mock) for ${staffName}`)
+        showToast('success', `Paid Rs. ${amount.toLocaleString()} (Mock) for ${payoutModal.name}`)
+        closePayoutModal()
         fetchSummary(selectedMonth)
       }
     } catch (err) {
-      console.error('[Commissions] Mark paid error:', err)
-      showToast('error', err.message || 'Error marking commissions paid.')
+      console.error('[Commissions] Payout error:', err)
+      showToast('error', err.message || 'Error processing commission payment.')
     } finally {
       setMarkingPaidId(null)
     }
@@ -287,6 +351,7 @@ export function Commissions() {
                   <th className="py-4 px-6 text-right">Total Sales</th>
                   <th className="py-4 px-6 text-right">Earned Commission</th>
                   <th className="py-4 px-6 text-right">Pending Payout</th>
+                  <th className="py-4 px-6 text-right">Paid Out</th>
                   <th className="py-4 pl-6 text-center">Actions</th>
                 </tr>
               </thead>
@@ -362,20 +427,23 @@ export function Commissions() {
                         <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-semibold text-base">
                           Rs. {(item.pending_commission || 0).toLocaleString()}
                         </td>
+                        <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-base">
+                          Rs. {(item.paid_commission || 0).toLocaleString()}
+                        </td>
                         <td className="py-5 pl-6 text-center whitespace-nowrap">
                           {hasPending ? (
                             <button
-                              onClick={() => handleMarkPaid(item.salesperson_id, item.name)}
+                              onClick={() => openPayoutModal(item)}
                               disabled={markingPaidId === item.salesperson_id}
                               className="px-3 py-1.5 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] text-xs font-sans font-bold uppercase tracking-[0.12em] flex items-center justify-center gap-1.5 transition-all mx-auto disabled:opacity-50"
-                              title="Mark Pending Commissions as Paid"
+                              title="Pay full or partial commission"
                             >
                               {markingPaidId === item.salesperson_id ? (
                                 <RefreshIcon className="w-3 h-3 animate-spin" />
                               ) : (
-                                <CheckMarkIcon className="w-3 h-3" />
+                                <BanknoteIcon className="w-3 h-3" />
                               )}
-                              <span>Mark Paid</span>
+                              <span>Pay</span>
                             </button>
                           ) : (
                             <span className="text-sm text-[#7A6F69] font-bold uppercase tracking-wider">Settled</span>
@@ -386,7 +454,7 @@ export function Commissions() {
                       {/* Expandable Drill-Down Row */}
                       {isExpanded && (
                         <tr className="bg-[#EFEBE3] border-b border-[#C9C0B5] animate-fade-in">
-                          <td colSpan={8} className="p-8">
+                          <td colSpan={9} className="p-8">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-3">
                                 <div className="flex items-center gap-2 text-base font-bold text-[#2E2822]">
@@ -436,7 +504,7 @@ export function Commissions() {
                                           </td>
                                           <td className="py-3 pl-4 text-center">
                                             <span className="font-mono text-xs uppercase font-bold text-[#2E2822]">
-                                              {sub.status || 'pending'}
+                                              {formatCommissionStatus(sub)}
                                             </span>
                                           </td>
                                         </tr>
@@ -457,6 +525,94 @@ export function Commissions() {
           </div>
         )}
       </div>
+
+      <StandardModal
+        isOpen={!!payoutModal}
+        onClose={closePayoutModal}
+        title="Commission Payout"
+        titleId="commission-payout-modal-title"
+        subtitle={
+          payoutModal
+            ? `${payoutModal.name} · ${selectedMonth} — enter a full or partial payment amount.`
+            : undefined
+        }
+        maxWidth="sm"
+        closeOnBackdrop={!markingPaidId}
+        footer={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={closePayoutModal}
+              disabled={!!markingPaidId}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction
+              onClick={handleProcessPayout}
+              disabled={!!markingPaidId || !payoutAmount || Number(payoutAmount) <= 0}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {markingPaidId ? 'Processing...' : 'Process Payment'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {payoutModal && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69] mb-1">
+                  Pending Balance
+                </span>
+                <span className="font-mono font-bold text-xl text-[#2E2822]">
+                  Rs. {payoutModal.pending_commission.toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69] mb-1">
+                  Already Paid
+                </span>
+                <span className="font-mono font-bold text-xl text-[#7A6F69]">
+                  Rs. {payoutModal.paid_commission.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <StandardModalLabel htmlFor="commission-payout-amount">Payment Amount (Rs.)</StandardModalLabel>
+              <StandardModalInput
+                id="commission-payout-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={payoutAmount}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setPayoutAmount(e.target.value)}
+                placeholder="0.00"
+                className="font-bold text-xl"
+              />
+            </div>
+
+            <div className="border-t border-[#C9C0B5] pt-4">
+              <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69] mb-1">
+                Remaining After Payment
+              </span>
+              <span className="font-mono font-bold text-lg text-[#2E2822]">
+                Rs. {Math.max(0, payoutModal.pending_commission - (Number(payoutAmount) || 0)).toLocaleString(undefined, {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              {Number(payoutAmount) > 0 && Number(payoutAmount) < payoutModal.pending_commission && (
+                <p className="text-xs text-[#7A6F69] mt-2">
+                  The unpaid remainder stays in Pending status until a future payout.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </StandardModal>
     </div>
   )
 }

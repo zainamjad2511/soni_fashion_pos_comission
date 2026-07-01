@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { getPendingCommissionBalance, recordCommissionPayout } from '../services/commission.service.js'
 
 export function registerReportsHandlers() {
   // Helper to unpack date filters whether passed as object or individual arguments
@@ -119,10 +120,16 @@ export function registerReportsHandlers() {
     let total_reversed = 0
 
     for (const r of rows) {
-      const amt = Number(r.commission_amount || 0)
-      if (r.status === 'pending') total_pending += amt
-      else if (r.status === 'paid') total_paid += amt
-      else if (r.status === 'reversed') total_reversed += amt
+      const total = Number(r.commission_amount || 0)
+      const paid = Number(r.paid_amount || 0)
+      const unpaid = Math.max(0, total - paid)
+
+      if (r.status === 'reversed') {
+        total_reversed += total
+      } else {
+        total_paid += paid
+        total_pending += unpaid
+      }
     }
 
     // Payable excludes reversed commissions
@@ -143,21 +150,36 @@ export function registerReportsHandlers() {
       throw new Error('Salesperson ID is required to mark commission paid.')
     }
 
-    const res = db.prepare(`
-      UPDATE commissions
-      SET status = 'paid'
-      WHERE month = ? AND salesperson_id = ? AND status = 'pending'
-    `).run(month, salespersonId)
+    const pendingBalance = getPendingCommissionBalance(db, salespersonId, month)
+    if (pendingBalance <= 0.0001) {
+      throw new Error('No pending commission balance to pay for this staff member.')
+    }
+
+    const result = recordCommissionPayout(db, {
+      salespersonId,
+      month,
+      amount: pendingBalance
+    })
 
     auditLog(
       db,
       'COMMISSION_PAID',
-      'commissions',
-      salespersonId,
-      `Marked ${res.changes} commission records paid for Staff #${salespersonId} for month ${month}`
+      'commission_payouts',
+      result.payout_id,
+      `Marked full pending commission (Rs. ${result.amount_paid.toLocaleString()}) as paid for Staff #${salespersonId} for month ${month}. Expense #${result.expense_id} auto-recorded.`
     )
 
-    return { success: true, updatedCount: res.changes }
+    auditLog(
+      db,
+      'EXPENSE_CREATE',
+      'expenses',
+      result.expense_id,
+      `Auto-recorded Staff Commissions expense of Rs. ${result.amount_paid.toLocaleString()} for full payout to Staff #${salespersonId} (${month})`,
+      null,
+      JSON.stringify({ expense_id: result.expense_id, payout_id: result.payout_id })
+    )
+
+    return { success: true, ...result }
   })
 
   // 5. Inventory Valuation Report

@@ -1,3 +1,5 @@
+import { COMMISSION_EXPENSE_CATEGORY, createExpenseRecord } from './expense.service.js'
+
 export const DEFAULT_COMMISSION_RATE = 1
 
 export function getConfiguredDefaultCommissionRate(db) {
@@ -33,4 +35,110 @@ export function ensureDefaultCommissionRateForStaff(db, salespersonId, month = n
     INSERT INTO commission_rates (salesperson_id, month, rate_percent, created_at)
     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
   `).run(salespersonId, month, defaultRate)
+}
+
+export function getPendingCommissionBalance(db, salespersonId, month) {
+  const row = db.prepare(`
+    SELECT COALESCE(SUM(commission_amount - paid_amount), 0) AS pending
+    FROM commissions
+    WHERE salesperson_id = ?
+      AND month = ?
+      AND status != 'reversed'
+      AND (commission_amount - paid_amount) > 0.0001
+  `).get(salespersonId, month)
+
+  return Number(row?.pending || 0)
+}
+
+export function recordCommissionPayout(db, { salespersonId, month, amount, notes = null }) {
+  const payoutAmount = Number(amount)
+
+  if (!salespersonId || !month || Number.isNaN(payoutAmount) || payoutAmount <= 0) {
+    throw new Error('Salesperson ID, month, and a positive payment amount are required.')
+  }
+
+  const staff = db.prepare('SELECT id, name FROM salespersons WHERE id = ?').get(salespersonId)
+  if (!staff) {
+    throw new Error(`Salesperson with ID ${salespersonId} not found.`)
+  }
+
+  const pendingBalance = getPendingCommissionBalance(db, salespersonId, month)
+  if (payoutAmount > pendingBalance + 0.0001) {
+    throw new Error(
+      `Payment amount (Rs. ${payoutAmount.toLocaleString()}) exceeds pending balance (Rs. ${pendingBalance.toLocaleString()}).`
+    )
+  }
+
+  const transaction = db.transaction(() => {
+    let remaining = payoutAmount
+    const pendingRows = db.prepare(`
+      SELECT id, commission_amount, paid_amount
+      FROM commissions
+      WHERE salesperson_id = ?
+        AND month = ?
+        AND status != 'reversed'
+        AND (commission_amount - paid_amount) > 0.0001
+      ORDER BY created_at ASC, id ASC
+    `).all(salespersonId, month)
+
+    const updateStmt = db.prepare(`
+      UPDATE commissions
+      SET paid_amount = ?, status = ?
+      WHERE id = ?
+    `)
+
+    let allocationsUpdated = 0
+    for (const row of pendingRows) {
+      if (remaining <= 0.0001) break
+
+      const unpaid = row.commission_amount - row.paid_amount
+      const apply = Math.min(remaining, unpaid)
+      const newPaid = row.paid_amount + apply
+      const newStatus = newPaid >= row.commission_amount - 0.0001 ? 'paid' : 'pending'
+
+      updateStmt.run(newPaid, newStatus, row.id)
+      remaining -= apply
+      allocationsUpdated += 1
+    }
+
+    const payoutInfo = db.prepare(`
+      INSERT INTO commission_payouts (salesperson_id, month, amount, notes, created_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(salespersonId, month, payoutAmount, notes)
+
+    const payoutId = payoutInfo.lastInsertRowid
+    const expenseNotes = [
+      `Commission payout #${payoutId}`,
+      notes ? `Payout note: ${notes}` : null,
+    ].filter(Boolean).join(' · ')
+
+    const expenseRow = createExpenseRecord(db, {
+      category: COMMISSION_EXPENSE_CATEGORY,
+      description: `Commission payout — ${staff.name} (${month})`,
+      amount: payoutAmount,
+      expense_date: new Date().toISOString().slice(0, 10),
+      recorded_by: 'POS System',
+      notes: expenseNotes,
+    })
+
+    const payoutColumns = db.prepare('PRAGMA table_info(commission_payouts)').all()
+    if (payoutColumns.some((col) => col.name === 'expense_id')) {
+      db.prepare('UPDATE commission_payouts SET expense_id = ? WHERE id = ?').run(expenseRow.id, payoutId)
+    }
+
+    const remainingPending = getPendingCommissionBalance(db, salespersonId, month)
+
+    return {
+      payout_id: payoutId,
+      expense_id: expenseRow.id,
+      salesperson_id: salespersonId,
+      salesperson_name: staff.name,
+      month,
+      amount_paid: payoutAmount,
+      remaining_pending: remainingPending,
+      allocations_updated: allocationsUpdated,
+    }
+  })
+
+  return transaction()
 }

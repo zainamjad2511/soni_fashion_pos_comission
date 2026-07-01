@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { createExpenseRecord } from '../services/expense.service.js'
 
 export function registerExpensesHandlers() {
   handleIpc('expenses:list', (_, filters) => {
@@ -35,34 +36,14 @@ export function registerExpensesHandlers() {
 
   handleIpc('expenses:create', (_, data) => {
     const db = getDb()
-    const category = data?.category?.trim()
-    const description = data?.description?.trim() || null
-    const amount = Number(data?.amount)
-    const expenseDate = data?.expense_date || new Date().toISOString().slice(0, 10)
-    const recordedBy = data?.recorded_by || null
-    const notes = data?.notes?.trim() || null
-
-    if (!category) {
-      throw new Error('Expense Category is required.')
-    }
-    if (isNaN(amount) || amount <= 0) {
-      throw new Error('Expense Amount must be a positive number greater than zero.')
-    }
-
-    const insertStmt = db.prepare(`
-      INSERT INTO expenses (category, description, amount, expense_date, recorded_by, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `)
-
-    const info = insertStmt.run(category, description, amount, expenseDate, recordedBy, notes)
-    const newRow = db.prepare('SELECT * FROM expenses WHERE id = ?').get(info.lastInsertRowid)
+    const newRow = createExpenseRecord(db, data)
 
     auditLog(
       db,
       'EXPENSE_CREATE',
       'expenses',
-      info.lastInsertRowid,
-      `Recorded expense of Rs. ${amount.toLocaleString()} in category "${category}"`,
+      newRow.id,
+      `Recorded expense of Rs. ${newRow.amount.toLocaleString()} in category "${newRow.category}"`,
       null,
       newRow
     )

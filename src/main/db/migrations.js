@@ -309,4 +309,70 @@ export function runMigrations(db) {
     migrateV3()
     console.log('[Migrations] Successfully applied V3 Migration.')
   }
+
+  if (currentVersion < 4) {
+    console.log('[Migrations] Applying V4 Migration (partial commission payouts)...')
+    const migrateV4 = db.transaction(() => {
+      const commissionColumns = db.prepare('PRAGMA table_info(commissions)').all()
+      const hasPaidAmount = commissionColumns.some((col) => col.name === 'paid_amount')
+
+      if (!hasPaidAmount) {
+        db.exec(`ALTER TABLE commissions ADD COLUMN paid_amount REAL NOT NULL DEFAULT 0`)
+        db.exec(`
+          UPDATE commissions
+          SET paid_amount = commission_amount
+          WHERE status = 'paid'
+        `)
+      }
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS commission_payouts (
+          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+          salesperson_id   INTEGER NOT NULL REFERENCES salespersons(id) ON DELETE RESTRICT,
+          month            TEXT    NOT NULL,
+          amount           REAL    NOT NULL CHECK (amount > 0),
+          notes            TEXT,
+          created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `)
+
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_commission_payouts_staff_month
+        ON commission_payouts(salesperson_id, month);
+      `)
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '4', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '4', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV4()
+    console.log('[Migrations] Successfully applied V4 Migration.')
+  }
+
+  if (currentVersion < 5) {
+    console.log('[Migrations] Applying V5 Migration (commission payout expense linkage)...')
+    const migrateV5 = db.transaction(() => {
+      const payoutColumns = db.prepare('PRAGMA table_info(commission_payouts)').all()
+      const hasExpenseId = payoutColumns.some((col) => col.name === 'expense_id')
+
+      if (!hasExpenseId) {
+        db.exec(`
+          ALTER TABLE commission_payouts
+          ADD COLUMN expense_id INTEGER REFERENCES expenses(id) ON DELETE SET NULL
+        `)
+      }
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '5', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '5', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV5()
+    console.log('[Migrations] Successfully applied V5 Migration.')
+  }
 }

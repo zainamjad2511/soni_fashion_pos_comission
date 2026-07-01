@@ -78,7 +78,8 @@ const customElectronAPI = {
     list: (filters) => ipcRenderer.invoke('commissions:list', filters),
     getSummary: (month) => ipcRenderer.invoke('commissions:getSummary', month),
     setRate: (data) => ipcRenderer.invoke('commissions:setRate', data),
-    updateStatus: (id, status) => ipcRenderer.invoke('commissions:updateStatus', id, status)
+    updateStatus: (id, status) => ipcRenderer.invoke('commissions:updateStatus', id, status),
+    recordPayout: (data) => ipcRenderer.invoke('commissions:recordPayout', data)
   },
 
   expenses: {
