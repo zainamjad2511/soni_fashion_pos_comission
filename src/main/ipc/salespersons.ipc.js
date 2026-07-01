@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { ensureDefaultCommissionRateForStaff } from '../services/commission.service.js'
 
 export function registerSalespersonsHandlers() {
   handleIpc('salespersons:list', (_, filters) => {
@@ -48,6 +49,8 @@ export function registerSalespersonsHandlers() {
 
     const info = insertStmt.run(name, contact, notes)
     const newRow = db.prepare('SELECT * FROM salespersons WHERE id = ?').get(info.lastInsertRowid)
+
+    ensureDefaultCommissionRateForStaff(db, info.lastInsertRowid)
 
     auditLog(
       db,

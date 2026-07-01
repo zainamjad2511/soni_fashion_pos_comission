@@ -54,7 +54,7 @@ export function Commissions() {
         // Initialize rate input state
         const initialRates = {}
         list.forEach((item) => {
-          initialRates[item.salesperson_id] = item.rate_percent || 0
+          initialRates[item.salesperson_id] = item.rate_percent ?? 1
         })
         setRateInputs(initialRates)
       } else {
@@ -66,7 +66,7 @@ export function Commissions() {
         setSummaryList(mockList)
         const initialRates = {}
         mockList.forEach((item) => {
-          initialRates[item.salesperson_id] = item.rate_percent || 0
+          initialRates[item.salesperson_id] = item.rate_percent ?? 1
         })
         setRateInputs(initialRates)
       }
@@ -294,7 +294,7 @@ export function Commissions() {
                 {listData.map((item) => {
                   const currentRateVal = rateInputs[item.salesperson_id] !== undefined
                     ? rateInputs[item.salesperson_id]
-                    : item.rate_percent || 0
+                    : item.rate_percent ?? 1
                   const hasChanged = Number(currentRateVal) !== Number(item.rate_percent)
                   const isExpanded = expandedRowId === item.salesperson_id
                   const hasPending = Number(item.pending_commission || 0) > 0

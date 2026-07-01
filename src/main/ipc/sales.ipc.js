@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { resolveCommissionRate } from '../services/commission.service.js'
 
 export function registerSalesHandlers() {
   handleIpc('sales:create', (_, payload) => {
@@ -111,8 +112,7 @@ export function registerSalesHandlers() {
 
       // 6. Calculate and insert Commission
       const currentMonth = new Date().toISOString().slice(0, 7)
-      const rateRow = db.prepare('SELECT rate_percent FROM commission_rates WHERE salesperson_id = ? AND month = ?').get(salespersonId, currentMonth)
-      const ratePercent = rateRow ? Number(rateRow.rate_percent) : 0
+      const ratePercent = resolveCommissionRate(db, salespersonId, currentMonth)
       const commissionAmount = (grandTotal * ratePercent) / 100
 
       db.prepare(`

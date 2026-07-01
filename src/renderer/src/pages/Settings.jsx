@@ -29,7 +29,7 @@ export function Settings() {
     shop_contact: '03246470929',
     receipt_footer: 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
     receipt_printer_name: '',
-    default_commission: '5',
+    default_commission: '1',
     sku_prefix: 'SF',
     invoice_prefix: 'SNF-INV',
     return_prefix: 'SNF-RET',

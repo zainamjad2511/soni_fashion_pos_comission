@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { resolveCommissionRate } from '../services/commission.service.js'
 
 export function registerCommissionsHandlers() {
   handleIpc('commissions:setRate', (_, data) => {
@@ -59,8 +60,7 @@ export function registerCommissionsHandlers() {
     `).all(targetMonth, targetMonth)
 
     const summary = staffList.map((staff) => {
-      const rateRow = db.prepare('SELECT rate_percent FROM commission_rates WHERE salesperson_id = ? AND month = ?').get(staff.id, targetMonth)
-      const ratePercent = rateRow ? rateRow.rate_percent : 0
+      const ratePercent = resolveCommissionRate(db, staff.id, targetMonth)
 
       const stats = db.prepare(`
         SELECT 

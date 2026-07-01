@@ -272,4 +272,41 @@ export function runMigrations(db) {
       db.pragma('foreign_keys = ON')
     }
   }
+
+  if (currentVersion < 3) {
+    console.log('[Migrations] Applying V3 Migration (default commission rate 1%)...')
+    const migrateV3 = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('default_commission', '1', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '1', updated_at = CURRENT_TIMESTAMP
+      `).run()
+
+      const currentMonth = new Date().toISOString().slice(0, 7)
+      const staffWithoutRate = db.prepare(`
+        SELECT sp.id
+        FROM salespersons sp
+        LEFT JOIN commission_rates cr ON sp.id = cr.salesperson_id AND cr.month = ?
+        WHERE cr.id IS NULL
+      `).all(currentMonth)
+
+      const insertRate = db.prepare(`
+        INSERT INTO commission_rates (salesperson_id, month, rate_percent, created_at)
+        VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+      `)
+
+      for (const staff of staffWithoutRate) {
+        insertRate.run(staff.id, currentMonth)
+      }
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '3', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '3', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV3()
+    console.log('[Migrations] Successfully applied V3 Migration.')
+  }
 }

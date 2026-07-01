@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { resolveCommissionRate } from '../services/commission.service.js'
 
 export function registerReturnsHandlers() {
   handleIpc('returns:lookupSale', (_, invoiceNo) => {
@@ -262,8 +263,7 @@ export function registerReturnsHandlers() {
 
         // Commission accrual for replacement sale
         const currentMonth = new Date().toISOString().slice(0, 7)
-        const rateRow = db.prepare('SELECT rate_percent FROM commission_rates WHERE salesperson_id = ? AND month = ?').get(exStaffId, currentMonth)
-        const ratePercent = rateRow ? rateRow.rate_percent : 0
+        const ratePercent = resolveCommissionRate(db, exStaffId, currentMonth)
         const commAmount = (grandTotal * ratePercent) / 100
         db.prepare(`
           INSERT INTO commissions (sale_id, salesperson_id, sale_amount, rate_percent, commission_amount, month, status)
