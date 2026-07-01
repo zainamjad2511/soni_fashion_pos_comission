@@ -188,12 +188,14 @@ export function registerReturnsHandlers() {
         )
       }
 
-      // Item-level commission reversal (immutable negative ledger rows)
-      if (origSale && refundCredit > 0) {
+      // Commission reversal only for invoice-linked returns (original salesperson is known).
+      // Manual returns never reverse commission — replacement sales accrue for current staff only.
+      if (origSale && return_type !== 'manual' && refundCredit > 0) {
         recordItemizedCommissionReversal(db, {
           origSale,
           returnId,
           returnItems: items,
+          returnType: return_type,
         })
       }
 
@@ -297,7 +299,8 @@ export function registerReturnsHandlers() {
           insertOutMovementStmt.run(vItem.article_id, vItem.quantity, newSaleId, `Exchange Sale #${newInvoiceNumber}`)
         }
 
-        // Commission accrual for replacement sale (offsets any negative staff balance)
+        // Commission for manual exchange: accrue on the new replacement sale only (current staff).
+        // No reversal is recorded for the returned items — original seller is unknown.
         accrueSaleCommission(db, {
           saleId: newSaleId,
           salespersonId: exStaffId,

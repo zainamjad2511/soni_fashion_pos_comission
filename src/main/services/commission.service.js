@@ -77,16 +77,21 @@ export function accrueSaleCommission(db, { saleId, salespersonId, saleAmount, mo
 }
 
 /**
- * Item-level commission reversal for invoice returns.
- * Inserts immutable negative ledger rows (original sale commission row is untouched).
- * Net balance may go negative and is auto-offset by future sale commissions.
+ * Item-level commission reversal for invoice-linked returns only.
+ * Manual returns skip reversal — original salesperson is unknown.
  */
 export function recordItemizedCommissionReversal(db, {
   origSale,
   returnId,
   returnItems,
+  returnType,
 }) {
-  if (!origSale?.id || !Array.isArray(returnItems) || returnItems.length === 0) {
+  if (
+    returnType === 'manual'
+    || !origSale?.id
+    || !Array.isArray(returnItems)
+    || returnItems.length === 0
+  ) {
     return { reversedTotal: 0, entries: [] }
   }
 

@@ -1695,10 +1695,11 @@ export function Returns() {
               {/* Manual Exchange Replacement Cart */}
               {manualReturnMode === 'exchange' && (
                 <div className="border-t border-[#C9C0B5] pt-6 space-y-4 animate-fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                      <RefreshIcon className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
-                    </h3>
+                  <div className="space-y-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                        <RefreshIcon className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
+                      </h3>
                     <div className="relative w-full sm:w-80">
                       <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
                       <input
@@ -1728,6 +1729,10 @@ export function Returns() {
                         </div>
                       )}
                     </div>
+                    </div>
+                    <p className="text-[11px] text-[#7A6F69] italic">
+                      No commission is reversed on manual returns (original seller unknown). Commission is earned only on this replacement sale for the selected staff member.
+                    </p>
                   </div>
 
                   <div className="overflow-x-auto pt-2">

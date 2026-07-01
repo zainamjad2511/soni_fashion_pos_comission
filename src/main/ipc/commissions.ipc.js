@@ -64,7 +64,15 @@ export function registerCommissionsHandlers() {
 
       const stats = db.prepare(`
         SELECT 
-          COALESCE(SUM(CASE WHEN status != 'reversed' THEN sale_amount ELSE 0 END), 0) as total_sales,
+          COALESCE(SUM(CASE WHEN status != 'reversed' AND commission_amount > 0 THEN sale_amount ELSE 0 END), 0) as total_sales,
+          COALESCE(SUM(CASE WHEN status != 'reversed' AND commission_amount > 0 THEN commission_amount ELSE 0 END), 0) as gross_commission,
+          COALESCE(SUM(
+            CASE
+              WHEN status != 'reversed' AND (return_id IS NOT NULL OR commission_amount < 0)
+              THEN commission_amount
+              ELSE 0
+            END
+          ), 0) as total_reversals,
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN commission_amount ELSE 0 END), 0) as total_commission,
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN paid_amount ELSE 0 END), 0) as paid_commission
         FROM commissions
@@ -81,6 +89,8 @@ export function registerCommissionsHandlers() {
         month: targetMonth,
         rate_percent: ratePercent,
         total_sales: stats.total_sales,
+        gross_commission: stats.gross_commission,
+        total_reversals: stats.total_reversals,
         total_commission: stats.total_commission,
         pending_commission: Math.max(0, netBalance),
         balance_commission: netBalance,
@@ -97,11 +107,23 @@ export function registerCommissionsHandlers() {
   handleIpc('commissions:list', (_, filters) => {
     const db = getDb()
     let query = `
-      SELECT c.*, s.invoice_number, sp.name as salesperson_name, r.return_number
+      SELECT
+        c.*,
+        s.invoice_number,
+        sp.name AS salesperson_name,
+        r.return_number,
+        a.name AS article_name,
+        a.sku AS article_sku,
+        CASE
+          WHEN c.return_id IS NOT NULL OR c.commission_amount < 0 THEN 'return_reversal'
+          ELSE 'sale'
+        END AS entry_type
       FROM commissions c
       JOIN sales s ON c.sale_id = s.id
       JOIN salespersons sp ON c.salesperson_id = sp.id
       LEFT JOIN returns r ON c.return_id = r.id
+      LEFT JOIN sale_items si ON c.sale_item_id = si.id
+      LEFT JOIN articles a ON si.article_id = a.id
       WHERE 1=1
     `
     const params = []
@@ -137,6 +159,16 @@ export function registerCommissionsHandlers() {
     const oldRow = db.prepare('SELECT * FROM commissions WHERE id = ?').get(commissionId)
     if (!oldRow) {
       throw new Error(`Commission record ID ${commissionId} not found.`)
+    }
+
+    if (oldRow.return_id || Number(oldRow.commission_amount) < 0) {
+      throw new Error('Return reversal ledger entries are immutable and cannot be modified.')
+    }
+
+    if (status === 'reversed') {
+      throw new Error(
+        'Original sale commission rows cannot be marked Reversed. Record the return in the Returns module to insert a negative ledger entry.'
+      )
     }
 
     db.prepare('UPDATE commissions SET status = ? WHERE id = ?').run(status, commissionId)

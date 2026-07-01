@@ -23,13 +23,20 @@ import {
   StandardModalLabel,
 } from '../components/StandardModal.jsx'
 
+function isReturnReversalEntry(sub) {
+  return sub?.entry_type === 'return_reversal'
+    || Boolean(sub?.return_id)
+    || Number(sub?.commission_amount) < -0.0001
+}
+
 function formatCommissionStatus(sub) {
+  if (isReturnReversalEntry(sub)) return 'Return Reversal'
+
   const total = Number(sub.commission_amount || 0)
   const paid = Number(sub.paid_amount || 0)
   const unpaid = Math.max(0, total - paid)
 
-  if (total < -0.0001 || sub.return_id) return 'Return Reversal'
-  if (sub.status === 'reversed') return 'Reversed'
+  if (sub.status === 'reversed') return 'Legacy Reversed'
   if (unpaid <= 0.0001) return 'Paid'
   if (paid > 0.0001) return `Partial · Pending Rs. ${unpaid.toLocaleString()}`
   return 'Pending'
@@ -38,7 +45,58 @@ function formatCommissionStatus(sub) {
 function formatCommissionAmount(value) {
   const amount = Number(value || 0)
   if (amount < -0.0001) return `-Rs. ${Math.abs(amount).toLocaleString()}`
-  return `Rs. ${amount.toLocaleString()}`
+  if (amount > 0.0001) return `+Rs. ${amount.toLocaleString()}`
+  return 'Rs. 0'
+}
+
+function getLedgerTypeLabel(sub) {
+  return isReturnReversalEntry(sub) ? 'Return Reversal' : 'Sale'
+}
+
+function getLedgerReference(sub) {
+  if (isReturnReversalEntry(sub)) {
+    return sub.return_number || `RET #${sub.return_id || '—'}`
+  }
+  return sub.invoice_number || `Sale #${sub.sale_id || sub.id}`
+}
+
+function getLedgerDescription(sub) {
+  if (isReturnReversalEntry(sub)) {
+    if (sub.article_name) {
+      return `${sub.article_name}${sub.article_sku ? ` (${sub.article_sku})` : ''}`
+    }
+    return sub.notes || 'Item return commission adjustment'
+  }
+  return sub.invoice_number ? `POS sale ${sub.invoice_number}` : 'Commissionable sale'
+}
+
+function computeLedgerTotals(items) {
+  const list = Array.isArray(items) ? items : []
+  let grossEarned = 0
+  let totalReversed = 0
+
+  for (const row of list) {
+    const amount = Number(row.commission_amount || 0)
+    if (isReturnReversalEntry(row)) {
+      totalReversed += amount
+    } else if (row.status !== 'reversed') {
+      grossEarned += amount
+    }
+  }
+
+  return {
+    grossEarned,
+    totalReversed,
+    netBalance: grossEarned + totalReversed,
+    entryCount: list.length,
+  }
+}
+
+function formatLedgerDate(value) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return String(value)
+  return parsed.toLocaleString()
 }
 
 export function Commissions() {
@@ -162,9 +220,9 @@ export function Commissions() {
         setDrillDownItems(items)
       } else {
         setDrillDownItems([
-          { id: 101, invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-05 14:22`, sale_amount: 50000, commission_amount: 2500, paid_amount: 0, status: 'pending' },
-          { id: 102, invoice_number: 'INV-2026-008', created_at: `${selectedMonth}-12 18:45`, sale_amount: 40000, commission_amount: 2000, paid_amount: 500, status: 'pending' },
-          { id: 103, invoice_number: 'INV-2026-015', created_at: `${selectedMonth}-18 11:10`, sale_amount: 60000, commission_amount: 3000, paid_amount: 3000, status: 'paid' }
+          { id: 101, entry_type: 'sale', invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-05T14:22:00`, sale_amount: 50000, commission_amount: 2500, paid_amount: 0, status: 'pending' },
+          { id: 102, entry_type: 'return_reversal', return_number: 'SNF-RET-20260701-0001', invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-08T11:05:00`, sale_amount: -10000, commission_amount: -170, paid_amount: 0, status: 'pending', article_name: 'Lehnga Full', article_sku: 'SF-00001', notes: 'Partial return reversal' },
+          { id: 103, entry_type: 'sale', invoice_number: 'INV-2026-015', created_at: `${selectedMonth}-18T11:10:00`, sale_amount: 60000, commission_amount: 3000, paid_amount: 3000, status: 'paid' },
         ])
       }
     } catch (err) {
@@ -260,8 +318,10 @@ export function Commissions() {
   // Calculate top KPI aggregates
   const listData = Array.isArray(summaryList) ? summaryList : []
   const totalSalesVolume = listData.reduce((acc, curr) => acc + Number(curr.total_sales || 0), 0)
-  const totalCommissionsEarned = listData.reduce((acc, curr) => acc + Number(curr.total_commission || 0), 0)
   const totalPendingPayouts = listData.reduce((acc, curr) => acc + Number(curr.pending_commission || 0), 0)
+  const totalReturnDebits = listData.reduce((acc, curr) => acc + Math.abs(Math.min(0, Number(curr.balance_commission || 0))), 0)
+  const totalGrossEarned = listData.reduce((acc, curr) => acc + Number(curr.gross_commission ?? (curr.total_commission || 0)), 0)
+  const ledgerTotals = computeLedgerTotals(drillDownItems)
 
   return (
     <div className="space-y-12 animate-fade-in pb-16 text-[#2E2822]">
@@ -284,13 +344,13 @@ export function Commissions() {
 
         <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
           <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">
-            Earned Commissions
+            Gross Commissions
           </span>
           <div className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
-            Rs. {totalCommissionsEarned.toLocaleString()}
+            Rs. {totalGrossEarned.toLocaleString()}
           </div>
           <p className="text-xs font-sans text-[#7A6F69]">
-            Total staff earnings based on configured % rates
+            Positive sale attributions before return reversals
           </p>
         </div>
 
@@ -302,7 +362,9 @@ export function Commissions() {
             Rs. {totalPendingPayouts.toLocaleString()}
           </div>
           <p className="text-xs font-sans text-[#7A6F69]">
-            Commissions awaiting disbursement to cashiers
+            {totalReturnDebits > 0
+              ? `Includes Rs. ${totalReturnDebits.toLocaleString()} staff return debits offset from net balance`
+              : 'Commissions awaiting disbursement to cashiers'}
           </p>
         </div>
       </div>
@@ -356,8 +418,8 @@ export function Commissions() {
                   <th className="py-4 px-6 text-center">Status</th>
                   <th className="py-4 px-6">Monthly Rate (%)</th>
                   <th className="py-4 px-6 text-right">Total Sales</th>
-                  <th className="py-4 px-6 text-right">Earned Commission</th>
-                  <th className="py-4 px-6 text-right">Pending Payout</th>
+                  <th className="py-4 px-6 text-right">Gross Earned</th>
+                  <th className="py-4 px-6 text-right">Net Balance</th>
                   <th className="py-4 px-6 text-right">Paid Out</th>
                   <th className="py-4 pl-6 text-center">Actions</th>
                 </tr>
@@ -433,15 +495,22 @@ export function Commissions() {
                           Rs. {(item.total_sales || 0).toLocaleString()}
                         </td>
                         <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-bold text-base">
-                          Rs. {(item.total_commission || 0).toLocaleString()}
+                          Rs. {(item.gross_commission ?? item.total_commission ?? 0).toLocaleString()}
+                          {Number(item.total_reversals || 0) < -0.0001 && (
+                            <div className="text-[10px] font-sans font-normal text-[#7A6F69] mt-0.5">
+                              {formatCommissionAmount(item.total_reversals)} reversals
+                            </div>
+                          )}
                         </td>
                         <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-semibold text-base">
                           {hasDebt ? (
-                            <span title="Commission owed after return reversals">
+                            <span title="Net commission balance after return reversals">
                               {formatCommissionAmount(netBalance)}
                             </span>
-                          ) : (
+                          ) : hasPending ? (
                             <>Rs. {(item.pending_commission || 0).toLocaleString()}</>
+                          ) : (
+                            <span className="text-[#7A6F69]">Rs. 0</span>
                           )}
                         </td>
                         <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-base">
@@ -462,71 +531,130 @@ export function Commissions() {
                               )}
                               <span>Pay</span>
                             </button>
+                          ) : hasDebt ? (
+                            <span className="text-sm text-[#2E2822] font-bold uppercase tracking-wider" title="Staff owes commission after returns">
+                              Return Debit
+                            </span>
                           ) : (
                             <span className="text-sm text-[#7A6F69] font-bold uppercase tracking-wider">Settled</span>
                           )}
                         </td>
                       </tr>
 
-                      {/* Expandable Drill-Down Row */}
+                      {/* Expandable Commission Ledger */}
                       {isExpanded && (
                         <tr className="bg-[#EFEBE3] border-b border-[#C9C0B5] animate-fade-in">
                           <td colSpan={9} className="p-8">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-3">
-                                <div className="flex items-center gap-2 text-base font-bold text-[#2E2822]">
-                                  <DocumentIcon className="w-4 h-4" />
-                                  <span>Individual Sale Attributions for {item.name} ({selectedMonth})</span>
+                            <div className="space-y-5">
+                              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 border-b border-[#C9C0B5] pb-4">
+                                <div>
+                                  <div className="flex items-center gap-2 text-base font-bold text-[#2E2822]">
+                                    <DocumentIcon className="w-4 h-4" />
+                                    <span>Commission Ledger — {item.name} ({selectedMonth})</span>
+                                  </div>
+                                  <p className="text-xs text-[#7A6F69] mt-1.5 max-w-2xl">
+                                    Immutable chronological history. Original sale rows are never modified or marked Reversed — each return inserts a separate negative ledger entry.
+                                  </p>
                                 </div>
-                                <span className="text-sm text-[#7A6F69]">
-                                  Showing records contributing to monthly payout
-                                </span>
+                                {!drillDownLoading && drillDownItems.length > 0 && (
+                                  <div className="grid grid-cols-3 gap-4 text-right shrink-0">
+                                    <div>
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69]">Gross Earned</div>
+                                      <div className="font-mono font-bold text-[#2E2822]">{formatCommissionAmount(ledgerTotals.grossEarned)}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69]">Return Reversals</div>
+                                      <div className="font-mono font-bold text-[#2E2822]">{formatCommissionAmount(ledgerTotals.totalReversed)}</div>
+                                    </div>
+                                    <div>
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69]">Net Balance</div>
+                                      <div className="font-mono font-bold text-[#2E2822]">{formatCommissionAmount(ledgerTotals.netBalance)}</div>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
 
                               {drillDownLoading ? (
                                 <div className="py-8 flex items-center justify-center gap-2 text-[#7A6F69] text-sm font-bold uppercase tracking-wider">
                                   <RefreshIcon className="w-4 h-4 animate-spin text-[#2E2822]" />
-                                  <span>Loading commission items...</span>
+                                  <span>Loading commission ledger...</span>
                                 </div>
                               ) : drillDownItems.length === 0 ? (
                                 <div className="py-6 text-center text-[#7A6F69] text-sm">
-                                  No individual commission transactions found for this period.
+                                  No commission ledger entries found for this period.
                                 </div>
                               ) : (
-                                <div className="overflow-x-auto max-h-64">
+                                <div className="overflow-x-auto max-h-80 border border-[#C9C0B5] bg-[#F7F5F0]">
                                   <table className="w-full text-left text-sm border-collapse font-sans">
-                                    <thead>
-                                      <tr className="border-b border-[#C9C0B5] text-[#7A6F69] uppercase tracking-wider font-bold">
-                                        <th className="py-2.5 pr-4">Invoice #</th>
+                                    <thead className="sticky top-0 bg-[#EFEBE3] z-10">
+                                      <tr className="border-b border-[#C9C0B5] text-[#7A6F69] uppercase tracking-wider font-bold text-[11px]">
+                                        <th className="py-2.5 px-4">Type</th>
+                                        <th className="py-2.5 px-4">Reference</th>
+                                        <th className="py-2.5 px-4">Description</th>
                                         <th className="py-2.5 px-4">Date / Time</th>
-                                        <th className="py-2.5 px-4 text-right">Sale Amount</th>
-                                        <th className="py-2.5 px-4 text-right">Commission Amount</th>
-                                        <th className="py-2.5 pl-4 text-center">Status</th>
+                                        <th className="py-2.5 px-4 text-right">Sale / Credit</th>
+                                        <th className="py-2.5 px-4 text-right">Commission</th>
+                                        <th className="py-2.5 px-4 text-center">Payout Status</th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[#C9C0B5]">
-                                      {drillDownItems.map((sub) => (
-                                        <tr key={sub.id}>
-                                          <td className="py-3 pr-4 font-mono text-[#2E2822] font-bold">
-                                            {sub.return_number || sub.invoice_number || `#${sub.sale_id || sub.id}`}
-                                          </td>
-                                          <td className="py-3 px-4 text-[#7A6F69] font-mono">
-                                            {sub.created_at || '—'}
-                                          </td>
-                                          <td className="py-3 px-4 text-right font-mono text-[#7A6F69]">
-                                            {formatCommissionAmount(sub.sale_amount)}
-                                          </td>
-                                          <td className="py-3 px-4 text-right font-mono text-[#2E2822] font-bold">
-                                            {formatCommissionAmount(sub.commission_amount)}
-                                          </td>
-                                          <td className="py-3 pl-4 text-center">
-                                            <span className="font-mono text-xs uppercase font-bold text-[#2E2822]">
-                                              {formatCommissionStatus(sub)}
-                                            </span>
-                                          </td>
-                                        </tr>
-                                      ))}
+                                      {drillDownItems.map((sub) => {
+                                        const isReversal = isReturnReversalEntry(sub)
+                                        return (
+                                          <tr
+                                            key={sub.id}
+                                            className={isReversal ? 'bg-[#EFEBE3]/80' : ''}
+                                          >
+                                            <td className="py-3 px-4">
+                                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] ${
+                                                isReversal
+                                                  ? 'bg-[#2E2822] text-[#F7F5F0]'
+                                                  : 'bg-transparent border border-[#C9C0B5] text-[#2E2822]'
+                                              }`}>
+                                                {getLedgerTypeLabel(sub)}
+                                              </span>
+                                            </td>
+                                            <td className="py-3 px-4 font-mono text-[#2E2822] font-bold text-xs">
+                                              {getLedgerReference(sub)}
+                                            </td>
+                                            <td className="py-3 px-4 text-[#7A6F69] text-xs max-w-xs">
+                                              {getLedgerDescription(sub)}
+                                            </td>
+                                            <td className="py-3 px-4 text-[#7A6F69] font-mono text-xs whitespace-nowrap">
+                                              {formatLedgerDate(sub.created_at)}
+                                            </td>
+                                            <td className={`py-3 px-4 text-right font-mono text-xs font-bold ${
+                                              isReversal ? 'text-[#2E2822]' : 'text-[#7A6F69]'
+                                            }`}>
+                                              {formatCommissionAmount(sub.sale_amount)}
+                                            </td>
+                                            <td className={`py-3 px-4 text-right font-mono text-sm font-bold ${
+                                              isReversal ? 'text-[#2E2822]' : 'text-[#2E2822]'
+                                            }`}>
+                                              {formatCommissionAmount(sub.commission_amount)}
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
+                                              <span className="font-mono text-[10px] uppercase font-bold text-[#2E2822]">
+                                                {formatCommissionStatus(sub)}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        )
+                                      })}
                                     </tbody>
+                                    <tfoot className="sticky bottom-0 bg-[#EFEBE3] border-t border-[#2E2822]">
+                                      <tr>
+                                        <td colSpan={5} className="py-3 px-4 text-right text-[11px] font-bold uppercase tracking-wider text-[#7A6F69]">
+                                          Ledger Totals ({ledgerTotals.entryCount} entries)
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-mono font-bold text-[#2E2822]">
+                                          {formatCommissionAmount(ledgerTotals.netBalance)}
+                                        </td>
+                                        <td className="py-3 px-4 text-center text-[10px] text-[#7A6F69] font-bold uppercase">
+                                          Net
+                                        </td>
+                                      </tr>
+                                    </tfoot>
                                   </table>
                                 </div>
                               )}
