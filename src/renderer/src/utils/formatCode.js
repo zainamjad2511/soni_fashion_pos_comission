@@ -7,7 +7,7 @@
  *
  * @param {string} input  — Raw user input, e.g. "1", "042", "SF-00001"
  * @param {'SKU' | 'INV' | 'RET'} type — Target code format
- * @returns {string} Formatted code, e.g. "SF-00001", "SNF-INV-00024", "SNF-RET-00007"
+ * @returns {string} Formatted code, e.g. "SF-00001", "SF-INV-00024", "SF-RET-00007"
  */
 export function formatCode(input, type) {
   if (!input || typeof input !== 'string') return input

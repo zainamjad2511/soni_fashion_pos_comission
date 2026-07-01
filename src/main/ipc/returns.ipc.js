@@ -1,5 +1,6 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
+import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
 
@@ -144,8 +145,7 @@ export function registerReturnsHandlers() {
 
       // Generate sequential return number using return_prefix setting
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      const retPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'return_prefix'").get()
-      const baseRetPrefix = (retPrefixRow ? retPrefixRow.value : 'SNF-RET').replace(/-+$/, '')
+      const baseRetPrefix = getRequiredSetting(db, 'return_prefix').replace(/-+$/, '')
       const prefix = `${baseRetPrefix}-${todayStr}-`
       const lastRet = db.prepare('SELECT return_number FROM returns WHERE return_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
       let seq = 1
@@ -256,8 +256,7 @@ export function registerReturnsHandlers() {
         netAmount = grandTotal - refundCredit
 
         // Generate Invoice Number using invoice_prefix setting
-        const invPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'invoice_prefix'").get()
-        const baseInvPrefix = (invPrefixRow ? invPrefixRow.value : 'SNF-INV').replace(/-+$/, '')
+        const baseInvPrefix = getRequiredSetting(db, 'invoice_prefix').replace(/-+$/, '')
         const invPrefix = `${baseInvPrefix}-${todayStr}-`
         const lastSale = db.prepare('SELECT invoice_number FROM sales WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${invPrefix}%`)
         let invSeq = 1
@@ -360,12 +359,12 @@ export function registerReturnsHandlers() {
       }
       if (filters.search && filters.search.trim()) {
         const term = `%${filters.search.trim()}%`
-        query += ' AND (r.return_number LIKE ? OR s1.invoice_number LIKE ? OR r.notes LIKE ?)'
-        params.push(term, term, term)
+        query += ' AND (r.return_number LIKE ? OR s1.invoice_number LIKE ? OR s2.invoice_number LIKE ? OR r.notes LIKE ?)'
+        params.push(term, term, term, term)
       }
     }
 
-    query += ' ORDER BY r.return_date DESC'
+    query += ' ORDER BY r.return_date DESC LIMIT 200'
     const stmt = db.prepare(query)
     return stmt.all(...params)
   })

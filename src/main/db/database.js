@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import fs from 'fs'
 import { runMigrations } from './migrations.js'
 import { runSeed } from './seed.js'
+import { applyOfficialPrefixes } from './officialSettings.js'
 import { runAutoBackup } from '../services/backup.service.js'
 import { auditLog } from '../services/audit.service.js'
 
@@ -33,6 +34,9 @@ export function getDb() {
 
   // Run initial settings seeder
   runSeed(db)
+
+  // Enforce official SF-INV / SF-RET prefix settings on every startup
+  applyOfficialPrefixes(db)
 
   // Run daily auto-backup asynchronously
   runAutoBackup(db)

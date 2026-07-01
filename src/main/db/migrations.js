@@ -407,4 +407,56 @@ export function runMigrations(db) {
     migrateV6()
     console.log('[Migrations] Successfully applied V6 Migration.')
   }
+
+  if (currentVersion < 7) {
+    console.log('[Migrations] Applying V7 Migration (SF-INV / SF-RET prefix defaults)...')
+    const migrateV7 = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('invoice_prefix', 'SF-INV', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = 'SF-INV', updated_at = CURRENT_TIMESTAMP
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('return_prefix', 'SF-RET', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = 'SF-RET', updated_at = CURRENT_TIMESTAMP
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '7', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '7', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV7()
+    console.log('[Migrations] Successfully applied V7 Migration.')
+  }
+
+  if (currentVersion < 8) {
+    console.log('[Migrations] Applying V8 Migration (enforce official SF-INV / SF-RET settings)...')
+    const migrateV8 = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('invoice_prefix', 'SF-INV', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = 'SF-INV', updated_at = CURRENT_TIMESTAMP
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('return_prefix', 'SF-RET', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = 'SF-RET', updated_at = CURRENT_TIMESTAMP
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '8', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '8', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV8()
+    console.log('[Migrations] Successfully applied V8 Migration.')
+  }
 }

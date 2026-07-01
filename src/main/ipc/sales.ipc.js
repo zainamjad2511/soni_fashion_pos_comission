@@ -1,5 +1,6 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
+import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission } from '../services/commission.service.js'
 
@@ -73,8 +74,7 @@ export function registerSalesHandlers() {
 
       // 3. Generate sequential invoice number using invoice_prefix setting
       const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      const invPrefixRow = db.prepare("SELECT value FROM settings WHERE key = 'invoice_prefix'").get()
-      const basePrefix = (invPrefixRow ? invPrefixRow.value : 'SNF-INV').replace(/-+$/, '')
+      const basePrefix = getRequiredSetting(db, 'invoice_prefix').replace(/-+$/, '')
       const prefix = `${basePrefix}-${todayStr}-`
       const lastSale = db.prepare('SELECT invoice_number FROM sales WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
       let seq = 1
@@ -140,7 +140,7 @@ export function registerSalesHandlers() {
       SELECT s.*, sp.name as salesperson_name
       FROM sales s
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
-      WHERE 1=1
+      WHERE s.exchange_return_id IS NULL
     `
     const params = []
 
@@ -266,6 +266,20 @@ export function registerSalesHandlers() {
       ORDER BY s.id DESC LIMIT 1
     `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
     if (!sale) throw new Error(`Invoice "${invoiceNo}" not found.`)
+
+    if (sale.exchange_return_id) {
+      const ret = db.prepare(`
+        SELECT r.*, sp.name AS processed_by_name
+        FROM returns r
+        LEFT JOIN salespersons sp ON r.processed_by = sp.id
+        WHERE r.id = ?
+      `).get(sale.exchange_return_id)
+      if (ret) {
+        throw new Error(
+          `Invoice "${sale.invoice_number}" is an internal exchange replacement. Reprint voucher ${ret.return_number} instead.`
+        )
+      }
+    }
 
     const items = db.prepare(`
       SELECT si.*, a.sku, a.name as article_name

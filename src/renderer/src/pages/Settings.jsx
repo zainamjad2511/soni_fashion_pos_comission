@@ -31,8 +31,8 @@ export function Settings() {
     receipt_printer_name: '',
     default_commission: '1',
     sku_prefix: 'SF',
-    invoice_prefix: 'SNF-INV',
-    return_prefix: 'SNF-RET',
+    invoice_prefix: 'SF-INV',
+    return_prefix: 'SF-RET',
     last_sku_number: '0',
     last_invoice_number: '0',
     last_return_number: '0'
@@ -365,10 +365,10 @@ export function Settings() {
                   type="text"
                   name="invoice_prefix"
                   value={formData.invoice_prefix}
-                  onChange={handleChange}
-                  required
-                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase focus:outline-none focus:border-[#2E2822]"
+                  readOnly
+                  className="w-full py-2 bg-[#EFEBE3]/50 border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase cursor-not-allowed"
                 />
+                <p className="text-[10px] text-[#7A6F69]">Official system prefix — SF-INV</p>
               </div>
 
               <div className="space-y-2">
@@ -379,10 +379,10 @@ export function Settings() {
                   type="text"
                   name="return_prefix"
                   value={formData.return_prefix}
-                  onChange={handleChange}
-                  required
-                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase focus:outline-none focus:border-[#2E2822]"
+                  readOnly
+                  className="w-full py-2 bg-[#EFEBE3]/50 border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm uppercase cursor-not-allowed"
                 />
+                <p className="text-[10px] text-[#7A6F69]">Official system prefix — SF-RET</p>
               </div>
             </div>
           </div>

@@ -82,9 +82,10 @@
       <div class="info-line" id="store-tagline">Jahan Fashion enters your life</div>
       <div class="info-line" id="store-address">Machli Bazar, Daska</div>
       <div class="info-line" id="store-contact">WhatsApp/Ph: 03246470929</div>
+      <div class="info-line bold" id="receipt-title" style="display:none; margin-top: 6px; text-transform: uppercase;"></div>
     </div>
 
-    <div class="info-line"><span class="bold">Inv #:</span> <span id="inv-no">INV-20260628-0001</span></div>
+    <div class="info-line"><span class="bold" id="inv-label">Inv #:</span> <span id="inv-no">INV-20260628-0001</span></div>
     <div class="info-line"><span class="bold">Date:</span> <span id="inv-date">28-Jun-2026 14:30</span></div>
     <div class="info-line"><span class="bold">Cashier:</span> <span id="inv-cashier">Staff</span></div>
 
@@ -139,6 +140,21 @@
       if (document.getElementById('store-address') && data.shop_address) document.getElementById('store-address').textContent = data.shop_address;
       if (document.getElementById('store-contact') && data.shop_contact) document.getElementById('store-contact').textContent = 'WhatsApp/Ph: ' + data.shop_contact;
       if (document.getElementById('store-footer') && data.receipt_footer) document.getElementById('store-footer').textContent = data.receipt_footer;
+
+      const titleEl = document.getElementById('receipt-title');
+      if (titleEl) {
+        if (data.receipt_title) {
+          titleEl.textContent = data.receipt_title;
+          titleEl.style.display = 'block';
+        } else {
+          titleEl.style.display = 'none';
+        }
+      }
+
+      const invLabel = document.getElementById('inv-label');
+      if (invLabel) {
+        invLabel.textContent = data.receipt_title ? 'Voucher #:' : 'Inv #:';
+      }
 
       document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
       document.getElementById('inv-date').textContent = data.sale_date || new Date().toLocaleString();

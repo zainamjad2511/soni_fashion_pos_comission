@@ -221,7 +221,7 @@ export function Commissions() {
       } else {
         setDrillDownItems([
           { id: 101, entry_type: 'sale', invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-05T14:22:00`, sale_amount: 50000, commission_amount: 2500, paid_amount: 0, status: 'pending' },
-          { id: 102, entry_type: 'return_reversal', return_number: 'SNF-RET-20260701-0001', invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-08T11:05:00`, sale_amount: -10000, commission_amount: -170, paid_amount: 0, status: 'pending', article_name: 'Lehnga Full', article_sku: 'SF-00001', notes: 'Partial return reversal' },
+          { id: 102, entry_type: 'return_reversal', return_number: 'SF-RET-20260701-0001', invoice_number: 'INV-2026-001', created_at: `${selectedMonth}-08T11:05:00`, sale_amount: -10000, commission_amount: -170, paid_amount: 0, status: 'pending', article_name: 'Lehnga Full', article_sku: 'SF-00001', notes: 'Partial return reversal' },
           { id: 103, entry_type: 'sale', invoice_number: 'INV-2026-015', created_at: `${selectedMonth}-18T11:10:00`, sale_amount: 60000, commission_amount: 3000, paid_amount: 3000, status: 'paid' },
         ])
       }

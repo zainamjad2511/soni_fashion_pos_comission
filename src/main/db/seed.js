@@ -7,8 +7,8 @@ export function runSeed(db) {
     ['shop_address', 'Machli Bazar, Daska'],
     ['shop_contact', '03246470929'],
     ['sku_prefix', 'SF'],
-    ['invoice_prefix', 'SNF-INV'],
-    ['return_prefix', 'SNF-RET'],
+    ['invoice_prefix', 'SF-INV'],
+    ['return_prefix', 'SF-RET'],
     ['last_sku_number', '0'],
     ['last_invoice_number', '0'],
     ['last_return_number', '0'],
@@ -39,4 +39,3 @@ export function runSeed(db) {
   seedTransaction()
   console.log('[Seed] Initial settings seed and personalization completed.')
 }
-

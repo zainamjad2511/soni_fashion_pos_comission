@@ -27,6 +27,7 @@ import {
   CloseIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
+import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 
 const INVOICE_SEARCH_PREFIX = 'SF-INV-'
 
@@ -164,74 +165,6 @@ export function Returns() {
       console.error('Failed to fetch returns history:', e)
     } finally {
       setLoadingHistory(false)
-    }
-  }
-
-  const buildReturnReceiptPayload = (fullRet) => {
-    const refundCredit = Number(fullRet.refund_credit || fullRet.refundCredit || 0)
-    const replacementItems = fullRet.replacement_items || []
-    const hasExchange = replacementItems.length > 0 || fullRet.exchange_new_sale_id
-
-    const saleDate = fullRet.return_date
-      ? new Date(fullRet.return_date).toLocaleString()
-      : new Date().toLocaleString()
-    const staffName = fullRet.processed_by_name || 'Returns Staff'
-
-    if (!hasExchange) {
-      return {
-        invoice_number: fullRet.return_number || fullRet.returnNumber || 'RETURN VOUCHER',
-        sale_date: saleDate,
-        salesperson_name: staffName,
-        items: (fullRet.items || []).map((i) => {
-          const qty = i.quantity_returned || i.quantity || 1
-          const unit = i.refund_per_unit || i.retail_price_snapshot || 0
-          return {
-            name: `[RETURN] ${i.article_name || i.name || 'Returned Article'}`,
-            retail_price_snapshot: unit,
-            quantity: qty,
-            line_total: -(qty * unit),
-          }
-        }),
-        subtotal: refundCredit,
-        total_discount: 0,
-        grand_total: -refundCredit,
-        payment_method: `${(fullRet.return_type || 'REFUND').toUpperCase()} CREDIT`,
-      }
-    }
-
-    const returnLines = (fullRet.items || []).map((i) => {
-      const qty = i.quantity_returned || i.quantity || 1
-      const unit = i.refund_per_unit || i.retail_price_snapshot || 0
-      return {
-        name: `[RETURN] ${i.article_name || i.name || 'Returned Article'}`,
-        retail_price_snapshot: unit,
-        quantity: qty,
-        line_total: -(qty * unit),
-      }
-    })
-
-    const replacementLines = replacementItems.map((i) => ({
-      name: `[NEW] ${i.article_name || i.name || 'Exchange Article'}`,
-      retail_price_snapshot: i.retail_price_snapshot || 0,
-      quantity: i.quantity || 1,
-      discount_amount: i.discount_amount || 0,
-      line_total: Number(i.line_total || 0),
-    }))
-
-    const replacementTotal = replacementLines.reduce((sum, item) => sum + item.line_total, 0)
-    const netAmount = replacementTotal - refundCredit
-    const returnRef = fullRet.return_number || fullRet.returnNumber || 'RETURN'
-    const exchangeInv = fullRet.exchange_new_invoice_number || fullRet.newInvoiceNumber || ''
-
-    return {
-      invoice_number: exchangeInv ? `EXCHANGE ${returnRef} / ${exchangeInv}` : `EXCHANGE ${returnRef}`,
-      sale_date: saleDate,
-      salesperson_name: staffName,
-      items: [...returnLines, ...replacementLines],
-      subtotal: replacementTotal,
-      total_discount: 0,
-      grand_total: netAmount,
-      payment_method: netAmount > 0 ? 'CUSTOMER PAYS DIFFERENCE' : netAmount < 0 ? 'STORE CREDIT BALANCE' : 'EVEN EXCHANGE',
     }
   }
 
@@ -990,7 +923,7 @@ export function Returns() {
                   <CheckIcon className="w-6 h-6 text-[#2E2822]" />
                   <div>
                     <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Transaction Successfully Processed</h2>
-                    <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {processResult.returnNumber}</p>
+                    <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Voucher: {processResult.returnNumber || processResult.return_number}</p>
                   </div>
                 </div>
                 <button
@@ -1008,8 +941,10 @@ export function Returns() {
                 </div>
                 {processResult.newSaleId && (
                   <div className="space-y-1">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Replacement Invoice</div>
-                    <div className="text-xl font-bold text-[#2E2822] font-mono mt-1">Generated (Sale ID #{processResult.newSaleId})</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Replacement (internal)</div>
+                    <div className="text-sm font-bold text-[#7A6F69] font-mono mt-1">
+                      {processResult.newInvoiceNumber || `Sale #${processResult.newSaleId}`}
+                    </div>
                   </div>
                 )}
                 <div className="space-y-1">
