@@ -105,6 +105,12 @@ input, select, textarea {
   border-bottom: 1px solid #C9C0B5 !important; border-radius: 0 !important; box-shadow: none !important;
 }
 input:focus, select:focus, textarea:focus { border-bottom-color: #2E2822 !important; outline: none !important; }
+input::placeholder,
+textarea::placeholder {
+  color: #7A6F69 !important;
+  opacity: 0.65;
+  -webkit-text-fill-color: #7A6F69 !important;
+}
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none !important; margin: 0 !important; }
 input[type="number"] { -moz-appearance: textfield !important; appearance: textfield !important; }

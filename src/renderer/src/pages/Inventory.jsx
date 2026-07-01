@@ -526,7 +526,7 @@ export function Inventory() {
                     value={formData.supplier_article_code}
                     onChange={handleFormChange}
                     disabled={!!editingArticle}
-                    placeholder="e.g. ART-101"
+                    placeholder="SU"
                     required
                     className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs uppercase placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
                   />
@@ -542,7 +542,7 @@ export function Inventory() {
                   name="name"
                   value={formData.name}
                   onChange={handleFormChange}
-                  placeholder="e.g. Embroidered Chiffon Suit 3-Piece"
+                  placeholder="Embroidered Chiffon Suit 3-Piece"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
@@ -574,7 +574,7 @@ export function Inventory() {
                     name="colour"
                     value={formData.colour}
                     onChange={handleFormChange}
-                    placeholder="e.g. Maroon"
+                    placeholder="Maroon"
                     className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
@@ -588,7 +588,7 @@ export function Inventory() {
                     name="size"
                     value={formData.size}
                     onChange={handleFormChange}
-                    placeholder="e.g. Free"
+                    placeholder="Free"
                     className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
@@ -612,7 +612,7 @@ export function Inventory() {
                       min="1"
                       step="any"
                       required
-                      className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-base focus:outline-none focus:border-[#2E2822]"
+                      className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-base placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                     />
                   </div>
 
@@ -627,7 +627,7 @@ export function Inventory() {
                       min="0"
                       step="any"
                       required
-                      className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono text-base font-bold focus:outline-none"
+                      className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono text-base font-bold placeholder-[#7A6F69] focus:outline-none"
                     />
                   </div>
                 </div>

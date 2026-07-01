@@ -606,7 +606,7 @@ export function Returns() {
                       // else: form onSubmit will handle normally
                     }
                   }}
-                  placeholder="Enter invoice number (e.g., SNF-INV-00024) or type a bare number..."
+                  placeholder="Enter invoice number (SNF-INV-00024) or type a bare number..."
                   className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>
@@ -931,7 +931,7 @@ export function Returns() {
                       type="text"
                       value={returnNotes}
                       onChange={(e) => setReturnNotes(e.target.value)}
-                      placeholder="Optional reason note (e.g., Size exchange, defective stitching)..."
+                      placeholder="Optional reason note (Size exchange, defective stitching)..."
                       className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none"
                     />
                   </div>
@@ -991,7 +991,7 @@ export function Returns() {
                   type="text"
                   value={skuQuery}
                   onChange={(e) => setSkuQuery(e.target.value)}
-                  placeholder="Search by article barcode SKU (e.g., SF-00001) or supplier code..."
+                  placeholder="Search by article barcode SKU (SF-00001) or supplier code..."
                   className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>
@@ -1254,7 +1254,7 @@ export function Returns() {
                       type="text"
                       value={manualNotes}
                       onChange={(e) => setManualNotes(e.target.value)}
-                      placeholder="Specify mandatory reason (e.g., Customer receipt lost, Manager approved refund)..."
+                      placeholder="Specify mandatory reason (Customer receipt lost, Manager approved refund)..."
                       className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all"
                     />
                   </div>

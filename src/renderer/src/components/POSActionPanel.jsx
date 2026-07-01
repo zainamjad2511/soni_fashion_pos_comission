@@ -199,7 +199,7 @@ export function POSActionPanel({
           value={notes}
           onChange={onNotesChange}
           placeholder="Optional sale note..."
-          className="w-full px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs focus:outline-none border-b border-[#C9C0B5] focus:border-[#2E2822] transition-colors rounded-none"
+          className="w-full px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs placeholder-[#7A6F69] focus:outline-none border-b border-[#C9C0B5] focus:border-[#2E2822] transition-colors rounded-none"
         />
       </div>
     </div>

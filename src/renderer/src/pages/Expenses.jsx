@@ -504,7 +504,7 @@ export function Expenses() {
                     name="recorded_by"
                     value={formData.recorded_by}
                     onChange={handleFormChange}
-                    placeholder="e.g. Manager"
+                    placeholder="Manager"
                     className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
@@ -519,7 +519,7 @@ export function Expenses() {
                   name="description"
                   value={formData.description}
                   onChange={handleFormChange}
-                  placeholder="e.g. Electricity bill for shop #1"
+                  placeholder="Electricity bill for shop #1"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>

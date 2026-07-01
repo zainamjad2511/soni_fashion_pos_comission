@@ -365,7 +365,7 @@ export function Suppliers() {
                   name="code"
                   value={formData.code}
                   onChange={handleFormChange}
-                  placeholder="e.g. SUIDHAGA or SF-V01"
+                  placeholder="SUIDHAGA or SF-V01"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] uppercase"
                 />
@@ -380,7 +380,7 @@ export function Suppliers() {
                   name="name"
                   value={formData.name}
                   onChange={handleFormChange}
-                  placeholder="e.g. Sui Dhaga Wholesale Garments"
+                  placeholder="Sui Dhaga Wholesale Garments"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
@@ -395,7 +395,7 @@ export function Suppliers() {
                   name="contact"
                   value={formData.contact}
                   onChange={handleFormChange}
-                  placeholder="e.g. 0300-1234567 or Mr. Tariq"
+                  placeholder="0300-1234567 or Mr. Tariq"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
@@ -409,7 +409,7 @@ export function Suppliers() {
                   name="address"
                   value={formData.address}
                   onChange={handleFormChange}
-                  placeholder="e.g. Shop #12, Azam Cloth Market, Lahore"
+                  placeholder="Shop #12, Azam Cloth Market, Lahore"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
@@ -423,7 +423,7 @@ export function Suppliers() {
                   value={formData.notes}
                   onChange={handleFormChange}
                   rows={3}
-                  placeholder="e.g. Weekly payment terms. Delivery via Faisal Movers."
+                  placeholder="Weekly payment terms. Delivery via Faisal Movers."
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>

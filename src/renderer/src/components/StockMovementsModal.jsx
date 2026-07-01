@@ -236,9 +236,9 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                     type="number"
                     value={adjustQty}
                     onChange={(e) => setAdjustQty(e.target.value)}
-                    placeholder="e.g. -2 or +5"
+                    placeholder="-2 or +5"
                     required
-                    className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono font-bold text-xs focus:outline-none"
+                    className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono font-bold text-xs placeholder-[#7A6F69] focus:outline-none"
                   />
                 </div>
 
@@ -249,7 +249,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                       type="text"
                       value={adjustNote}
                       onChange={(e) => setAdjustNote(e.target.value)}
-                      placeholder="e.g. Shelf recount correction or damaged item"
+                      placeholder="Shelf recount correction or damaged item"
                       required
                       className="flex-1 py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none font-bold"
                     />

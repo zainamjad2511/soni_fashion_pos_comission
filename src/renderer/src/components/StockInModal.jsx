@@ -266,7 +266,7 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                 type="text"
                 value={shipmentNote}
                 onChange={(e) => setShipmentNote(e.target.value)}
-                placeholder="e.g. INV-2026-104 or Courier Tracking"
+                placeholder="INV-2026-104 or Courier Tracking"
                 className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-mono font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
               />
             </div>
@@ -323,7 +323,7 @@ export function StockInModal({ isOpen, onClose, onSuccess }) {
                       onChange={(e) => setAddQuantity(e.target.value)}
                       placeholder="Qty"
                       min="1"
-                      className="w-20 py-1.5 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs font-mono font-bold text-center focus:outline-none"
+                      className="w-20 py-1.5 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xs font-mono font-bold text-center placeholder-[#7A6F69] focus:outline-none"
                     />
                     <button
                       type="submit"

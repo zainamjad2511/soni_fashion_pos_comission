@@ -393,7 +393,7 @@ export function Salespersons() {
                   name="name"
                   value={formData.name}
                   onChange={handleFormChange}
-                  placeholder="e.g. Bilal Ahmed or Cashier 1"
+                  placeholder="Bilal Ahmed or Cashier 1"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
@@ -408,7 +408,7 @@ export function Salespersons() {
                   name="contact"
                   value={formData.contact}
                   onChange={handleFormChange}
-                  placeholder="e.g. 0300-9876543"
+                  placeholder="0300-9876543"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
@@ -422,7 +422,7 @@ export function Salespersons() {
                   value={formData.notes}
                   onChange={handleFormChange}
                   rows={4}
-                  placeholder="e.g. Morning shift lead. Base salary + 2% commission."
+                  placeholder="Morning shift lead. Base salary + 2% commission."
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>

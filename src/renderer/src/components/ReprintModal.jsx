@@ -159,7 +159,7 @@ export function ReprintModal({ isOpen, onClose }) {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by Invoice # (e.g. INV-2026...), Cashier Name, or Remarks..."
+            placeholder="Search by Invoice # (INV-2026...), Cashier Name, or Remarks..."
             className="w-full pl-6 pr-10 py-2.5 bg-transparent border-b border-[#C9C0B5] text-xs font-mono text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-all"
           />
           {loading && (

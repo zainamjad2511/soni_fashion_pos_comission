@@ -180,7 +180,7 @@ export function Settings() {
                   name="shop_name"
                   value={formData.shop_name}
                   onChange={handleChange}
-                  placeholder="e.g. Soni Fashion | سونی فیشن"
+                  placeholder="Soni Fashion | سونی فیشن"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] text-xl font-display font-bold placeholder-[#7A6F69] focus:outline-none"
                 />
@@ -195,7 +195,7 @@ export function Settings() {
                   name="shop_tagline"
                   value={formData.shop_tagline || ''}
                   onChange={handleChange}
-                  placeholder="e.g. Jahan Fashion enters your life"
+                  placeholder="Jahan Fashion enters your life"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
@@ -209,7 +209,7 @@ export function Settings() {
                   name="shop_address"
                   value={formData.shop_address}
                   onChange={handleChange}
-                  placeholder="e.g. Qazi Market, Machli Bazar, Daska"
+                  placeholder="Qazi Market, Machli Bazar, Daska"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
@@ -224,7 +224,7 @@ export function Settings() {
                   name="shop_contact"
                   value={formData.shop_contact}
                   onChange={handleChange}
-                  placeholder="e.g. +92 300 1234567"
+                  placeholder="+92 300 1234567"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>
@@ -255,7 +255,7 @@ export function Settings() {
                   value={formData.receipt_footer}
                   onChange={handleChange}
                   rows={2}
-                  placeholder="e.g. Thank you for visiting Soni Fashion! No cash refund, exchange within 7 days."
+                  placeholder="Thank you for visiting Soni Fashion! No cash refund, exchange within 7 days."
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] resize-none"
                 />
               </div>
