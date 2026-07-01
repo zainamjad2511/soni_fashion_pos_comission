@@ -46,6 +46,25 @@ export function registerArticlesHandlers() {
           params.push(term, term, term, term)
         }
       }
+      if (filters.sku_query) {
+        const skuQuery = filters.sku_query.trim()
+        let resolvedSku = skuQuery
+        if (/^\d+$/.test(skuQuery)) {
+          const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+          const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+          resolvedSku = `${cleanPrefix}-${String(skuQuery).padStart(5, '0')}`
+        }
+        query += ' AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ?)'
+        params.push(resolvedSku, `%${skuQuery}%`, `%${skuQuery}%`)
+        exactSku = resolvedSku
+      }
+      if (filters.vendor_code && filters.supplier_article_code) {
+        query += ' AND UPPER(suppliers.code) = ? AND UPPER(articles.supplier_article_code) = ?'
+        params.push(
+          filters.vendor_code.trim().toUpperCase(),
+          filters.supplier_article_code.trim().toUpperCase()
+        )
+      }
     }
 
     if (exactSku) {

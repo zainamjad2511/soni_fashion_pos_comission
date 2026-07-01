@@ -180,7 +180,12 @@ export function registerReturnsHandlers() {
       for (const item of items) {
         insertRetItemStmt.run(returnId, item.sale_item_id || null, item.article_id, item.quantity_returned, item.refund_per_unit)
         restoreStockStmt.run(item.quantity_returned, item.article_id)
-        insertMovementStmt.run(item.article_id, item.quantity_returned, returnId, `Return #${returnNumber}`)
+        insertMovementStmt.run(
+          item.article_id,
+          item.quantity_returned,
+          returnId,
+          return_type === 'manual' ? `Manual Return #${returnNumber}` : `Return #${returnNumber}`
+        )
       }
 
       // Commission Reversal

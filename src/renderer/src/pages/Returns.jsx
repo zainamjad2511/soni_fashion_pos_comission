@@ -30,6 +30,13 @@ import { formatCode } from '../utils/formatCode.js'
 
 const INVOICE_SEARCH_PREFIX = 'SF-INV-'
 
+const MANUAL_RETURN_REASONS = [
+  'Customer Receipt Lost',
+  'Defective / Damaged Item',
+  'Wrong Size / Fit Issue',
+  'Other (Custom Note)',
+]
+
 function normalizeInvoiceLookupQuery(raw) {
   const trimmed = String(raw || '').trim()
   if (!trimmed) return trimmed
@@ -81,10 +88,14 @@ export function Returns() {
   const [processResult, setProcessResult] = useState(null)
 
   // Task 4.6: Manual Returns State
-  const [manualSearchQuery, setManualSearchQuery] = useState('')
+  const [manualSearchMode, setManualSearchMode] = useState('sku')
+  const [manualSkuQuery, setManualSkuQuery] = useState('')
+  const [manualVendorCode, setManualVendorCode] = useState('')
+  const [manualArticleNumber, setManualArticleNumber] = useState('')
   const [manualSearchResults, setManualSearchResults] = useState([])
   const [manualCart, setManualCart] = useState([])
-  const [manualNotes, setManualNotes] = useState('')
+  const [manualReason, setManualReason] = useState('Customer Receipt Lost')
+  const [manualCustomNote, setManualCustomNote] = useState('')
   const [processingManual, setProcessingManual] = useState(false)
   const [manualResult, setManualResult] = useState(null)
 
@@ -486,19 +497,123 @@ export function Returns() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedSale, processingReturn, activeTab, returnQuantities, replacementCart, returnType])
 
-  // Task 4.6: Manual return handlers
-  const handleManualSearch = async (query) => {
-    setManualSearchQuery(query)
-    if (!query.trim() || query.trim().length < 2) {
-      setManualSearchResults([])
-      return
+  const getManualReturnNotes = () => {
+    if (manualReason === 'Other (Custom Note)') {
+      return manualCustomNote.trim()
     }
+    return manualReason
+  }
+
+  const isManualReasonValid = () => {
+    if (manualReason === 'Other (Custom Note)') {
+      return manualCustomNote.trim().length > 0
+    }
+    return Boolean(manualReason)
+  }
+
+  // Task 4.6: Manual return handlers
+  const runManualArticleSearch = async ({ mode, skuQuery, vendorCode, articleNumber }) => {
     try {
-      const res = await window.electronAPI.articles.list({ search: query.trim() })
+      const filters = { is_active: 1 }
+      if (mode === 'vendor') {
+        if (!vendorCode?.trim() || !articleNumber?.trim()) {
+          setManualSearchResults([])
+          return
+        }
+        filters.vendor_code = vendorCode.trim()
+        filters.supplier_article_code = articleNumber.trim()
+      } else {
+        const raw = skuQuery?.trim()
+        if (!raw) {
+          setManualSearchResults([])
+          return
+        }
+        filters.sku_query = formatCode(raw, 'SKU')
+      }
+
+      const res = await window.electronAPI.articles.list(filters)
       const list = (res && res.data) ? res.data : res
       setManualSearchResults(Array.isArray(list) ? list : [])
     } catch (e) {
       console.error('Manual article search failed:', e)
+      setManualSearchResults([])
+    }
+  }
+
+  const handleManualSkuSearch = (query) => {
+    setManualSkuQuery(query)
+    if (!query.trim()) {
+      setManualSearchResults([])
+      return
+    }
+    runManualArticleSearch({ mode: 'sku', skuQuery: query })
+  }
+
+  const handleManualVendorSearch = (vendorCode, articleNumber) => {
+    setManualVendorCode(vendorCode)
+    setManualArticleNumber(articleNumber)
+    runManualArticleSearch({ mode: 'vendor', vendorCode, articleNumber })
+  }
+
+  const handleManualSkuKeyDown = async (e) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+
+    const trimmed = manualSkuQuery.trim()
+    if (!trimmed) return
+
+    const formatted = formatCode(trimmed, 'SKU')
+    if (formatted !== trimmed) {
+      setManualSkuQuery(formatted)
+    }
+
+    try {
+      const res = await window.electronAPI.articles.list({
+        is_active: 1,
+        sku_query: formatted,
+      })
+      const list = (res && res.data) ? res.data : res
+      const results = Array.isArray(list) ? list : []
+
+      if (results.length > 0) {
+        addManualItem(results[0])
+      } else {
+        setManualSearchResults([])
+        showToast('error', `No article found for SKU "${formatted}".`)
+      }
+    } catch (err) {
+      console.error('Manual SKU lookup failed:', err)
+      showToast('error', 'Failed to search article by SKU.')
+    }
+  }
+
+  const handleManualVendorKeyDown = async (e) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+
+    if (!manualVendorCode.trim() || !manualArticleNumber.trim()) {
+      showToast('error', 'Enter both vendor code and article number.')
+      return
+    }
+
+    try {
+      const res = await window.electronAPI.articles.list({
+        is_active: 1,
+        vendor_code: manualVendorCode.trim(),
+        supplier_article_code: manualArticleNumber.trim(),
+      })
+      const list = (res && res.data) ? res.data : res
+      const results = Array.isArray(list) ? list : []
+
+      if (results.length > 0) {
+        addManualItem(results[0])
+      } else {
+        setManualSearchResults([])
+        showToast('error', `No article found for ${manualVendorCode.toUpperCase()}-${manualArticleNumber.toUpperCase()}.`)
+      }
+    } catch (err) {
+      console.error('Manual vendor lookup failed:', err)
+      showToast('error', 'Failed to search article by vendor code.')
     }
   }
 
@@ -523,7 +638,10 @@ export function Returns() {
         }
       ])
     }
-    setManualSearchQuery('')
+    showToast('success', `Added "${article.name}" — stock will be restored when the return is confirmed.`)
+    setManualSkuQuery('')
+    setManualVendorCode('')
+    setManualArticleNumber('')
     setManualSearchResults([])
   }
 
@@ -561,10 +679,14 @@ export function Returns() {
       showToast('error', 'Please add at least one article to process a manual return.')
       return
     }
-    if (!manualNotes || !manualNotes.trim()) {
-      showToast('error', 'A mandatory reason note is required for manual returns.')
+    if (!isManualReasonValid()) {
+      showToast('error', manualReason === 'Other (Custom Note)'
+        ? 'Please enter a custom explanation for this manual return.'
+        : 'Please select a return reason.')
       return
     }
+
+    const composedNotes = getManualReturnNotes()
 
     const itemsPayload = manualCart.map((item) => ({
       article_id: item.article_id,
@@ -579,7 +701,7 @@ export function Returns() {
         return_type: 'manual',
         processed_by: selectedStaff || 1,
         items: itemsPayload,
-        notes: manualNotes.trim()
+        notes: composedNotes
       }
 
       const res = await window.electronAPI.returns.create(payload)
@@ -589,7 +711,11 @@ export function Returns() {
       const resultData = res.data
       setManualResult(resultData)
       setManualCart([])
-      setManualNotes('')
+      setManualReason('Customer Receipt Lost')
+      setManualCustomNote('')
+      setManualSkuQuery('')
+      setManualVendorCode('')
+      setManualArticleNumber('')
       showToast('success', 'Manual return voucher recorded successfully!')
     } catch (err) {
       console.error('Manual return processing error:', err)
@@ -1219,39 +1345,93 @@ export function Returns() {
                 </div>
               </div>
 
-              {/* Search Article Bar */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-[#EFEBE3] p-4 rounded-[2px]">
-                <div className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-2 w-full sm:w-auto">
-                  <SearchIcon className="w-4 h-4 shrink-0" />
-                  <span>Search &amp; Add Article to Return Cart:</span>
+              {/* Dual-Query Search */}
+              <div className="bg-[#EFEBE3] p-4 rounded-[2px] space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-2">
+                    <SearchIcon className="w-4 h-4 shrink-0" />
+                    <span>Find Article to Return:</span>
+                  </span>
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                    <button
+                      type="button"
+                      onClick={() => { setManualSearchMode('sku'); setManualSearchResults([]) }}
+                      className={`px-3 py-1.5 border-b-2 transition-colors ${manualSearchMode === 'sku' ? 'border-[#2E2822] text-[#2E2822]' : 'border-transparent text-[#7A6F69]'}`}
+                    >
+                      Public SKU
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setManualSearchMode('vendor'); setManualSearchResults([]) }}
+                      className={`px-3 py-1.5 border-b-2 transition-colors ${manualSearchMode === 'vendor' ? 'border-[#2E2822] text-[#2E2822]' : 'border-transparent text-[#7A6F69]'}`}
+                    >
+                      Vendor + Article #
+                    </button>
+                  </div>
                 </div>
-                <div className="relative w-full sm:w-96">
-                  <input
-                    type="text"
-                    value={manualSearchQuery}
-                    onChange={(e) => handleManualSearch(e.target.value)}
-                    placeholder="Type article SKU barcode or name..."
-                    className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
-                  />
-                  {manualSearchResults.length > 0 && (
-                    <div className="absolute z-20 left-0 right-0 mt-1 bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-h-60 overflow-y-auto divide-y divide-[#C9C0B5]">
-                      {(Array.isArray(manualSearchResults) ? manualSearchResults : []).map((art) => (
-                        <button
-                          key={art.id}
-                          type="button"
-                          onClick={() => addManualItem(art)}
-                          className="w-full p-3 text-left hover:bg-[#EFEBE3] transition-colors flex items-center justify-between"
-                        >
-                          <div>
-                            <div className="text-xs font-bold text-[#2E2822]">{art.name}</div>
-                            <div className="text-[10px] text-[#7A6F69] font-mono">{art.sku} | Current Stock: {art.quantity}</div>
-                          </div>
-                          <div className="text-xs font-bold text-[#2E2822] font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
-                        </button>
-                      ))}
+
+                {manualSearchMode === 'sku' ? (
+                  <div className="relative w-full sm:max-w-md">
+                    <input
+                      type="text"
+                      value={manualSkuQuery}
+                      onChange={(e) => handleManualSkuSearch(e.target.value)}
+                      onKeyDown={handleManualSkuKeyDown}
+                      placeholder="Public SKU (SF-00001) — press Enter to add"
+                      className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#7A6F69] mb-1">Vendor Code</label>
+                      <input
+                        type="text"
+                        value={manualVendorCode}
+                        onChange={(e) => handleManualVendorSearch(e.target.value, manualArticleNumber)}
+                        onKeyDown={handleManualVendorKeyDown}
+                        placeholder="SU"
+                        className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono uppercase"
+                      />
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#7A6F69] mb-1">Article Number</label>
+                      <input
+                        type="text"
+                        value={manualArticleNumber}
+                        onChange={(e) => handleManualVendorSearch(manualVendorCode, e.target.value)}
+                        onKeyDown={handleManualVendorKeyDown}
+                        placeholder="101"
+                        className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono uppercase"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {manualSearchResults.length > 0 && (
+                  <div className="bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-h-60 overflow-y-auto divide-y divide-[#C9C0B5]">
+                    {(Array.isArray(manualSearchResults) ? manualSearchResults : []).map((art) => (
+                      <button
+                        key={art.id}
+                        type="button"
+                        onClick={() => addManualItem(art)}
+                        className="w-full p-3 text-left hover:bg-[#EFEBE3] transition-colors flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="text-xs font-bold text-[#2E2822]">{art.name}</div>
+                          <div className="text-[10px] text-[#7A6F69] font-mono">
+                            {art.sku}
+                            {art.supplier_code && art.supplier_article_code && (
+                              <span> · {art.supplier_code}-{art.supplier_article_code}</span>
+                            )}
+                            <span> · Stock: {art.quantity}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs font-bold text-[#2E2822] font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Manual Return Cart Table */}
@@ -1345,16 +1525,27 @@ export function Returns() {
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#2E2822] mb-1.5 flex items-center gap-1.5">
-                      <span>Mandatory Reason Note *</span>
-                      {!manualNotes.trim() && <span className="text-[10px] bg-[#EFEBE3] text-[#7A6F69] px-2 py-0.5 rounded-[2px] font-normal">Required for Audit</span>}
+                      <span>Return Reason *</span>
+                      {!isManualReasonValid() && <span className="text-[10px] bg-[#EFEBE3] text-[#7A6F69] px-2 py-0.5 rounded-[2px] font-normal">Required for Audit</span>}
                     </label>
-                    <input
-                      type="text"
-                      value={manualNotes}
-                      onChange={(e) => setManualNotes(e.target.value)}
-                      placeholder="Specify mandatory reason (Customer receipt lost, Manager approved refund)..."
-                      className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all"
-                    />
+                    <select
+                      value={manualReason}
+                      onChange={(e) => setManualReason(e.target.value)}
+                      className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none"
+                    >
+                      {MANUAL_RETURN_REASONS.map((reason) => (
+                        <option key={reason} value={reason}>{reason}</option>
+                      ))}
+                    </select>
+                    {manualReason === 'Other (Custom Note)' && (
+                      <input
+                        type="text"
+                        value={manualCustomNote}
+                        onChange={(e) => setManualCustomNote(e.target.value)}
+                        placeholder="Type custom explanation..."
+                        className="w-full mt-3 bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all"
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -1366,7 +1557,7 @@ export function Returns() {
 
                   <button
                     type="button"
-                    disabled={processingManual || manualCart.length === 0 || !manualNotes.trim()}
+                    disabled={processingManual || manualCart.length === 0 || !isManualReasonValid()}
                     onClick={handleProcessManualReturn}
                     className="w-full py-3.5 rounded-[2px] font-bold bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2"
                   >
@@ -1379,9 +1570,9 @@ export function Returns() {
                       </>
                     )}
                   </button>
-                  {(!manualNotes.trim() || manualCart.length === 0) && (
+                  {(!isManualReasonValid() || manualCart.length === 0) && (
                     <p className="text-[11px] text-center text-[#7A6F69] italic font-sans">
-                      {manualCart.length === 0 ? 'Add return items' : 'Fill mandatory reason note'} to enable confirmation.
+                      {manualCart.length === 0 ? 'Add return items' : manualReason === 'Other (Custom Note)' ? 'Enter custom reason note' : 'Select return reason'} to enable confirmation.
                     </p>
                   )}
                 </div>
