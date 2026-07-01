@@ -23,6 +23,8 @@ export function POSSale() {
   const [isReprintOpen, setIsReprintOpen] = useState(false)
   const [isCashierModalOpen, setIsCashierModalOpen] = useState(false)
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
+  const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
+  const [pendingCheckoutSalesperson, setPendingCheckoutSalesperson] = useState(null)
 
   const searchInputRef = useRef(null)
 
@@ -102,9 +104,15 @@ export function POSSale() {
         const res = await window.electronAPI.salespersons.list({ is_active: 1 })
         if (res.success && res.data) {
           setSalespersons(res.data)
-          // Default select first active salesperson if none selected
-          if (!selectedSalesperson && res.data.length > 0) {
-            setSalesperson(res.data[0])
+
+          const current = useCartStore.getState().selectedSalesperson
+          if (current) {
+            const fresh = res.data.find((s) => s.id === current.id)
+            if (fresh) setSalesperson(fresh)
+          } else {
+            const lastId = localStorage.getItem('pos_last_salesperson_id')
+            const restored = lastId ? res.data.find((s) => String(s.id) === lastId) : null
+            if (restored) setSalesperson(restored)
           }
         }
       }
@@ -140,14 +148,10 @@ export function POSSale() {
     }
   }
 
-  const handleCompleteSale = async () => {
-    if (!selectedSalesperson) {
-      showToast('error', 'Please select a Salesperson / Cashier before completing sale.')
-      return
-    }
+  const validateSaleItems = () => {
     if (items.length === 0) {
       showToast('error', 'Cart is empty! Add articles to proceed.')
-      return
+      return false
     }
 
     for (const item of items) {
@@ -155,20 +159,43 @@ export function POSSale() {
       const finalVal = item.final_amount_input !== undefined ? item.final_amount_input : (subtotal - (item.discount_amount || 0))
       if (finalVal === '' || Number(finalVal) <= 0) {
         showToast('error', `Cannot finalize sale: Final amount for "${item.name}" cannot be empty or zero.`)
-        return
+        return false
       }
       const finalAmount = Number(finalVal)
       if (finalAmount > subtotal) {
         showToast('error', `Cannot finalize sale: Final amount for "${item.name}" (Rs. ${finalAmount.toLocaleString()}) cannot exceed retail subtotal (Rs. ${subtotal.toLocaleString()}).`)
-        return
+        return false
       }
     }
 
+    return true
+  }
+
+  const handleInitiateCheckout = () => {
+    if (processing) return
+    if (!validateSaleItems()) return
+
+    setPendingCheckoutSalesperson(selectedSalesperson)
+    setIsCheckoutConfirmOpen(true)
+  }
+
+  const handleConfirmCheckout = async () => {
+    if (!pendingCheckoutSalesperson) {
+      showToast('error', 'Please select a salesman for this transaction before completing the sale.')
+      return
+    }
+
+    setSalesperson(pendingCheckoutSalesperson)
+    setIsCheckoutConfirmOpen(false)
+    await executeCompleteSale(pendingCheckoutSalesperson)
+  }
+
+  const executeCompleteSale = async (salesperson) => {
     setProcessing(true)
     try {
       if (window.electronAPI && window.electronAPI.sales) {
         const payload = {
-          salesperson_id: selectedSalesperson.id,
+          salesperson_id: salesperson.id,
           items: items.map((i) => ({
             article_id: i.article_id,
             quantity: i.quantity,
@@ -187,17 +214,13 @@ export function POSSale() {
           setLastCompletedSale(newSale)
           showToast('success', `Sale Completed! Invoice #${newSale.invoice_number} generated successfully.`)
           clearCart()
-          // Automatically trigger silent thermal receipt printing
+          setPendingCheckoutSalesperson(null)
           if (window.electronAPI?.print?.receipt) {
             window.electronAPI.print.receipt(newSale).then((printRes) => {
               if (printRes?.success) {
                 console.log('[POS] Silent receipt printed successfully.')
               }
             }).catch((err) => console.warn('[POS] Auto print error:', err))
-          }
-          // Re-fetch staff if needed or re-default
-          if (salespersons.length > 0) {
-            setSalesperson(salespersons.find((s) => s.id === selectedSalesperson.id) || salespersons[0])
           }
         } else {
           showToast('error', res?.error || 'Failed to complete transaction.')
@@ -211,14 +234,14 @@ export function POSSale() {
     }
   }
 
+
   // Keyboard shortcuts for Complete Sale [F12] and Print Receipt [F11 / Ctrl+P]
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'F12') {
         e.preventDefault()
-        if (!processing && items.length > 0) {
-          handleCompleteSale()
-        }
+        if (isCheckoutConfirmOpen || processing || items.length === 0) return
+        handleInitiateCheckout()
       } else if (e.key === 'F11' || (e.ctrlKey && e.key.toLowerCase() === 'p')) {
         e.preventDefault()
         if (lastCompletedSale && window.electronAPI?.print?.receipt) {
@@ -229,7 +252,20 @@ export function POSSale() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [items, selectedSalesperson, orderDiscount, paymentMethod, notes, processing, lastCompletedSale])
+  }, [items, processing, lastCompletedSale, isCheckoutConfirmOpen])
+
+  useEffect(() => {
+    if (!isCheckoutConfirmOpen) return undefined
+
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Enter' || processing || !pendingCheckoutSalesperson) return
+      e.preventDefault()
+      handleConfirmCheckout()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isCheckoutConfirmOpen, pendingCheckoutSalesperson, processing])
 
   const subtotal = getSubtotal()
   const totalDiscount = getTotalDiscount()
@@ -275,7 +311,9 @@ export function POSSale() {
               </span>
               <span className="font-medium text-[#332822] text-sm flex items-center gap-1.5 mt-0.5">
                 <CustomerIcon className="w-4 h-4 inline text-[#7A6F69]" />
-                <span>{selectedSalesperson ? selectedSalesperson.name : 'Ahmed Zahid'}</span>
+                <span className={selectedSalesperson ? 'font-medium text-[#332822]' : 'font-medium text-[#7A6F69] italic'}>
+                  {selectedSalesperson ? selectedSalesperson.name : 'Not assigned'}
+                </span>
               </span>
             </div>
           </div>
@@ -406,7 +444,7 @@ export function POSSale() {
             <div>
               <span>TERMINAL : 1</span>
               <span className="mx-4 text-[#7A6F69]">|</span>
-              <span>User : {selectedSalesperson ? selectedSalesperson.name : 'Ahmed Zahid'}</span>
+              <span>User : {selectedSalesperson ? selectedSalesperson.name : 'Not assigned'}</span>
             </div>
           </div>
         </div>
@@ -426,7 +464,7 @@ export function POSSale() {
           }}
           processing={processing}
           itemsLength={items.length}
-          onCompleteSale={handleCompleteSale}
+          onCompleteSale={handleInitiateCheckout}
           onNewDocument={() => {
             if (items.length > 0 && window.confirm('Clear current active cart?')) clearCart()
           }}
@@ -458,32 +496,96 @@ export function POSSale() {
         bodyClassName="p-0 overflow-y-auto max-h-64"
         footer={<StandardModalAction onClick={() => setIsCashierModalOpen(false)}>Close</StandardModalAction>}
       >
-        <button
-          type="button"
-          onClick={() => { setSalesperson(null); setIsCashierModalOpen(false); }}
-          className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 transition-colors hover:bg-[#EFEBE3] ${
-            !selectedSalesperson ? 'bg-[#EFEBE3]/60' : ''
-          }`}
-        >
-          <span className="font-sans font-medium text-sm text-[#2E2822]">Ahmed Zahid</span>
-          <span className="text-[10px] uppercase tracking-[0.16em] text-[#7A6F69] shrink-0">Default</span>
-        </button>
+        {salespersons.length === 0 ? (
+          <div className="px-6 py-8 text-sm text-[#7A6F69] text-center">
+            No active salespersons registered. Add staff in Salespersons before assigning sales.
+          </div>
+        ) : (
+          salespersons.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { setSalesperson(s); setIsCashierModalOpen(false); }}
+              className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 last:border-b-0 transition-colors hover:bg-[#EFEBE3] ${
+                selectedSalesperson?.id === s.id ? 'bg-[#EFEBE3]/60' : ''
+              }`}
+            >
+              <span className="font-sans font-medium text-sm text-[#2E2822]">{s.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7A6F69] shrink-0">
+                ID&nbsp;{s.id}
+              </span>
+            </button>
+          ))
+        )}
+      </StandardModal>
 
-        {salespersons.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => { setSalesperson(s); setIsCashierModalOpen(false); }}
-            className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 last:border-b-0 transition-colors hover:bg-[#EFEBE3] ${
-              selectedSalesperson?.id === s.id ? 'bg-[#EFEBE3]/60' : ''
-            }`}
-          >
-            <span className="font-sans font-medium text-sm text-[#2E2822]">{s.name}</span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7A6F69] shrink-0">
-              ID&nbsp;{s.id}
-            </span>
-          </button>
-        ))}
+      <StandardModal
+        isOpen={isCheckoutConfirmOpen}
+        onClose={() => {
+          if (processing) return
+          setIsCheckoutConfirmOpen(false)
+          setPendingCheckoutSalesperson(null)
+        }}
+        title="Confirm Salesman for This Sale"
+        titleId="checkout-confirm-modal-title"
+        subtitle={
+          pendingCheckoutSalesperson
+            ? `Total: Rs. ${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — ${pendingCheckoutSalesperson.name} is selected. Press Enter to confirm, or choose a different salesman.`
+            : `Total: Rs. ${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} — select the salesman for this sale, then press Enter to confirm.`
+        }
+        maxWidth="md"
+        closeOnBackdrop={!processing}
+        bodyClassName="p-0 overflow-y-auto max-h-72"
+        footer={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCheckoutConfirmOpen(false)
+                setPendingCheckoutSalesperson(null)
+              }}
+              disabled={processing}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction
+              onClick={handleConfirmCheckout}
+              disabled={processing || !pendingCheckoutSalesperson}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {processing ? 'Processing...' : 'Confirm & Complete Sale [Enter]'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {salespersons.length === 0 ? (
+          <div className="px-6 py-8 text-sm text-[#7A6F69] text-center">
+            No active salespersons available. Register staff before completing a sale.
+          </div>
+        ) : (
+          salespersons.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setPendingCheckoutSalesperson(s)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pendingCheckoutSalesperson?.id === s.id && !processing) {
+                  e.preventDefault()
+                  handleConfirmCheckout()
+                }
+              }}
+              className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 last:border-b-0 transition-colors hover:bg-[#EFEBE3] ${
+                pendingCheckoutSalesperson?.id === s.id ? 'bg-[#EFEBE3]/60 ring-1 ring-inset ring-[#2E2822]/20' : ''
+              }`}
+            >
+              <span className="font-sans font-medium text-sm text-[#2E2822]">{s.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7A6F69] shrink-0">
+                {pendingCheckoutSalesperson?.id === s.id ? 'Selected' : `ID ${s.id}`}
+              </span>
+            </button>
+          ))
+        )}
       </StandardModal>
 
       <StandardModal

@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+const LAST_SALESPERSON_KEY = 'pos_last_salesperson_id'
+
 export const useCartStore = create((set, get) => ({
   // Active Sale State
   selectedSalesperson: null,
@@ -10,7 +12,12 @@ export const useCartStore = create((set, get) => ({
   exchangeReturnId: null,
 
   // Actions
-  setSalesperson: (salesperson) => set({ selectedSalesperson: salesperson }),
+  setSalesperson: (salesperson) => {
+    if (salesperson?.id) {
+      localStorage.setItem(LAST_SALESPERSON_KEY, String(salesperson.id))
+    }
+    set({ selectedSalesperson: salesperson })
+  },
 
   addItem: (article) => {
     const { items } = get()
@@ -124,7 +131,6 @@ export const useCartStore = create((set, get) => ({
 
   clearCart: () =>
     set({
-      selectedSalesperson: null,
       items: [],
       orderDiscount: 0,
       paymentMethod: 'cash',
