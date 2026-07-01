@@ -365,7 +365,7 @@ export function Suppliers() {
                   name="code"
                   value={formData.code}
                   onChange={handleFormChange}
-                  placeholder="SUIDHAGA or SF-V01"
+                  placeholder="SU"
                   required
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] uppercase"
                 />
@@ -395,7 +395,7 @@ export function Suppliers() {
                   name="contact"
                   value={formData.contact}
                   onChange={handleFormChange}
-                  placeholder="0300-1234567 or Mr. Tariq"
+                  placeholder="0300-1234567"
                   className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                 />
               </div>

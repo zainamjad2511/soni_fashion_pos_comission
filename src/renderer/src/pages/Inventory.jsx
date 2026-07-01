@@ -518,7 +518,7 @@ export function Inventory() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
-                    Vendor Code *
+                    Article Number *
                   </label>
                   <input
                     type="text"
@@ -526,7 +526,7 @@ export function Inventory() {
                     value={formData.supplier_article_code}
                     onChange={handleFormChange}
                     disabled={!!editingArticle}
-                    placeholder="SU"
+                    placeholder="101"
                     required
                     className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs uppercase placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
                   />
