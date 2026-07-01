@@ -96,6 +96,7 @@ export function Returns() {
   const [manualCart, setManualCart] = useState([])
   const [manualReason, setManualReason] = useState('Customer Receipt Lost')
   const [manualCustomNote, setManualCustomNote] = useState('')
+  const [manualReturnMode, setManualReturnMode] = useState('credit') // 'credit' | 'exchange'
   const [processingManual, setProcessingManual] = useState(false)
   const [manualResult, setManualResult] = useState(null)
 
@@ -132,6 +133,21 @@ export function Returns() {
     }
   }, [activeTab, historyFilterType, historyStartDate, historyEndDate])
 
+  useEffect(() => {
+    if (activeTab === 'manual') {
+      setReplacementCart([])
+      setArticleSearchQuery('')
+      setArticleSearchResults([])
+    }
+    if (activeTab === 'invoice') {
+      setManualCart([])
+      setManualSkuQuery('')
+      setManualVendorCode('')
+      setManualArticleNumber('')
+      setManualSearchResults([])
+    }
+  }, [activeTab])
+
   const fetchReturnsHistory = async () => {
     setLoadingHistory(true)
     try {
@@ -151,6 +167,74 @@ export function Returns() {
     }
   }
 
+  const buildReturnReceiptPayload = (fullRet) => {
+    const refundCredit = Number(fullRet.refund_credit || fullRet.refundCredit || 0)
+    const replacementItems = fullRet.replacement_items || []
+    const hasExchange = replacementItems.length > 0 || fullRet.exchange_new_sale_id
+
+    const saleDate = fullRet.return_date
+      ? new Date(fullRet.return_date).toLocaleString()
+      : new Date().toLocaleString()
+    const staffName = fullRet.processed_by_name || 'Returns Staff'
+
+    if (!hasExchange) {
+      return {
+        invoice_number: fullRet.return_number || fullRet.returnNumber || 'RETURN VOUCHER',
+        sale_date: saleDate,
+        salesperson_name: staffName,
+        items: (fullRet.items || []).map((i) => {
+          const qty = i.quantity_returned || i.quantity || 1
+          const unit = i.refund_per_unit || i.retail_price_snapshot || 0
+          return {
+            name: `[RETURN] ${i.article_name || i.name || 'Returned Article'}`,
+            retail_price_snapshot: unit,
+            quantity: qty,
+            line_total: -(qty * unit),
+          }
+        }),
+        subtotal: refundCredit,
+        total_discount: 0,
+        grand_total: -refundCredit,
+        payment_method: `${(fullRet.return_type || 'REFUND').toUpperCase()} CREDIT`,
+      }
+    }
+
+    const returnLines = (fullRet.items || []).map((i) => {
+      const qty = i.quantity_returned || i.quantity || 1
+      const unit = i.refund_per_unit || i.retail_price_snapshot || 0
+      return {
+        name: `[RETURN] ${i.article_name || i.name || 'Returned Article'}`,
+        retail_price_snapshot: unit,
+        quantity: qty,
+        line_total: -(qty * unit),
+      }
+    })
+
+    const replacementLines = replacementItems.map((i) => ({
+      name: `[NEW] ${i.article_name || i.name || 'Exchange Article'}`,
+      retail_price_snapshot: i.retail_price_snapshot || 0,
+      quantity: i.quantity || 1,
+      discount_amount: i.discount_amount || 0,
+      line_total: Number(i.line_total || 0),
+    }))
+
+    const replacementTotal = replacementLines.reduce((sum, item) => sum + item.line_total, 0)
+    const netAmount = replacementTotal - refundCredit
+    const returnRef = fullRet.return_number || fullRet.returnNumber || 'RETURN'
+    const exchangeInv = fullRet.exchange_new_invoice_number || fullRet.newInvoiceNumber || ''
+
+    return {
+      invoice_number: exchangeInv ? `EXCHANGE ${returnRef} / ${exchangeInv}` : `EXCHANGE ${returnRef}`,
+      sale_date: saleDate,
+      salesperson_name: staffName,
+      items: [...returnLines, ...replacementLines],
+      subtotal: replacementTotal,
+      total_discount: 0,
+      grand_total: netAmount,
+      payment_method: netAmount > 0 ? 'CUSTOMER PAYS DIFFERENCE' : netAmount < 0 ? 'STORE CREDIT BALANCE' : 'EVEN EXCHANGE',
+    }
+  }
+
   // Handle Thermal Voucher Printing
   const handlePrintReturnVoucher = async (retObj) => {
     try {
@@ -165,21 +249,7 @@ export function Returns() {
         return
       }
 
-      const receiptData = {
-        invoice_number: fullRet.return_number || fullRet.returnNumber || 'RETURN VOUCHER',
-        sale_date: fullRet.return_date ? new Date(fullRet.return_date).toLocaleString() : new Date().toLocaleString(),
-        salesperson_name: fullRet.processed_by_name || 'Returns Staff',
-        items: (fullRet.items || []).map((i) => ({
-          name: i.article_name || i.name || 'Returned Article',
-          retail_price_snapshot: i.refund_per_unit || i.retail_price_snapshot || 0,
-          quantity: i.quantity_returned || i.quantity || 1,
-          line_total: (i.quantity_returned || i.quantity || 1) * (i.refund_per_unit || i.retail_price_snapshot || 0)
-        })),
-        subtotal: fullRet.refund_credit || fullRet.refundCredit || 0,
-        total_discount: 0,
-        grand_total: -(fullRet.refund_credit || fullRet.refundCredit || 0),
-        payment_method: `${fullRet.return_type || 'REFUND'} VOUCHER`
-      }
+      const receiptData = buildReturnReceiptPayload(fullRet)
 
       const printRes = await window.electronAPI.print.receipt(receiptData)
       if (printRes && printRes.success) {
@@ -332,6 +402,31 @@ export function Returns() {
     }
   }
 
+  const getPerPieceFinalAmount = (item) => {
+    const qty = Math.max(1, Number(item.quantity) || 1)
+    const currentFinal = item.final_amount_input !== undefined && item.final_amount_input !== ''
+      ? Number(item.final_amount_input)
+      : Number(item.line_total ?? item.retail_price_snapshot * qty)
+    if (Number.isNaN(currentFinal)) {
+      return Number(item.retail_price_snapshot) || 0
+    }
+    return currentFinal / qty
+  }
+
+  const scaleLineAmountsForQuantity = (item, nextQty) => {
+    const subtotal = nextQty * item.retail_price_snapshot
+    const perPieceFinal = getPerPieceFinalAmount(item)
+    const newFinal = perPieceFinal * nextQty
+    const discount = Math.max(0, subtotal - newFinal)
+    return {
+      ...item,
+      quantity: nextQty,
+      discount_amount: discount,
+      final_amount_input: newFinal,
+      line_total: newFinal,
+    }
+  }
+
   const addReplacementItem = (article) => {
     const existing = replacementCart.find((item) => item.article_id === article.id)
     if (existing) {
@@ -341,12 +436,7 @@ export function Returns() {
       }
       setReplacementCart(replacementCart.map((item) =>
         item.article_id === article.id
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-              final_amount_input: (item.quantity + 1) * item.retail_price_snapshot - (item.discount_amount || 0),
-              line_total: (item.quantity + 1) * item.retail_price_snapshot - (item.discount_amount || 0),
-            }
+          ? scaleLineAmountsForQuantity(item, item.quantity + 1)
           : item
       ))
     } else {
@@ -378,18 +468,7 @@ export function Returns() {
     setReplacementCart(replacementCart.map((item) => {
       if (item.article_id === articleId) {
         const nextQty = Math.max(1, Math.min(item.max_quantity, item.quantity + delta))
-        const subtotal = nextQty * item.retail_price_snapshot
-        const finalVal = item.final_amount_input !== undefined && item.final_amount_input !== ''
-          ? Number(item.final_amount_input)
-          : subtotal - (item.discount_amount || 0)
-        const discount = subtotal - finalVal
-        return {
-          ...item,
-          quantity: nextQty,
-          discount_amount: discount,
-          final_amount_input: finalVal,
-          line_total: finalVal,
-        }
+        return scaleLineAmountsForQuantity(item, nextQty)
       }
       return item
     }))
@@ -511,109 +590,155 @@ export function Returns() {
     return Boolean(manualReason)
   }
 
-  // Task 4.6: Manual return handlers
-  const runManualArticleSearch = async ({ mode, skuQuery, vendorCode, articleNumber }) => {
-    try {
-      const filters = { is_active: 1 }
-      if (mode === 'vendor') {
-        if (!vendorCode?.trim() || !articleNumber?.trim()) {
-          setManualSearchResults([])
-          return
-        }
-        filters.vendor_code = vendorCode.trim()
-        filters.supplier_article_code = articleNumber.trim()
-      } else {
-        const raw = skuQuery?.trim()
-        if (!raw) {
-          setManualSearchResults([])
-          return
-        }
-        filters.sku_query = formatCode(raw, 'SKU')
-      }
-
-      const res = await window.electronAPI.articles.list(filters)
-      const list = (res && res.data) ? res.data : res
-      setManualSearchResults(Array.isArray(list) ? list : [])
-    } catch (e) {
-      console.error('Manual article search failed:', e)
+  // Task 4.6: Manual return handlers — SKU search mirrors POS two-step Enter flow
+  const performManualSkuSearch = async (query) => {
+    const trimmed = String(query || '').trim()
+    if (!trimmed) {
       setManualSearchResults([])
+      return []
+    }
+    // Bare numeric input is formatted on Enter; do not show suggestions while typing
+    if (/^\d+$/.test(trimmed)) {
+      setManualSearchResults([])
+      return []
+    }
+    try {
+      const res = await window.electronAPI.articles.list({ search: trimmed, is_active: 1 })
+      const list = (res && res.data) ? res.data : res
+      const results = Array.isArray(list) ? list : []
+      setManualSearchResults(results)
+      return results
+    } catch (e) {
+      console.error('Manual SKU search failed:', e)
+      setManualSearchResults([])
+      return []
     }
   }
+
+  const filterExactVendorMatches = (results, vendorCode, articleNumber) => {
+    const vendor = String(vendorCode || '').trim().toUpperCase()
+    const article = String(articleNumber || '').trim().toUpperCase()
+    if (!vendor || !article) return []
+    return (Array.isArray(results) ? results : []).filter(
+      (a) => a.supplier_code?.toUpperCase() === vendor
+        && a.supplier_article_code?.toUpperCase() === article
+    )
+  }
+
+  const runManualVendorSearch = async (vendorCode, articleNumber) => {
+    const vendor = String(vendorCode || '').trim()
+    const article = String(articleNumber || '').trim()
+    if (!vendor || !article) {
+      setManualSearchResults([])
+      return []
+    }
+    try {
+      const res = await window.electronAPI.articles.list({
+        is_active: 1,
+        vendor_code: vendor,
+        supplier_article_code: article,
+      })
+      const list = (res && res.data) ? res.data : res
+      const raw = Array.isArray(list) ? list : []
+      const results = filterExactVendorMatches(raw, vendor, article)
+      setManualSearchResults(results)
+      return results
+    } catch (e) {
+      console.error('Manual vendor search failed:', e)
+      setManualSearchResults([])
+      return []
+    }
+  }
+
+  useEffect(() => {
+    if (manualSearchMode !== 'sku') return undefined
+    const timer = setTimeout(() => {
+      if (manualSkuQuery.trim()) {
+        performManualSkuSearch(manualSkuQuery.trim())
+      } else {
+        setManualSearchResults([])
+      }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [manualSkuQuery, manualSearchMode])
 
   const handleManualSkuSearch = (query) => {
     setManualSkuQuery(query)
     if (!query.trim()) {
       setManualSearchResults([])
-      return
     }
-    runManualArticleSearch({ mode: 'sku', skuQuery: query })
   }
 
   const handleManualVendorSearch = (vendorCode, articleNumber) => {
     setManualVendorCode(vendorCode)
     setManualArticleNumber(articleNumber)
-    runManualArticleSearch({ mode: 'vendor', vendorCode, articleNumber })
+    // No live suggestions — exact lookup runs on Enter (same two-step flow as SKU search)
+    setManualSearchResults([])
   }
 
   const handleManualSkuKeyDown = async (e) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      const trimmed = manualSkuQuery.trim()
+      if (!trimmed) return
 
-    const trimmed = manualSkuQuery.trim()
-    if (!trimmed) return
+      const formatted = formatCode(trimmed, 'SKU')
+      if (formatted !== trimmed) {
+        setManualSkuQuery(formatted)
+        await performManualSkuSearch(formatted)
+        return
+      }
 
-    const formatted = formatCode(trimmed, 'SKU')
-    if (formatted !== trimmed) {
-      setManualSkuQuery(formatted)
-    }
-
-    try {
-      const res = await window.electronAPI.articles.list({
-        is_active: 1,
-        sku_query: formatted,
-      })
-      const list = (res && res.data) ? res.data : res
-      const results = Array.isArray(list) ? list : []
+      let results = manualSearchResults
+      if (results.length === 0) {
+        results = await performManualSkuSearch(formatted)
+      }
 
       if (results.length > 0) {
-        addManualItem(results[0])
-      } else {
-        setManualSearchResults([])
-        showToast('error', `No article found for SKU "${formatted}".`)
+        const exact = results.find((a) => a.sku.toUpperCase() === formatted.toUpperCase())
+        addManualItem(exact || results[0])
       }
-    } catch (err) {
-      console.error('Manual SKU lookup failed:', err)
-      showToast('error', 'Failed to search article by SKU.')
+    } else if (e.key === 'Escape') {
+      setManualSkuQuery('')
+      setManualSearchResults([])
     }
   }
 
   const handleManualVendorKeyDown = async (e) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
+    if (e.key === 'Enter') {
+      e.preventDefault()
 
-    if (!manualVendorCode.trim() || !manualArticleNumber.trim()) {
-      showToast('error', 'Enter both vendor code and article number.')
-      return
-    }
-
-    try {
-      const res = await window.electronAPI.articles.list({
-        is_active: 1,
-        vendor_code: manualVendorCode.trim(),
-        supplier_article_code: manualArticleNumber.trim(),
-      })
-      const list = (res && res.data) ? res.data : res
-      const results = Array.isArray(list) ? list : []
-
-      if (results.length > 0) {
-        addManualItem(results[0])
-      } else {
-        setManualSearchResults([])
-        showToast('error', `No article found for ${manualVendorCode.toUpperCase()}-${manualArticleNumber.toUpperCase()}.`)
+      const vendor = manualVendorCode.trim().toUpperCase()
+      const article = manualArticleNumber.trim().toUpperCase()
+      if (!vendor || !article) {
+        showToast('error', 'Enter both vendor code and article number.')
+        return
       }
-    } catch (err) {
-      console.error('Manual vendor lookup failed:', err)
-      showToast('error', 'Failed to search article by vendor code.')
+
+      const hasExactResult = manualSearchResults.some(
+        (a) => a.supplier_code?.toUpperCase() === vendor
+          && a.supplier_article_code?.toUpperCase() === article
+      )
+
+      if (!hasExactResult) {
+        const results = await runManualVendorSearch(vendor, article)
+        if (results.length === 0) {
+          showToast('error', `No article found for ${vendor}-${article}.`)
+        }
+        return
+      }
+
+      const exact = manualSearchResults.find(
+        (a) => a.supplier_code?.toUpperCase() === vendor
+          && a.supplier_article_code?.toUpperCase() === article
+      )
+      if (exact) {
+        addManualItem(exact)
+      }
+    } else if (e.key === 'Escape') {
+      setManualVendorCode('')
+      setManualArticleNumber('')
+      setManualSearchResults([])
     }
   }
 
@@ -673,10 +798,16 @@ export function Returns() {
     return manualCart.reduce((sum, item) => sum + item.line_total, 0)
   }
   const manualTotal = calculateManualTotal()
+  const manualReplacementTotal = replacementCart.reduce((sum, item) => sum + Number(item.line_total || 0), 0)
+  const manualNetSettlement = manualReplacementTotal - manualTotal
 
   const handleProcessManualReturn = async () => {
     if (manualCart.length === 0) {
       showToast('error', 'Please add at least one article to process a manual return.')
+      return
+    }
+    if (manualReturnMode === 'exchange' && replacementCart.length === 0) {
+      showToast('error', 'Please add at least one replacement article for the exchange.')
       return
     }
     if (!isManualReasonValid()) {
@@ -701,7 +832,10 @@ export function Returns() {
         return_type: 'manual',
         processed_by: selectedStaff || 1,
         items: itemsPayload,
-        notes: composedNotes
+        notes: composedNotes,
+        replacement_items: manualReturnMode === 'exchange' ? replacementCart : [],
+        payment_method: paymentMethod,
+        salesperson_id: selectedStaff || 1,
       }
 
       const res = await window.electronAPI.returns.create(payload)
@@ -709,14 +843,21 @@ export function Returns() {
         throw new Error(res?.error || 'Failed to record manual return')
       }
       const resultData = res.data
+      const wasExchange = manualReturnMode === 'exchange'
       setManualResult(resultData)
       setManualCart([])
+      setReplacementCart([])
+      setArticleSearchQuery('')
+      setArticleSearchResults([])
+      setManualReturnMode('credit')
       setManualReason('Customer Receipt Lost')
       setManualCustomNote('')
       setManualSkuQuery('')
       setManualVendorCode('')
       setManualArticleNumber('')
-      showToast('success', 'Manual return voucher recorded successfully!')
+      showToast('success', wasExchange
+        ? 'Manual exchange completed successfully!'
+        : 'Manual return voucher recorded successfully!')
     } catch (err) {
       console.error('Manual return processing error:', err)
       showToast('error', `Transaction Failed: ${err.message}`)
@@ -991,7 +1132,7 @@ export function Returns() {
                               </div>
                             </td>
                             <td className="py-3.5 pl-4 text-right font-mono font-bold text-[#2E2822]">
-                              {formatCurrency(currentQty * item.retail_price_snapshot)}
+                              {currentQty > 0 ? `-${formatCurrency(currentQty * item.retail_price_snapshot)}` : formatCurrency(0)}
                             </td>
                           </tr>
                         )
@@ -1301,7 +1442,9 @@ export function Returns() {
                 <div className="flex items-center gap-3">
                   <CheckIcon className="w-6 h-6 text-[#2E2822]" />
                   <div>
-                    <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Manual Return Processed &amp; Stock Restored</h2>
+                    <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">
+                      {manualResult.newSaleId ? 'Manual Exchange Processed' : 'Manual Return Processed & Stock Restored'}
+                    </h2>
                     <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {manualResult.returnNumber}</p>
                   </div>
                 </div>
@@ -1313,16 +1456,36 @@ export function Returns() {
                 </button>
               </div>
 
-              <div className="p-6 bg-[#F7F5F0] rounded-[2px] flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-[#7A6F69]">Total Manual Credit Slip Issued</div>
-                  <div className="text-2xl font-bold text-[#2E2822] font-mono mt-1">{formatCurrency(manualResult.refundCredit)}</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Return Credit (Items Restored)</div>
+                  <div className="text-xl font-bold text-[#2E2822] font-mono mt-1">-{formatCurrency(manualResult.refundCredit)}</div>
                 </div>
+                {manualResult.newSaleId && (
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Replacement Invoice</div>
+                    <div className="text-xl font-bold text-[#2E2822] font-mono mt-1">{manualResult.newInvoiceNumber || `Sale #${manualResult.newSaleId}`}</div>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#7A6F69]">Net Settlement</div>
+                  <div className="text-xl font-bold font-mono mt-1 text-[#2E2822]">
+                    {formatCurrency(Math.abs(manualResult.netAmount ?? manualResult.refundCredit))}
+                    {manualResult.newSaleId && (
+                      <span className="text-xs font-sans font-normal text-[#7A6F69] ml-1">
+                        {(manualResult.netAmount ?? 0) > 0 ? '(Customer Paid)' : (manualResult.netAmount ?? 0) < 0 ? '(Store Credit)' : '(Even Swap)'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-[#C9C0B5]">
                 <button
                   onClick={() => handlePrintReturnVoucher(manualResult)}
                   className="px-6 py-3 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-[0.12em] transition-all flex items-center gap-2"
                 >
-                  <PrintIcon className="w-4 h-4" /> Print Credit Voucher
+                  <PrintIcon className="w-4 h-4" /> Print Return / Exchange Slip
                 </button>
               </div>
             </div>
@@ -1377,7 +1540,7 @@ export function Returns() {
                       value={manualSkuQuery}
                       onChange={(e) => handleManualSkuSearch(e.target.value)}
                       onKeyDown={handleManualSkuKeyDown}
-                      placeholder="Public SKU (SF-00001) — press Enter to add"
+                      placeholder="Scan or type SKU — press Enter to format, Enter again to add (e.g. 1 → SF-00001)"
                       className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
                     />
                   </div>
@@ -1404,6 +1567,7 @@ export function Returns() {
                         placeholder="101"
                         className="w-full bg-transparent border-b border-[#2E2822] px-3 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono uppercase"
                       />
+                      <p className="text-[10px] text-[#7A6F69] mt-1 italic">Enter both fields, then press Enter to search — Enter again to add</p>
                     </div>
                   </div>
                 )}
@@ -1436,6 +1600,27 @@ export function Returns() {
 
               {/* Manual Return Cart Table */}
               <div className="overflow-x-auto pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                    <ShoppingBagIcon className="w-4 h-4" /> Items Being Returned
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                    <button
+                      type="button"
+                      onClick={() => { setManualReturnMode('credit'); setReplacementCart([]); setArticleSearchQuery(''); setArticleSearchResults([]) }}
+                      className={`px-3 py-1.5 border-b-2 transition-colors ${manualReturnMode === 'credit' ? 'border-[#2E2822] text-[#2E2822]' : 'border-transparent text-[#7A6F69]'}`}
+                    >
+                      Credit Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualReturnMode('exchange')}
+                      className={`px-3 py-1.5 border-b-2 transition-colors ${manualReturnMode === 'exchange' ? 'border-[#2E2822] text-[#2E2822]' : 'border-transparent text-[#7A6F69]'}`}
+                    >
+                      Exchange
+                    </button>
+                  </div>
+                </div>
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
@@ -1490,7 +1675,7 @@ export function Returns() {
                               className="w-28 text-right bg-transparent border-b border-[#2E2822] px-2 py-1 text-[#2E2822] focus:outline-none font-mono font-bold text-xs"
                             />
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.line_total)}</td>
+                          <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">-{formatCurrency(item.line_total)}</td>
                           <td className="py-3.5 pl-4 text-center">
                             <button
                               type="button"
@@ -1507,6 +1692,112 @@ export function Returns() {
                 </table>
               </div>
 
+              {/* Manual Exchange Replacement Cart */}
+              {manualReturnMode === 'exchange' && (
+                <div className="border-t border-[#C9C0B5] pt-6 space-y-4 animate-fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
+                      <RefreshIcon className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
+                    </h3>
+                    <div className="relative w-full sm:w-80">
+                      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
+                      <input
+                        type="text"
+                        value={articleSearchQuery}
+                        onChange={(e) => handleArticleSearch(e.target.value)}
+                        onKeyDown={handleReplacementSearchKeyDown}
+                        placeholder="Scan or type SKU — press Enter to format, Enter again to add"
+                        className="w-full bg-transparent border-b border-[#2E2822] pl-10 pr-4 py-2 text-xs text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono font-bold"
+                      />
+                      {articleSearchResults.length > 0 && (
+                        <div className="absolute z-20 left-0 right-0 mt-1 bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-h-60 overflow-y-auto divide-y divide-[#C9C0B5]">
+                          {(Array.isArray(articleSearchResults) ? articleSearchResults : []).map((art) => (
+                            <button
+                              key={art.id}
+                              type="button"
+                              onClick={() => addReplacementItem(art)}
+                              className="w-full p-3 text-left hover:bg-[#EFEBE3] transition-colors flex items-center justify-between"
+                            >
+                              <div>
+                                <div className="text-xs font-bold text-[#2E2822]">{art.name}</div>
+                                <div className="text-[10px] text-[#7A6F69] font-mono">{art.sku} | Stock: {art.quantity}</div>
+                              </div>
+                              <div className="text-xs font-bold text-[#2E2822] font-mono">{formatCurrency(art.retail_price || art.selling_price || 0)}</div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto pt-2">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                          <th className="py-3 pr-4">Replacement Article</th>
+                          <th className="py-3 px-4 text-right">Unit Price</th>
+                          <th className="py-3 px-4 text-center">Quantity</th>
+                          <th className="py-3 px-4 text-right">Final Amount</th>
+                          <th className="py-3 px-4 text-right">Discount</th>
+                          <th className="py-3 px-4 text-right">Line Total</th>
+                          <th className="py-3 pl-4 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#C9C0B5]">
+                        {replacementCart.length === 0 ? (
+                          <tr>
+                            <td colSpan="7" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">
+                              No replacement items added yet. Search and select articles above.
+                            </td>
+                          </tr>
+                        ) : (
+                          replacementCart.map((item) => (
+                            <tr key={item.article_id}>
+                              <td className="py-3.5 pr-4">
+                                <div className="font-bold text-[#2E2822]">{item.name}</div>
+                                <div className="text-xs text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-mono text-[#2E2822]">{formatCurrency(item.retail_price_snapshot)}</td>
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button type="button" onClick={() => updateReplacementQty(item.article_id, -1)} className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all">
+                                    <MinusIcon className="w-3.5 h-3.5" />
+                                  </button>
+                                  <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</span>
+                                  <button type="button" onClick={() => updateReplacementQty(item.article_id, 1)} className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all">
+                                    <PlusIcon className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={item.final_amount_input !== undefined ? item.final_amount_input : item.line_total}
+                                  onFocus={(e) => e.target.select()}
+                                  onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
+                                  onChange={(e) => updateReplacementFinalAmount(item.article_id, e.target.value)}
+                                  className="w-24 py-1 px-2 text-right bg-[#F7F5F0] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:bg-white border-b border-[#C9C0B5]"
+                                />
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
+                                {(item.discount_amount || 0) > 0 ? formatCurrency(item.discount_amount) : '0'}
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">+{formatCurrency(item.line_total)}</td>
+                              <td className="py-3.5 pl-4 text-center">
+                                <button type="button" onClick={() => removeReplacementItem(item.article_id)} className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors">
+                                  <TrashIcon className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Processing Footer */}
               <div className="border-t border-[#C9C0B5] pt-6 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
@@ -1522,6 +1813,20 @@ export function Returns() {
                       ))}
                     </select>
                   </div>
+
+                  {manualReturnMode === 'exchange' && (
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#7A6F69] mb-1.5">Payment Settlement Method</label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none capitalize"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="card">Card / Bank Transfer</option>
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[#2E2822] mb-1.5 flex items-center gap-1.5">
@@ -1550,14 +1855,34 @@ export function Returns() {
                 </div>
 
                 <div className="bg-[#EFEBE3] p-6 rounded-[2px] space-y-4">
-                  <div className="flex justify-between items-center text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
-                    <span>Total Manual Credit Slip:</span>
-                    <span className="text-xl font-bold font-mono text-[#2E2822]">{formatCurrency(manualTotal)}</span>
+                  <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                    <span>Return Credit (Returned Items):</span>
+                    <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(manualTotal)}</span>
                   </div>
+                  {manualReturnMode === 'exchange' && (
+                    <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                      <span>Replacement Articles Total:</span>
+                      <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(manualReplacementTotal)}</span>
+                    </div>
+                  )}
+                  {manualReturnMode === 'exchange' && (
+                    <div className="border-t border-[#C9C0B5] pt-4 flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em]">
+                        {manualNetSettlement > 0 ? 'Customer Pays Difference:' : manualNetSettlement < 0 ? 'Store Credit Balance:' : 'Even Exchange:'}
+                      </span>
+                      <span className="text-xl font-bold font-mono text-[#2E2822]">{formatCurrency(Math.abs(manualNetSettlement))}</span>
+                    </div>
+                  )}
+                  {manualReturnMode === 'credit' && (
+                    <div className="flex justify-between items-center text-xs font-bold text-[#7A6F69] uppercase tracking-wider border-t border-[#C9C0B5] pt-4">
+                      <span>Total Manual Credit Slip:</span>
+                      <span className="text-xl font-bold font-mono text-[#2E2822]">{formatCurrency(manualTotal)}</span>
+                    </div>
+                  )}
 
                   <button
                     type="button"
-                    disabled={processingManual || manualCart.length === 0 || !isManualReasonValid()}
+                    disabled={processingManual || manualCart.length === 0 || !isManualReasonValid() || (manualReturnMode === 'exchange' && replacementCart.length === 0)}
                     onClick={handleProcessManualReturn}
                     className="w-full py-3.5 rounded-[2px] font-bold bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2"
                   >
@@ -1566,13 +1891,19 @@ export function Returns() {
                     ) : (
                       <>
                         <CheckIcon className="w-4 h-4" />
-                        <span>Confirm &amp; Issue Manual Credit Voucher</span>
+                        <span>{manualReturnMode === 'exchange' ? 'Confirm & Complete Manual Exchange' : 'Confirm & Issue Manual Credit Voucher'}</span>
                       </>
                     )}
                   </button>
-                  {(!isManualReasonValid() || manualCart.length === 0) && (
+                  {(!isManualReasonValid() || manualCart.length === 0 || (manualReturnMode === 'exchange' && replacementCart.length === 0)) && (
                     <p className="text-[11px] text-center text-[#7A6F69] italic font-sans">
-                      {manualCart.length === 0 ? 'Add return items' : manualReason === 'Other (Custom Note)' ? 'Enter custom reason note' : 'Select return reason'} to enable confirmation.
+                      {manualCart.length === 0
+                        ? 'Add return items'
+                        : manualReturnMode === 'exchange' && replacementCart.length === 0
+                          ? 'Add replacement items for exchange'
+                          : manualReason === 'Other (Custom Note)'
+                            ? 'Enter custom reason note'
+                            : 'Select return reason'} to enable confirmation.
                     </p>
                   )}
                 </div>

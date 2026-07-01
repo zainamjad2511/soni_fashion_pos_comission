@@ -211,12 +211,16 @@ export function registerReturnsHandlers() {
       let newInvoiceNumber = null
       let netAmount = -refundCredit
 
-      // Handle Exchange New Sale
-      if (return_type === 'exchange') {
-        if (!Array.isArray(replacement_items) || replacement_items.length === 0) {
-          throw new Error('Replacement items are required for an exchange.')
-        }
+      const hasReplacementItems = Array.isArray(replacement_items) && replacement_items.length > 0
+      const isExchangeSettlement =
+        return_type === 'exchange' || (return_type === 'manual' && hasReplacementItems)
 
+      if (return_type === 'exchange' && !hasReplacementItems) {
+        throw new Error('Replacement items are required for an exchange.')
+      }
+
+      // Handle exchange replacement sale (invoice exchange or manual return with new items)
+      if (isExchangeSettlement) {
         const exStaffId = salesperson_id || staffId
         if (!exStaffId) throw new Error('Salesperson ID required for replacement sale.')
 
@@ -277,7 +281,10 @@ export function registerReturnsHandlers() {
           INSERT INTO sales (invoice_number, salesperson_id, subtotal, total_discount, grand_total, payment_method, notes, status, exchange_return_id, sale_date)
           VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP)
         `)
-        const saleRes = insertSaleStmt.run(newInvoiceNumber, exStaffId, subtotal, totalDiscount, grandTotal, payment_method || 'cash', `Exchange for Return #${returnNumber}`, returnId)
+        const saleNotes = return_type === 'manual'
+          ? `Manual exchange for Return #${returnNumber}`
+          : `Exchange for Return #${returnNumber}`
+        const saleRes = insertSaleStmt.run(newInvoiceNumber, exStaffId, subtotal, totalDiscount, grandTotal, payment_method || 'cash', saleNotes, returnId)
         newSaleId = saleRes.lastInsertRowid
 
         // Update return with new sale link

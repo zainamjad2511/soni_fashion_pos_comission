@@ -159,7 +159,10 @@
 
         const totalTd = document.createElement('td');
         totalTd.className = 'text-right bold';
-        totalTd.textContent = `Rs.${Number(item.line_total).toLocaleString()}`;
+        const lineVal = Number(item.line_total);
+        totalTd.textContent = lineVal < 0
+          ? `-Rs.${Math.abs(lineVal).toLocaleString()}`
+          : `Rs.${lineVal.toLocaleString()}`;
 
         tr.appendChild(nameTd);
         tr.appendChild(qtyTd);
@@ -169,7 +172,10 @@
 
       document.getElementById('subtotal').textContent = `Rs. ${Number(data.subtotal || 0).toLocaleString()}`;
       document.getElementById('discount').textContent = `Rs. ${Number(data.total_discount || 0).toLocaleString()}`;
-      document.getElementById('grand-total').textContent = `Rs. ${Number(data.grand_total || 0).toLocaleString()}`;
+      const grandVal = Number(data.grand_total || 0);
+      document.getElementById('grand-total').textContent = grandVal < 0
+        ? `-Rs. ${Math.abs(grandVal).toLocaleString()}`
+        : `Rs. ${grandVal.toLocaleString()}`;
       document.getElementById('payment-method').textContent = (data.payment_method || 'CASH').replace(/_/g, ' ');
     }
 

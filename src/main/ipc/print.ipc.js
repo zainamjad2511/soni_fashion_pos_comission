@@ -88,12 +88,15 @@ function getReceiptHtmlTemplate() {
       tbody.innerHTML = '';
       (data.items || []).forEach(item => {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td><div class="bold">' + (item.name || item.article_name || 'Item') + '</div><div style="font-size: 9px; color: #444;">@ Rs.' + Number(item.retail_price_snapshot).toLocaleString() + '</div></td><td class="text-center">' + item.quantity + '</td><td class="text-right bold">Rs.' + Number(item.line_total).toLocaleString() + '</td>';
+        const lineVal = Number(item.line_total);
+        const lineText = lineVal < 0 ? '-Rs.' + Math.abs(lineVal).toLocaleString() : 'Rs.' + lineVal.toLocaleString();
+        tr.innerHTML = '<td><div class="bold">' + (item.name || item.article_name || 'Item') + '</div><div style="font-size: 9px; color: #444;">@ Rs.' + Number(item.retail_price_snapshot).toLocaleString() + '</div></td><td class="text-center">' + item.quantity + '</td><td class="text-right bold">' + lineText + '</td>';
         tbody.appendChild(tr);
       });
       document.getElementById('subtotal').textContent = 'Rs. ' + Number(data.subtotal || 0).toLocaleString();
       document.getElementById('discount').textContent = 'Rs. ' + Number(data.total_discount || 0).toLocaleString();
-      document.getElementById('grand-total').textContent = 'Rs. ' + Number(data.grand_total || 0).toLocaleString();
+      const grandVal = Number(data.grand_total || 0);
+      document.getElementById('grand-total').textContent = grandVal < 0 ? '-Rs. ' + Math.abs(grandVal).toLocaleString() : 'Rs. ' + grandVal.toLocaleString();
       document.getElementById('payment-method').textContent = (data.payment_method || 'CASH').replace(/_/g, ' ');
     }
   </script>

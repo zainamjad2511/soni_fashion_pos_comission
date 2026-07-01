@@ -33,9 +33,19 @@ export const useCartStore = create((set, get) => ({
         throw new Error(`Cannot add more "${article.name}". Max available stock is ${currentItem.max_stock}.`)
       }
 
+      const currentQty = Math.max(1, currentItem.quantity)
+      const currentFinal = currentItem.final_amount_input === ''
+        ? currentItem.retail_price_snapshot * currentQty
+        : Number(currentItem.final_amount_input)
+      const perPieceFinal = currentFinal / currentQty
+      const subtotal = currentItem.retail_price_snapshot * newQty
+      const newFinal = perPieceFinal * newQty
+
       updatedItems[existingIndex] = {
         ...currentItem,
-        quantity: newQty
+        quantity: newQty,
+        final_amount_input: currentItem.final_amount_input === '' ? '' : newFinal,
+        discount_amount: currentItem.final_amount_input === '' ? 0 : Math.max(0, subtotal - newFinal),
       }
       set({ items: updatedItems })
     } else {
@@ -78,9 +88,20 @@ export const useCartStore = create((set, get) => ({
           if (qty > item.max_stock) {
             throw new Error(`Quantity exceeds available stock (${item.max_stock}).`)
           }
+          if (item.final_amount_input === '') {
+            return { ...item, quantity: qty }
+          }
+          const currentQty = Math.max(1, Number(item.quantity) || 1)
+          const currentFinal = Number(item.final_amount_input)
+          const perPieceFinal = currentFinal / currentQty
           const subtotal = item.retail_price_snapshot * qty
-          const newFinal = item.final_amount_input === '' ? '' : (subtotal - (item.discount_amount || 0))
-          return { ...item, quantity: qty, final_amount_input: newFinal }
+          const newFinal = perPieceFinal * qty
+          return {
+            ...item,
+            quantity: qty,
+            final_amount_input: newFinal,
+            discount_amount: Math.max(0, subtotal - newFinal),
+          }
         }
         return item
       })

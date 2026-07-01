@@ -5,6 +5,28 @@ import { auditLog } from '../services/audit.service.js'
 export function registerArticlesHandlers() {
   handleIpc('articles:list', (_, filters) => {
     const db = getDb()
+
+    // Exact vendor + article lookup — isolated query, no broad LIKE fallbacks
+    if (filters?.vendor_code?.trim() && filters?.supplier_article_code?.trim()) {
+      let lookupQuery = `
+        SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
+        FROM articles
+        JOIN suppliers ON articles.supplier_id = suppliers.id
+        WHERE UPPER(suppliers.code) = ?
+          AND UPPER(articles.supplier_article_code) = ?
+      `
+      const lookupParams = [
+        filters.vendor_code.trim().toUpperCase(),
+        filters.supplier_article_code.trim().toUpperCase(),
+      ]
+      if (filters.is_active !== undefined && filters.is_active !== null && filters.is_active !== '') {
+        lookupQuery += ' AND articles.is_active = ?'
+        lookupParams.push(Number(filters.is_active))
+      }
+      lookupQuery += ' ORDER BY articles.id DESC LIMIT 5'
+      return db.prepare(lookupQuery).all(...lookupParams)
+    }
+
     let query = `
       SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
       FROM articles
@@ -57,13 +79,6 @@ export function registerArticlesHandlers() {
         query += ' AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ?)'
         params.push(resolvedSku, `%${skuQuery}%`, `%${skuQuery}%`)
         exactSku = resolvedSku
-      }
-      if (filters.vendor_code && filters.supplier_article_code) {
-        query += ' AND UPPER(suppliers.code) = ? AND UPPER(articles.supplier_article_code) = ?'
-        params.push(
-          filters.vendor_code.trim().toUpperCase(),
-          filters.supplier_article_code.trim().toUpperCase()
-        )
       }
     }
 
