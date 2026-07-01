@@ -123,6 +123,12 @@ export function StandardModal({
   const modalTitleId = titleId || (title ? 'standard-modal-title' : undefined)
   const widthClass = MAX_WIDTH[maxWidth] || MAX_WIDTH.md
 
+  const handleBackdropClick = (event) => {
+    if (!closeOnBackdrop || !onClose) return
+    if (event.target !== event.currentTarget) return
+    onClose()
+  }
+
   const sharedPanelClasses = `bg-[#F7F5F0] flex flex-col rounded-none text-[#2E2822] ${className}`
   const bodyClasses = `px-6 py-5 flex-1 overflow-y-auto ${bodyClassName}`
 
@@ -131,7 +137,7 @@ export function StandardModal({
       <div
         className="fixed inset-0 overflow-hidden bg-black/40 backdrop-blur-sm flex justify-end"
         style={{ zIndex }}
-        onClick={closeOnBackdrop ? onClose : undefined}
+        onClick={handleBackdropClick}
       >
         <div
           className={`w-full ${widthClass} h-full border-l border-[#C9C0B5] shadow-none ${sharedPanelClasses}`}
@@ -162,7 +168,7 @@ export function StandardModal({
     <div
       className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
       style={{ zIndex }}
-      onClick={closeOnBackdrop ? onClose : undefined}
+      onClick={handleBackdropClick}
     >
       <div
         className={`w-full ${widthClass} ${sharedPanelClasses}`}

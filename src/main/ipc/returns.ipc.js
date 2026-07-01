@@ -3,24 +3,48 @@ import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { resolveCommissionRate } from '../services/commission.service.js'
 
+function findSaleByInvoiceOrReturnNumber(db, invoiceNo) {
+  const queryStr = String(invoiceNo).trim()
+  let padded4 = null
+  let padded5 = null
+  if (/^\d+$/.test(queryStr)) {
+    padded4 = queryStr.padStart(4, '0')
+    padded5 = queryStr.padStart(5, '0')
+  }
+
+  const sale = db.prepare(`
+    SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
+    FROM sales s
+    LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
+    WHERE s.invoice_number = ? OR s.id = ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ?
+    ORDER BY s.id DESC LIMIT 1
+  `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
+
+  if (sale) return sale
+
+  const returnRow = db.prepare(`
+    SELECT original_sale_id
+    FROM returns
+    WHERE return_number = ? OR return_number LIKE ? OR return_number LIKE ? OR return_number LIKE ?
+    ORDER BY id DESC LIMIT 1
+  `).get(queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
+
+  if (!returnRow?.original_sale_id) return null
+
+  return db.prepare(`
+    SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
+    FROM sales s
+    LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
+    WHERE s.id = ?
+  `).get(returnRow.original_sale_id)
+}
+
 export function registerReturnsHandlers() {
   handleIpc('returns:lookupSale', (_, invoiceNo) => {
     const db = getDb()
     if (!invoiceNo) throw new Error('Invoice number required.')
 
-    const queryStr = String(invoiceNo).trim()
-    let padded4 = null, padded5 = null
-    if (/^\d+$/.test(queryStr)) {
-      padded4 = queryStr.padStart(4, '0')
-      padded5 = queryStr.padStart(5, '0')
-    }
-    const sale = db.prepare(`
-      SELECT s.*, sp.name as salesperson_name, sp.contact as salesperson_contact
-      FROM sales s
-      LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
-      WHERE s.invoice_number = ? OR s.id = ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ? OR s.invoice_number LIKE ?
-      ORDER BY s.id DESC LIMIT 1
-    `).get(queryStr, queryStr, `%-${padded4}`, `%-${padded5}`, `%${queryStr}`)
+    const sale = findSaleByInvoiceOrReturnNumber(db, invoiceNo)
 
     if (!sale) throw new Error(`Invoice "${invoiceNo}" not found.`)
 

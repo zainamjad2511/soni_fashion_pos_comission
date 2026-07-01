@@ -27,6 +27,20 @@ import {
   CloseIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
+
+const INVOICE_SEARCH_PREFIX = 'SF-INV-'
+
+function normalizeInvoiceLookupQuery(raw) {
+  const trimmed = String(raw || '').trim()
+  if (!trimmed) return trimmed
+
+  const upper = trimmed.toUpperCase()
+  if (upper.startsWith('SF-RET-') || upper.startsWith('SNF-RET')) {
+    return formatCode(trimmed, 'RET')
+  }
+
+  return formatCode(trimmed, 'INV')
+}
 import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
 
@@ -40,7 +54,7 @@ export function Returns() {
   }
 
   // Tab 1: Invoice Lookup State
-  const [invoiceQuery, setInvoiceQuery] = useState('')
+  const [invoiceQuery, setInvoiceQuery] = useState(INVOICE_SEARCH_PREFIX)
   const [loadingLookup, setLoadingLookup] = useState(false)
   const [lookupError, setLookupError] = useState('')
   const [selectedSale, setSelectedSale] = useState(null)
@@ -186,8 +200,12 @@ export function Returns() {
   // Handle Invoice Lookup
   const handleInvoiceLookup = async (e, customInvoiceNo = null) => {
     if (e) e.preventDefault()
-    const query = customInvoiceNo || invoiceQuery.trim()
-    if (!query) return
+    const query = normalizeInvoiceLookupQuery(customInvoiceNo || invoiceQuery)
+    if (!query || query === INVOICE_SEARCH_PREFIX) return
+
+    if (!customInvoiceNo && query !== invoiceQuery.trim()) {
+      setInvoiceQuery(query)
+    }
 
     setLoadingLookup(true)
     setLookupError('')
@@ -279,6 +297,27 @@ export function Returns() {
       setArticleSearchResults(Array.isArray(list) ? list : [])
     } catch (e) {
       console.error('Article search failed:', e)
+    }
+  }
+
+  const handleReplacementSearchKeyDown = async (e) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+
+    const trimmed = articleSearchQuery.trim()
+    if (!trimmed) return
+
+    const formatted = formatCode(trimmed, 'SKU')
+    if (formatted !== trimmed) {
+      setArticleSearchQuery(formatted)
+      await handleArticleSearch(formatted)
+      return
+    }
+
+    if (articleSearchResults.length > 0) {
+      addReplacementItem(articleSearchResults[0])
+      setArticleSearchQuery('')
+      setArticleSearchResults([])
     }
   }
 
@@ -593,26 +632,21 @@ export function Returns() {
                   onChange={(e) => setInvoiceQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      // Auto-format bare numbers to SNF-INV-XXXXX before lookup fires
-                      // Uses SNF-RET- prefix if returnType context is 'exchange', otherwise SNF-INV-
-                      const codeType = returnType === 'exchange' ? 'RET' : 'INV'
-                      const formatted = formatCode(invoiceQuery.trim(), codeType)
+                      const formatted = normalizeInvoiceLookupQuery(invoiceQuery)
                       if (formatted !== invoiceQuery.trim()) {
-                        // Update state and immediately pass the formatted value to the lookup
                         setInvoiceQuery(formatted)
                         handleInvoiceLookup(null, formatted)
-                        e.preventDefault() // prevent the form's own onSubmit from double-firing
+                        e.preventDefault()
                       }
-                      // else: form onSubmit will handle normally
                     }
                   }}
-                  placeholder="Enter invoice number (SNF-INV-00024) or type a bare number..."
+                  placeholder="SF-INV-00024 or SF-RET-00007 — type a bare number and press Enter"
                   className="w-full bg-transparent border-b border-[#2E2822] pl-12 pr-4 py-3 text-[#2E2822] placeholder-[#7A6F69] focus:outline-none transition-all text-sm font-mono font-bold"
                 />
               </div>
               <button
                 type="submit"
-                disabled={loadingLookup || !invoiceQuery.trim()}
+                disabled={loadingLookup || !invoiceQuery.trim() || invoiceQuery.trim() === INVOICE_SEARCH_PREFIX}
                 className="bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] font-bold px-8 py-3 rounded-[2px] transition-all uppercase tracking-[0.12em] flex items-center justify-center gap-2 text-xs shrink-0 w-full md:w-auto"
               >
                 {loadingLookup ? (
@@ -646,7 +680,7 @@ export function Returns() {
                   </div>
                 </div>
                 <button
-                  onClick={() => { setSelectedSale(null); setProcessResult(null); setInvoiceQuery(''); }}
+                  onClick={() => { setSelectedSale(null); setProcessResult(null); setInvoiceQuery(INVOICE_SEARCH_PREFIX); }}
                   className="px-4 py-2 bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] rounded-[2px] text-xs font-bold uppercase tracking-[0.1em] transition-all flex items-center gap-2"
                 >
                   <RefreshIcon className="w-3.5 h-3.5" /> Start New Return
@@ -807,7 +841,8 @@ export function Returns() {
                         type="text"
                         value={articleSearchQuery}
                         onChange={(e) => handleArticleSearch(e.target.value)}
-                        placeholder="Search replacement article SKU..."
+                        onKeyDown={handleReplacementSearchKeyDown}
+                        placeholder="Scan or type SKU — press Enter to add (e.g. 2 → SF-00002)"
                         className="w-full bg-transparent border-b border-[#2E2822] pl-10 pr-4 py-2 text-xs text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono font-bold"
                       />
                       {articleSearchResults.length > 0 && (
