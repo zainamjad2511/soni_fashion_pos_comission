@@ -1,7 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
-import { resolveCommissionRate, recordCommissionPayout, getPendingCommissionBalance } from '../services/commission.service.js'
+import { resolveCommissionRate, recordCommissionPayout, getPendingCommissionBalance, getCommissionBalance } from '../services/commission.service.js'
 
 export function registerCommissionsHandlers() {
   handleIpc('commissions:setRate', (_, data) => {
@@ -66,17 +66,12 @@ export function registerCommissionsHandlers() {
         SELECT 
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN sale_amount ELSE 0 END), 0) as total_sales,
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN commission_amount ELSE 0 END), 0) as total_commission,
-          COALESCE(SUM(
-            CASE
-              WHEN status != 'reversed' AND (commission_amount - paid_amount) > 0.0001
-              THEN commission_amount - paid_amount
-              ELSE 0
-            END
-          ), 0) as pending_commission,
           COALESCE(SUM(CASE WHEN status != 'reversed' THEN paid_amount ELSE 0 END), 0) as paid_commission
         FROM commissions
         WHERE salesperson_id = ? AND month = ?
       `).get(staff.id, targetMonth)
+
+      const netBalance = getCommissionBalance(db, staff.id, targetMonth)
 
       return {
         salesperson_id: staff.id,
@@ -87,7 +82,8 @@ export function registerCommissionsHandlers() {
         rate_percent: ratePercent,
         total_sales: stats.total_sales,
         total_commission: stats.total_commission,
-        pending_commission: stats.pending_commission,
+        pending_commission: Math.max(0, netBalance),
+        balance_commission: netBalance,
         paid_commission: stats.paid_commission
       }
     })
@@ -101,10 +97,11 @@ export function registerCommissionsHandlers() {
   handleIpc('commissions:list', (_, filters) => {
     const db = getDb()
     let query = `
-      SELECT c.*, s.invoice_number, sp.name as salesperson_name
+      SELECT c.*, s.invoice_number, sp.name as salesperson_name, r.return_number
       FROM commissions c
       JOIN sales s ON c.sale_id = s.id
       JOIN salespersons sp ON c.salesperson_id = sp.id
+      LEFT JOIN returns r ON c.return_id = r.id
       WHERE 1=1
     `
     const params = []
@@ -124,7 +121,7 @@ export function registerCommissionsHandlers() {
       }
     }
 
-    query += ' ORDER BY c.created_at DESC'
+    query += ' ORDER BY c.created_at ASC, c.id ASC'
     const stmt = db.prepare(query)
     return stmt.all(...params)
   })

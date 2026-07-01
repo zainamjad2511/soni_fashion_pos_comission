@@ -1,7 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
-import { resolveCommissionRate } from '../services/commission.service.js'
+import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
 
 function findSaleByInvoiceOrReturnNumber(db, invoiceNo) {
   const queryStr = String(invoiceNo).trim()
@@ -188,23 +188,13 @@ export function registerReturnsHandlers() {
         )
       }
 
-      // Commission Reversal
+      // Item-level commission reversal (immutable negative ledger rows)
       if (origSale && refundCredit > 0) {
-        const origComm = db.prepare('SELECT * FROM commissions WHERE sale_id = ? AND status != ? LIMIT 1').get(origSale.id, 'reversed')
-        if (origComm) {
-          const rate = origComm.rate_percent || 0
-          const reversedComm = (refundCredit * rate) / 100
-          
-          if (refundCredit >= origComm.sale_amount) {
-            db.prepare("UPDATE commissions SET status = 'reversed' WHERE id = ?").run(origComm.id)
-          } else {
-            db.prepare('UPDATE commissions SET sale_amount = MAX(0, sale_amount - ?), commission_amount = MAX(0, commission_amount - ?) WHERE id = ?').run(refundCredit, reversedComm, origComm.id)
-            db.prepare(`
-              INSERT INTO commissions (sale_id, salesperson_id, sale_amount, rate_percent, commission_amount, month, status)
-              VALUES (?, ?, ?, ?, ?, ?, 'reversed')
-            `).run(origSale.id, origComm.salesperson_id, refundCredit, rate, reversedComm, origComm.month)
-          }
-        }
+        recordItemizedCommissionReversal(db, {
+          origSale,
+          returnId,
+          returnItems: items,
+        })
       }
 
       let newSaleId = null
@@ -307,14 +297,12 @@ export function registerReturnsHandlers() {
           insertOutMovementStmt.run(vItem.article_id, vItem.quantity, newSaleId, `Exchange Sale #${newInvoiceNumber}`)
         }
 
-        // Commission accrual for replacement sale
-        const currentMonth = new Date().toISOString().slice(0, 7)
-        const ratePercent = resolveCommissionRate(db, exStaffId, currentMonth)
-        const commAmount = (grandTotal * ratePercent) / 100
-        db.prepare(`
-          INSERT INTO commissions (sale_id, salesperson_id, sale_amount, rate_percent, commission_amount, month, status)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending')
-        `).run(newSaleId, exStaffId, grandTotal, ratePercent, commAmount, currentMonth)
+        // Commission accrual for replacement sale (offsets any negative staff balance)
+        accrueSaleCommission(db, {
+          saleId: newSaleId,
+          salespersonId: exStaffId,
+          saleAmount: grandTotal,
+        })
       }
 
       auditLog(

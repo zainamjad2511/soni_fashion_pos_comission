@@ -1,7 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
-import { getPendingCommissionBalance, recordCommissionPayout } from '../services/commission.service.js'
+import { getPendingCommissionBalance, recordCommissionPayout, getCommissionBalance } from '../services/commission.service.js'
 
 export function registerReportsHandlers() {
   // Helper to unpack date filters whether passed as object or individual arguments
@@ -180,24 +180,35 @@ export function registerReportsHandlers() {
     query += ' ORDER BY c.id DESC'
     const rows = db.prepare(query).all(...params)
 
-    let total_pending = 0
     let total_paid = 0
     let total_reversed = 0
+    let total_commission = 0
 
     for (const r of rows) {
       const total = Number(r.commission_amount || 0)
       const paid = Number(r.paid_amount || 0)
-      const unpaid = Math.max(0, total - paid)
 
       if (r.status === 'reversed') {
         total_reversed += total
       } else {
+        total_commission += total
         total_paid += paid
-        total_pending += unpaid
       }
     }
 
-    // Payable excludes reversed commissions
+    const staffBalances = new Map()
+    for (const r of rows) {
+      if (r.status === 'reversed') continue
+      const key = r.salesperson_id
+      const unpaid = Number(r.commission_amount || 0) - Number(r.paid_amount || 0)
+      staffBalances.set(key, (staffBalances.get(key) || 0) + unpaid)
+    }
+
+    let total_pending = 0
+    for (const balance of staffBalances.values()) {
+      total_pending += Math.max(0, balance)
+    }
+
     const total_payable = total_pending
 
     return { commissions: rows, summary: { total_pending, total_paid, total_reversed, total_payable } }

@@ -37,17 +37,132 @@ export function ensureDefaultCommissionRateForStaff(db, salespersonId, month = n
   `).run(salespersonId, month, defaultRate)
 }
 
-export function getPendingCommissionBalance(db, salespersonId, month) {
+/** Net commission balance for a staff member in a month (may be negative after returns). */
+export function getCommissionBalance(db, salespersonId, month) {
   const row = db.prepare(`
-    SELECT COALESCE(SUM(commission_amount - paid_amount), 0) AS pending
+    SELECT COALESCE(SUM(commission_amount - paid_amount), 0) AS balance
     FROM commissions
     WHERE salesperson_id = ?
       AND month = ?
       AND status != 'reversed'
-      AND (commission_amount - paid_amount) > 0.0001
   `).get(salespersonId, month)
 
-  return Number(row?.pending || 0)
+  return Number(row?.balance || 0)
+}
+
+/** Payable balance only — never negative (used for payout caps). */
+export function getPendingCommissionBalance(db, salespersonId, month) {
+  return Math.max(0, getCommissionBalance(db, salespersonId, month))
+}
+
+export function accrueSaleCommission(db, { saleId, salespersonId, saleAmount, month = null }) {
+  const currentMonth = month || new Date().toISOString().slice(0, 7)
+  const ratePercent = resolveCommissionRate(db, salespersonId, currentMonth)
+  const commissionAmount = (Number(saleAmount) * ratePercent) / 100
+
+  const result = db.prepare(`
+    INSERT INTO commissions (
+      sale_id, salesperson_id, sale_amount, rate_percent, commission_amount, month, status, paid_amount
+    )
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', 0)
+  `).run(saleId, salespersonId, Number(saleAmount), ratePercent, commissionAmount, currentMonth)
+
+  return {
+    id: result.lastInsertRowid,
+    commissionAmount,
+    ratePercent,
+    month: currentMonth,
+    netBalanceAfter: getCommissionBalance(db, salespersonId, currentMonth),
+  }
+}
+
+/**
+ * Item-level commission reversal for invoice returns.
+ * Inserts immutable negative ledger rows (original sale commission row is untouched).
+ * Net balance may go negative and is auto-offset by future sale commissions.
+ */
+export function recordItemizedCommissionReversal(db, {
+  origSale,
+  returnId,
+  returnItems,
+}) {
+  if (!origSale?.id || !Array.isArray(returnItems) || returnItems.length === 0) {
+    return { reversedTotal: 0, entries: [] }
+  }
+
+  const origComm = db.prepare(`
+    SELECT *
+    FROM commissions
+    WHERE sale_id = ?
+      AND commission_amount > 0
+      AND status IN ('pending', 'paid')
+    ORDER BY id ASC
+    LIMIT 1
+  `).get(origSale.id)
+
+  if (!origComm) {
+    return { reversedTotal: 0, entries: [] }
+  }
+
+  const rate = Number(origComm.rate_percent) || 0
+  const salespersonId = origComm.salesperson_id
+  const month = origComm.month
+  const insertStmt = db.prepare(`
+    INSERT INTO commissions (
+      sale_id, salesperson_id, sale_amount, rate_percent, commission_amount,
+      month, status, paid_amount, return_id, sale_item_id, notes
+    )
+    VALUES (?, ?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?)
+  `)
+
+  let reversedTotal = 0
+  const entries = []
+
+  for (const item of returnItems) {
+    if (!item.sale_item_id) continue
+
+    const qty = Number(item.quantity_returned)
+    const refundPerUnit = Number(item.refund_per_unit)
+    if (!qty || qty <= 0 || Number.isNaN(refundPerUnit) || refundPerUnit < 0) continue
+
+    const returnedLineTotal = qty * refundPerUnit
+    const reversedComm = (returnedLineTotal * rate) / 100
+    if (reversedComm <= 0.0001) continue
+
+    const saleItem = db.prepare('SELECT id, article_id FROM sale_items WHERE id = ?').get(item.sale_item_id)
+    if (!saleItem) continue
+
+    const notes = `Return #${returnId} — item reversal (${qty} unit(s) @ Rs. ${refundPerUnit.toLocaleString()})`
+    const result = insertStmt.run(
+      origSale.id,
+      salespersonId,
+      -returnedLineTotal,
+      rate,
+      -reversedComm,
+      month,
+      returnId,
+      item.sale_item_id,
+      notes
+    )
+
+    reversedTotal += reversedComm
+    entries.push({
+      id: result.lastInsertRowid,
+      sale_item_id: item.sale_item_id,
+      returned_line_total: returnedLineTotal,
+      commission_reversed: reversedComm,
+    })
+  }
+
+  const netBalance = getCommissionBalance(db, salespersonId, month)
+
+  return {
+    reversedTotal,
+    entries,
+    salesperson_id: salespersonId,
+    month,
+    net_balance: netBalance,
+  }
 }
 
 export function recordCommissionPayout(db, { salespersonId, month, amount, notes = null }) {
@@ -127,6 +242,7 @@ export function recordCommissionPayout(db, { salespersonId, month, amount, notes
     }
 
     const remainingPending = getPendingCommissionBalance(db, salespersonId, month)
+    const netBalance = getCommissionBalance(db, salespersonId, month)
 
     return {
       payout_id: payoutId,
@@ -136,6 +252,7 @@ export function recordCommissionPayout(db, { salespersonId, month, amount, notes
       month,
       amount_paid: payoutAmount,
       remaining_pending: remainingPending,
+      net_balance: netBalance,
       allocations_updated: allocationsUpdated,
     }
   })

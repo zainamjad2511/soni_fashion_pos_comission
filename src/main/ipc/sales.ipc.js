@@ -1,7 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
-import { resolveCommissionRate } from '../services/commission.service.js'
+import { accrueSaleCommission } from '../services/commission.service.js'
 
 export function registerSalesHandlers() {
   handleIpc('sales:create', (_, payload) => {
@@ -110,15 +110,12 @@ export function registerSalesHandlers() {
         insertMovementStmt.run(vItem.article_id, vItem.quantity, saleId, `POS Sale ${invoiceNumber}`)
       }
 
-      // 6. Calculate and insert Commission
-      const currentMonth = new Date().toISOString().slice(0, 7)
-      const ratePercent = resolveCommissionRate(db, salespersonId, currentMonth)
-      const commissionAmount = (grandTotal * ratePercent) / 100
-
-      db.prepare(`
-        INSERT INTO commissions (sale_id, salesperson_id, sale_amount, rate_percent, commission_amount, month, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'pending')
-      `).run(saleId, salespersonId, grandTotal, ratePercent, commissionAmount, currentMonth)
+      // 6. Calculate and insert Commission (net balance auto-offsets prior return debits)
+      accrueSaleCommission(db, {
+        saleId,
+        salespersonId,
+        saleAmount: grandTotal,
+      })
 
       // 7. Audit Log
       auditLog(

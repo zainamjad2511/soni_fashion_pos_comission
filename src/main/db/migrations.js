@@ -375,4 +375,36 @@ export function runMigrations(db) {
     migrateV5()
     console.log('[Migrations] Successfully applied V5 Migration.')
   }
+
+  if (currentVersion < 6) {
+    console.log('[Migrations] Applying V6 Migration (itemized commission reversal ledger)...')
+    const migrateV6 = db.transaction(() => {
+      const commissionColumns = db.prepare('PRAGMA table_info(commissions)').all()
+      const columnNames = new Set(commissionColumns.map((col) => col.name))
+
+      if (!columnNames.has('return_id')) {
+        db.exec(`ALTER TABLE commissions ADD COLUMN return_id INTEGER REFERENCES returns(id) ON DELETE SET NULL`)
+      }
+      if (!columnNames.has('sale_item_id')) {
+        db.exec(`ALTER TABLE commissions ADD COLUMN sale_item_id INTEGER REFERENCES sale_items(id) ON DELETE SET NULL`)
+      }
+      if (!columnNames.has('notes')) {
+        db.exec(`ALTER TABLE commissions ADD COLUMN notes TEXT`)
+      }
+
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_commissions_return_id
+        ON commissions(return_id);
+      `)
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '6', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '6', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV6()
+    console.log('[Migrations] Successfully applied V6 Migration.')
+  }
 }

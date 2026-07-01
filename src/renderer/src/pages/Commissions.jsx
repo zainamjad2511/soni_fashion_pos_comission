@@ -28,10 +28,17 @@ function formatCommissionStatus(sub) {
   const paid = Number(sub.paid_amount || 0)
   const unpaid = Math.max(0, total - paid)
 
+  if (total < -0.0001 || sub.return_id) return 'Return Reversal'
   if (sub.status === 'reversed') return 'Reversed'
   if (unpaid <= 0.0001) return 'Paid'
   if (paid > 0.0001) return `Partial · Pending Rs. ${unpaid.toLocaleString()}`
   return 'Pending'
+}
+
+function formatCommissionAmount(value) {
+  const amount = Number(value || 0)
+  if (amount < -0.0001) return `-Rs. ${Math.abs(amount).toLocaleString()}`
+  return `Rs. ${amount.toLocaleString()}`
 }
 
 export function Commissions() {
@@ -362,7 +369,11 @@ export function Commissions() {
                     : item.rate_percent ?? 1
                   const hasChanged = Number(currentRateVal) !== Number(item.rate_percent)
                   const isExpanded = expandedRowId === item.salesperson_id
-                  const hasPending = Number(item.pending_commission || 0) > 0
+                  const netBalance = item.balance_commission !== undefined
+                    ? Number(item.balance_commission)
+                    : Number(item.pending_commission || 0)
+                  const hasPending = netBalance > 0.0001
+                  const hasDebt = netBalance < -0.0001
 
                   return (
                     <React.Fragment key={item.salesperson_id}>
@@ -425,7 +436,13 @@ export function Commissions() {
                           Rs. {(item.total_commission || 0).toLocaleString()}
                         </td>
                         <td className="py-5 px-6 text-right font-mono text-[#2E2822] font-semibold text-base">
-                          Rs. {(item.pending_commission || 0).toLocaleString()}
+                          {hasDebt ? (
+                            <span title="Commission owed after return reversals">
+                              {formatCommissionAmount(netBalance)}
+                            </span>
+                          ) : (
+                            <>Rs. {(item.pending_commission || 0).toLocaleString()}</>
+                          )}
                         </td>
                         <td className="py-5 px-6 text-right font-mono text-[#7A6F69] text-base">
                           Rs. {(item.paid_commission || 0).toLocaleString()}
@@ -491,16 +508,16 @@ export function Commissions() {
                                       {drillDownItems.map((sub) => (
                                         <tr key={sub.id}>
                                           <td className="py-3 pr-4 font-mono text-[#2E2822] font-bold">
-                                            {sub.invoice_number || `#${sub.sale_id || sub.id}`}
+                                            {sub.return_number || sub.invoice_number || `#${sub.sale_id || sub.id}`}
                                           </td>
                                           <td className="py-3 px-4 text-[#7A6F69] font-mono">
                                             {sub.created_at || '—'}
                                           </td>
                                           <td className="py-3 px-4 text-right font-mono text-[#7A6F69]">
-                                            Rs. {Number(sub.sale_amount || 0).toLocaleString()}
+                                            {formatCommissionAmount(sub.sale_amount)}
                                           </td>
                                           <td className="py-3 px-4 text-right font-mono text-[#2E2822] font-bold">
-                                            Rs. {Number(sub.commission_amount || 0).toLocaleString()}
+                                            {formatCommissionAmount(sub.commission_amount)}
                                           </td>
                                           <td className="py-3 pl-4 text-center">
                                             <span className="font-mono text-xs uppercase font-bold text-[#2E2822]">
