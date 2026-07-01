@@ -1,5 +1,4 @@
 import React from 'react'
-import { Sparkles } from 'lucide-react'
 
 export function PlaceholderPage({ title, sprint, description, icon: Icon }) {
   return (

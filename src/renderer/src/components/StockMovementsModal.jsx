@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import {
-  History,
-  X,
-  ArrowUpRight,
-  ArrowDownLeft,
-  RefreshCw,
-  Sliders,
-  CheckCircle2,
-  AlertCircle,
-  Package,
-  Calendar,
-  User,
-  FileText
-} from 'lucide-react'
+  HistoryIcon,
+  CloseIcon,
+  ArrowUpRightIcon,
+  ArrowDownLeftIcon,
+  RefreshIcon,
+  SlidersIcon,
+  CheckIcon,
+  AlertIcon,
+  PackageIcon,
+  CalendarIcon,
+  CustomerIcon,
+  DocumentIcon,
+} from './icons/TechnicalIcons.jsx'
+import { StandardModal, StandardModalAction } from './StandardModal.jsx'
 
 export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted }) {
   const [movements, setMovements] = useState([])
@@ -127,61 +127,51 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#2E2822]/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-      <div className="w-full max-w-4xl bg-[#F7F5F0] text-[#2E2822] border border-[#2E2822] rounded-[2px] shadow-none overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Toast inside modal */}
-        {toast && (
-          <div className="absolute top-6 right-6 z-50 animate-fade-in">
-            <div
-              className={`flex items-center gap-2.5 px-4 py-3 rounded-[2px] border font-sans text-xs font-bold ${
-                toast.type === 'success'
-                  ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
-                  : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4 text-[#2E2822] shrink-0" />
-              <span>{toast.message}</span>
-            </div>
+  return (
+    <StandardModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={article.name}
+      subtitle={`${article.sku} · Vendor #${article.supplier_article_code || 'N/A'} · ${article.category}`}
+      maxWidth="xl"
+      maxHeight="90vh"
+      showCloseButton
+      zIndex={100}
+      bodyClassName="space-y-6 font-sans relative"
+      footer={
+        <div className="flex items-center justify-between font-sans gap-4">
+          <div className="text-xs text-[#7A6F69]">
+            Showing up to <strong className="text-[#2E2822] font-bold">100 most recent</strong> stock movement records for audit compliance.
           </div>
-        )}
-
-        {/* Header */}
-        <div className="p-6 border-b border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <History className="w-6 h-6 text-[#2E2822]" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#7A6F69]">
-                  [{article.sku}]
-                </span>
-                <h3 className="text-xl font-display font-bold text-[#2E2822]">{article.name}</h3>
-              </div>
-              <p className="text-xs font-sans text-[#7A6F69] mt-1 flex items-center gap-3">
-                <span>Vendor Code: #{article.supplier_article_code || 'N/A'}</span>
-                <span>•</span>
-                <span>Category: {article.category}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-[2px] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <StandardModalAction onClick={onClose} className="w-auto px-6 py-2">
+            Close Ledger
+          </StandardModalAction>
         </div>
-
-        {/* Error Banner */}
-        {error && (
-          <div className="mx-6 mt-6 p-4 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
-            <AlertCircle className="w-4 h-4 text-[#2E2822] shrink-0" />
-            <span>{error}</span>
+      }
+    >
+      {toast && (
+        <div className="absolute top-0 right-0 z-50">
+          <div
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-none border font-sans text-xs font-bold ${
+              toast.type === 'success'
+                ? 'bg-[#EFEBE3] border-[#2E2822] text-[#2E2822]'
+                : 'bg-[#EFEBE3] border-[#7A6F69] text-[#2E2822]'
+            }`}
+          >
+            <CheckIcon className="w-4 h-4 text-[#2E2822] shrink-0" />
+            <span>{toast.message}</span>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Modal Content */}
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto font-sans">
+      {error && (
+        <div className="p-4 bg-[#EFEBE3] border-b border-[#2E2822] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
+          <AlertIcon className="w-4 h-4 text-[#2E2822] shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="space-y-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4 border-b border-[#C9C0B5]">
             <div className="space-y-1">
@@ -209,7 +199,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                 onClick={() => setShowAdjustForm(!showAdjustForm)}
                 className="px-3 py-2 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] text-xs font-bold uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all"
               >
-                <Sliders className="w-3.5 h-3.5" />
+                <SlidersIcon className="w-3.5 h-3.5" />
                 <span>{showAdjustForm ? 'Cancel' : 'Adjust'}</span>
               </button>
             </div>
@@ -220,7 +210,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
             <form onSubmit={handleManualAdjustment} className="p-5 rounded-[2px] bg-[#EFEBE3] border border-[#2E2822] space-y-4 animate-fade-in">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                  <Sliders className="w-4 h-4" />
+                  <SlidersIcon className="w-4 h-4" />
                   <span>Record Manual Stock Audit / Damage Write-off</span>
                 </div>
                 <span className="text-[11px] text-[#7A6F69]">Creates tamper-evident adjustment row in ledger</span>
@@ -268,7 +258,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                       disabled={submitting}
                       className="px-4 py-2 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] font-bold text-xs uppercase tracking-[0.1em] flex items-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
                     >
-                      {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <span>Submit</span>}
+                      {submitting ? <RefreshIcon className="w-3.5 h-3.5 animate-spin" /> : <span>Submit</span>}
                     </button>
                   </div>
                 </div>
@@ -285,7 +275,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
                 disabled={loading}
                 className="flex items-center gap-1.5 text-[#2E2822] hover:underline transition-colors"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh Ledger</span>
               </button>
             </div>
@@ -293,7 +283,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
             <div>
               {loading && movements.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-[#7A6F69]">
-                  <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+                  <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
                   <span className="text-xs font-bold uppercase tracking-wider">Querying stock ledger from SQLite...</span>
                 </div>
               ) : movements.length === 0 ? (
@@ -364,22 +354,7 @@ export function StockMovementsModal({ isOpen, onClose, article, onStockAdjusted 
               )}
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-[#2E2822] bg-[#EFEBE3] flex items-center justify-between font-sans">
-          <div className="text-xs text-[#7A6F69]">
-            Showing up to <strong className="text-[#2E2822] font-bold">100 most recent</strong> stock movement records for audit compliance.
-          </div>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-bold text-xs uppercase tracking-[0.12em] transition-all"
-          >
-            Close Ledger
-          </button>
-        </div>
       </div>
-    </div>,
-    document.body
+    </StandardModal>
   )
 }

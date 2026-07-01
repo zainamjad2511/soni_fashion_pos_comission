@@ -1,27 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { formatCode } from '../utils/formatCode.js'
-import {
-  ShoppingCart,
-  Search,
-  User,
-  Plus,
-  Minus,
-  Trash2,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  CreditCard,
-  Banknote,
-  FileText,
-  Tag,
-  Barcode,
-  Package,
-  ArrowRight,
-  Printer
-} from 'lucide-react'
+import { CustomerIcon, TrashIcon } from '../components/icons/TechnicalIcons.jsx'
 import { useCartStore } from '../store/cartStore.js'
 import { ReprintModal } from '../components/ReprintModal.jsx'
 import { Toast } from '../components/Toast.jsx'
+import {
+  StandardModal,
+  StandardModalAction,
+  StandardModalInput,
+  StandardModalLabel,
+} from '../components/StandardModal.jsx'
+import { POSActionPanel } from '../components/POSActionPanel.jsx'
 
 export function POSSale() {
   const [salespersons, setSalespersons] = useState([])
@@ -285,7 +274,7 @@ export function POSSale() {
                 <span className="text-[#332822] underline font-medium">[Change]</span>
               </span>
               <span className="font-medium text-[#332822] text-sm flex items-center gap-1.5 mt-0.5">
-                <User className="w-4 h-4 inline text-[#7A6F69]" />
+                <CustomerIcon className="w-4 h-4 inline text-[#7A6F69]" />
                 <span>{selectedSalesperson ? selectedSalesperson.name : 'Ahmed Zahid'}</span>
               </span>
             </div>
@@ -305,83 +294,8 @@ export function POSSale() {
 
       {/* Main Split Content Area */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0 bg-[#FCFBFA]">
-        {/* Left Area: Search Bar (relocated above table), Ledger Table & Bottom Status Bar */}
+        {/* Left Area: Ledger Table & Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#FCFBFA]">
-          {/* TASK 2 & 3: Search bar relocated here, directly above the ledger table.
-               Positioned relative on outer wrapper for correct dropdown anchor.
-               Dropdown has solid bg, border, and high z-index to strictly overlay table. */}
-          <div className="bg-[#F7F5F0] border-b border-[#E4DBC8] px-4 py-3 relative z-50">
-            <div className="relative">
-              <Search className="w-4 h-4 text-[#7A6F69] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                ref={searchInputRef}
-                autoFocus
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Scan Barcode or type SKU / Name — press Enter to add..."
-                className="w-full pl-10 pr-10 py-2 bg-white text-[#332822] font-normal text-sm placeholder-[#7A6F69] focus:outline-none border border-[#D8CBB6] focus:border-[#B09A7A] shadow-none"
-              />
-              {searching ? (
-                <RefreshCw className="w-4 h-4 text-[#7A6F69] animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />
-              ) : searchTerm ? (
-                <Barcode className="w-4 h-4 text-[#7A6F69] absolute right-3.5 top-1/2 -translate-y-1/2" />
-              ) : null}
-            </div>
-
-            {/* TASK 2: Dropdown — solid white bg, definite border, z-50 strictly above table thead (z-10) */}
-            {searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-0 bg-[#FFFFFF] border border-[#D8CBB6] shadow-xl z-50 max-h-72 overflow-y-auto">
-                <div className="px-3 py-1.5 bg-[#F7F5F0] border-b border-[#E4DBC8] flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#7A6F69]">
-                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} — Press Enter to add top result
-                  </span>
-                  <button
-                    onClick={() => { setSearchTerm(''); setSearchResults([]); }}
-                    className="text-[10px] text-[#7A6F69] hover:text-[#332822] uppercase tracking-wide"
-                  >
-                    ✕ Clear
-                  </button>
-                </div>
-                {searchResults.map((art, idx) => (
-                  <div
-                    key={art.id}
-                    onClick={() => {
-                      handleAddToCart(art)
-                      setSearchTerm('')
-                      setSearchResults([])
-                    }}
-                    className={`px-4 py-3 cursor-pointer flex items-center justify-between border-b border-[#F0EBE3] last:border-0 transition-colors ${
-                      idx === 0 ? 'bg-[#FAF6EE] hover:bg-[#F0EBE3]' : 'bg-white hover:bg-[#FAF6EE]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-[#E4DBC8] text-[#332822] flex items-center justify-center font-mono font-semibold text-[10px] shrink-0">
-                        {art.sku}
-                      </div>
-                      <div>
-                        <div className="font-medium text-[#332822] text-sm leading-tight">
-                          {art.name}
-                          {idx === 0 && <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-[#B09A7A] bg-[#E4DBC8] px-1.5 py-0.5">↵ Enter</span>}
-                        </div>
-                        <div className="text-[11px] text-[#7A6F69] mt-0.5">
-                          Stock: <span className="text-emerald-700 font-semibold">{art.quantity}</span> · {art.category || 'General'}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-mono font-semibold text-[#332822] text-sm">
-                        Rs. {Number(art.retail_price || 0).toLocaleString()}
-                      </div>
-                      <span className="text-[10px] text-[#7A6F69] uppercase tracking-wide">click to add</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Table Area (Near-White Canvas with Crisp White Rows) */}
           <div className="flex-1 overflow-auto bg-[#FCFBFA]">
             <table className="w-full text-left border-collapse font-sans">
@@ -401,7 +315,7 @@ export function POSSale() {
                 {items.length === 0 ? (
                   <tr className="bg-white">
                     <td colSpan="7" className="py-28 text-center text-[#7A6F69] font-normal text-base">
-                      No document items added. Scan items or search SKU above.
+                      No document items added. Scan items or search SKU in the action panel.
                     </td>
                   </tr>
                 ) : (
@@ -468,7 +382,7 @@ export function POSSale() {
                             className="text-[#7A6F69] hover:text-rose-700 p-1"
                             title="Delete Row"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <TrashIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -497,169 +411,104 @@ export function POSSale() {
           </div>
         </div>
 
-        {/* Right Action Button Panel (Near-White background #FCFBFA with Soft Cream Solid Buttons) */}
-        <div className="w-full lg:w-80 bg-[#FCFBFA] p-5 flex flex-col gap-3 shrink-0 select-none">
-          {/* Action Grid with gap-3 between buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* TASK 1: Checkout — Deep Slate (#1E2832) bg, Cream Ivory (#F7F5F0) text.
-                 High-contrast, squared, no rounded corners, strictly branded. */}
-            <button
-              onClick={handleCompleteSale}
-              disabled={processing || items.length === 0}
-              className="col-span-2 py-5 px-4 bg-[#1E2832] hover:bg-[#2C3A47] text-[#F7F5F0] font-display font-bold text-xl uppercase tracking-[0.12em] flex items-center justify-center gap-3 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-md"
-              style={{ borderRadius: 0 }}
-            >
-              {processing ? (
-                <RefreshCw className="w-5 h-5 animate-spin text-[#C9B99A]" />
-              ) : (
-                <CheckCircle2 className="w-5 h-5 text-[#C9B99A]" />
-              )}
-              <span>Checkout [F12]</span>
-            </button>
-
-            {/* Solid Light Cream Blocks (#F7F5F0 with Hover White) */}
-            <button
-              onClick={() => {
-                if (items.length > 0 && window.confirm('Clear current active cart?')) clearCart()
-              }}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm"
-            >
-              <FileText className="w-5 h-5 text-[#332822]" />
-              <span>New Document</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (lastCompletedSale && window.electronAPI?.print?.receipt) {
-                  window.electronAPI.print.receipt(lastCompletedSale)
-                  showToast('success', 'Sending receipt to thermal printer...')
-                }
-              }}
-              disabled={!lastCompletedSale}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm disabled:opacity-40"
-            >
-              <Printer className="w-5 h-5 text-[#332822]" />
-              <span>Print Document</span>
-            </button>
-
-            <button
-              onClick={() => setIsCashierModalOpen(true)}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm"
-            >
-              <User className="w-5 h-5 text-[#332822]" />
-              <span>Set Salesman</span>
-            </button>
-
-            <button
-              onClick={() => setIsDiscountModalOpen(true)}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm"
-            >
-              <Banknote className="w-5 h-5 text-[#332822]" />
-              <span>Set Discount</span>
-            </button>
-
-            <button
-              onClick={() => setPaymentMethod(paymentMethod === 'cash' ? 'online' : 'cash')}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm"
-            >
-              <CreditCard className="w-5 h-5 text-[#332822]" />
-              <span>Mode: {paymentMethod === 'cash' ? 'Cash' : 'Online'}</span>
-            </button>
-
-            <button
-              onClick={() => setIsReprintOpen(true)}
-              className="p-4 bg-[#F7F5F0] hover:bg-white text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 shadow-sm"
-            >
-              <FileText className="w-5 h-5 text-[#332822]" />
-              <span>Reprint Sale</span>
-            </button>
-
-            {/* Delete Document Wireframe Action */}
-            <button
-              onClick={() => {
-                if (items.length > 0 && window.confirm('Delete document lines?')) clearCart()
-              }}
-              disabled={items.length === 0}
-              className="col-span-2 py-3.5 px-4 bg-[#D8CBB6] hover:bg-rose-200 text-[#332822] font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border-0 shadow-sm disabled:opacity-40"
-            >
-              <Trash2 className="w-4 h-4 text-[#332822]" />
-              <span>Delete Document Lines</span>
-            </button>
-          </div>
-
-          {/* Remarks Input at Bottom of Sidebar */}
-          <div className="mt-auto pt-3">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">
-              Remarks / Notes
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional sale note..."
-              className="w-full px-3 py-2.5 bg-white text-[#332822] font-medium text-xs focus:outline-none border-0 shadow-sm"
-            />
-          </div>
-        </div>
+        <POSActionPanel
+          searchInputRef={searchInputRef}
+          searchTerm={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          onSearchKeyDown={handleSearchKeyDown}
+          searching={searching}
+          searchResults={searchResults}
+          onClearSearch={() => { setSearchTerm(''); setSearchResults([]) }}
+          onAddToCart={(art) => {
+            handleAddToCart(art)
+            setSearchTerm('')
+            setSearchResults([])
+          }}
+          processing={processing}
+          itemsLength={items.length}
+          onCompleteSale={handleCompleteSale}
+          onNewDocument={() => {
+            if (items.length > 0 && window.confirm('Clear current active cart?')) clearCart()
+          }}
+          onDeleteLines={() => {
+            if (items.length > 0 && window.confirm('Delete document lines?')) clearCart()
+          }}
+          onPrintDocument={() => {
+            if (lastCompletedSale && window.electronAPI?.print?.receipt) {
+              window.electronAPI.print.receipt(lastCompletedSale)
+              showToast('success', 'Sending receipt to thermal printer...')
+            }
+          }}
+          lastCompletedSale={lastCompletedSale}
+          onOpenCashierModal={() => setIsCashierModalOpen(true)}
+          onOpenDiscountModal={() => setIsDiscountModalOpen(true)}
+          paymentMethod={paymentMethod}
+          onTogglePaymentMethod={() => setPaymentMethod(paymentMethod === 'cash' ? 'online' : 'cash')}
+          onOpenReprint={() => setIsReprintOpen(true)}
+          notes={notes}
+          onNotesChange={(e) => setNotes(e.target.value)}
+        />
       </div>
 
-      {/* Popups for Cashier & Discount selection */}
-      {isCashierModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="font-display font-bold text-lg text-[#332822]">Select Cashier / Salesperson</h3>
-            <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-              <button
-                onClick={() => { setSalesperson(null); setIsCashierModalOpen(false); }}
-                className="p-3 text-left bg-[#FAF6EE] hover:bg-[#EFEBE3] text-[#332822] font-bold text-sm"
-              >
-                Ahmed Zahid (Default)
-              </button>
-              {salespersons.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => { setSalesperson(s); setIsCashierModalOpen(false); }}
-                  className="p-3 text-left bg-[#FAF6EE] hover:bg-[#EFEBE3] text-[#332822] font-bold text-sm flex items-center justify-between"
-                >
-                  <span>{s.name}</span>
-                  <span className="text-xs text-[#7A6F69] font-mono">ID: {s.id}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setIsCashierModalOpen(false)}
-              className="w-full py-3 bg-[#EFEBE3] text-[#332822] font-extrabold text-xs uppercase"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <StandardModal
+        isOpen={isCashierModalOpen}
+        onClose={() => setIsCashierModalOpen(false)}
+        title="Select Cashier / Salesperson"
+        titleId="cashier-modal-title"
+        bodyClassName="p-0 overflow-y-auto max-h-64"
+        footer={<StandardModalAction onClick={() => setIsCashierModalOpen(false)}>Close</StandardModalAction>}
+      >
+        <button
+          type="button"
+          onClick={() => { setSalesperson(null); setIsCashierModalOpen(false); }}
+          className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 transition-colors hover:bg-[#EFEBE3] ${
+            !selectedSalesperson ? 'bg-[#EFEBE3]/60' : ''
+          }`}
+        >
+          <span className="font-sans font-medium text-sm text-[#2E2822]">Ahmed Zahid</span>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-[#7A6F69] shrink-0">Default</span>
+        </button>
 
-      {isDiscountModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded p-6 max-w-sm w-full space-y-4 shadow-2xl">
-            <h3 className="font-display font-bold text-lg text-[#332822]">Set Overall Order Discount</h3>
-            <div>
-              <label className="text-xs font-bold text-[#7A6F69] block mb-1">Discount Amount (Rs.)</label>
-              <input
-                type="number"
-                min="0"
-                value={orderDiscount}
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => setOrderDiscount(e.target.value)}
-                className="w-full p-3 bg-[#FAF6EE] text-[#332822] font-mono font-bold text-xl focus:outline-none focus:ring-2 focus:ring-[#C89B3C]"
-              />
-            </div>
-            <button
-              onClick={() => setIsDiscountModalOpen(false)}
-              className="w-full py-3 bg-[#C89B3C] text-[#1A1715] font-black text-sm uppercase"
-            >
-              Apply Discount
-            </button>
-          </div>
-        </div>
-      )}
+        {salespersons.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => { setSalesperson(s); setIsCashierModalOpen(false); }}
+            className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 last:border-b-0 transition-colors hover:bg-[#EFEBE3] ${
+              selectedSalesperson?.id === s.id ? 'bg-[#EFEBE3]/60' : ''
+            }`}
+          >
+            <span className="font-sans font-medium text-sm text-[#2E2822]">{s.name}</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7A6F69] shrink-0">
+              ID&nbsp;{s.id}
+            </span>
+          </button>
+        ))}
+      </StandardModal>
+
+      <StandardModal
+        isOpen={isDiscountModalOpen}
+        onClose={() => setIsDiscountModalOpen(false)}
+        title="Set Overall Order Discount"
+        titleId="discount-modal-title"
+        maxWidth="sm"
+        footer={
+          <StandardModalAction onClick={() => setIsDiscountModalOpen(false)}>
+            Apply Discount
+          </StandardModalAction>
+        }
+      >
+        <StandardModalLabel htmlFor="order-discount-input">Discount Amount (Rs.)</StandardModalLabel>
+        <StandardModalInput
+          id="order-discount-input"
+          type="number"
+          min="0"
+          value={orderDiscount}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => setOrderDiscount(e.target.value)}
+          className="font-bold text-xl"
+        />
+      </StandardModal>
 
       <ReprintModal isOpen={isReprintOpen} onClose={() => setIsReprintOpen(false)} />
     </div>

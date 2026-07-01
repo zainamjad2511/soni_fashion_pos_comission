@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import {
-  Truck,
-  Search,
-  Plus,
-  Edit2,
-  Power,
-  PowerOff,
-  Phone,
-  MapPin,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  X,
-  Filter
-} from 'lucide-react'
+  TruckIcon,
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  PowerOnIcon,
+  PowerOffIcon,
+  PhoneIcon,
+  LocationIcon,
+  DocumentIcon,
+  CheckIcon,
+  AlertIcon,
+  RefreshIcon,
+  CloseIcon,
+  FilterIcon,
+} from '../components/icons/TechnicalIcons.jsx'
+import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
 
 export function Suppliers() {
@@ -178,7 +178,7 @@ export function Suppliers() {
           onClick={() => handleOpenDrawer()}
           className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <PlusIcon className="w-4 h-4" />
           <span>Register Supplier</span>
         </button>
       </div>
@@ -186,7 +186,7 @@ export function Suppliers() {
       {/* Filter & Search Toolbar — Borderless Spatial Row */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
         <div className="relative w-full sm:max-w-md">
-          <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
+          <SearchIcon className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
           <input
             type="text"
             value={searchTerm}
@@ -205,7 +205,7 @@ export function Suppliers() {
                 : 'bg-transparent text-[#7A6F69] hover:text-[#2E2822]'
             }`}
           >
-            <Filter className="w-3.5 h-3.5" />
+            <FilterIcon className="w-3.5 h-3.5" />
             <span>{filterActiveOnly ? 'Active Only' : 'All Suppliers'}</span>
           </button>
           <button
@@ -213,7 +213,7 @@ export function Suppliers() {
             className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
             title="Refresh List"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -222,13 +222,13 @@ export function Suppliers() {
       <div className="w-full overflow-x-auto">
         {loading && suppliers.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
             <span className="font-sans text-xs tracking-[0.18em] uppercase">Synchronizing Suppliers...</span>
           </div>
         ) : suppliers.length === 0 ? (
           <div className="py-20 text-center">
             <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
-              <Truck className="w-6 h-6" />
+              <TruckIcon className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
               No Suppliers Found
@@ -243,7 +243,7 @@ export function Suppliers() {
                 onClick={() => handleOpenDrawer()}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase hover:bg-[#4A423A] transition-all inline-flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
+                <PlusIcon className="w-4 h-4" />
                 <span>Add First Supplier</span>
               </button>
             )}
@@ -279,7 +279,7 @@ export function Suppliers() {
                   <td className="py-5 px-4 text-[#2E2822]">
                     {sup.contact ? (
                       <div className="flex items-center gap-2 text-sm font-mono font-medium">
-                        <Phone className="w-4 h-4 text-[#7A6F69] shrink-0" />
+                        <PhoneIcon className="w-4 h-4 text-[#7A6F69] shrink-0" />
                         <span>{sup.contact}</span>
                       </div>
                     ) : (
@@ -289,13 +289,13 @@ export function Suppliers() {
                   <td className="py-5 px-4 text-[#7A6F69] max-w-xs truncate text-sm">
                     {sup.address && (
                       <div className="flex items-center gap-2 text-[#2E2822] mb-1 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
+                        <LocationIcon className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
                         <span className="truncate">{sup.address}</span>
                       </div>
                     )}
                     {sup.notes && (
                       <div className="flex items-center gap-2 text-[#7A6F69] truncate">
-                        <FileText className="w-3.5 h-3.5 shrink-0" />
+                        <DocumentIcon className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{sup.notes}</span>
                       </div>
                     )}
@@ -315,14 +315,14 @@ export function Suppliers() {
                       className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                       title="Edit Supplier"
                     >
-                      <Edit2 className="w-4 h-4 inline" />
+                      <EditIcon className="w-4 h-4 inline" />
                     </button>
                     <button
                       onClick={() => handleToggleStatus(sup)}
                       className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                       title={sup.is_active ? 'Deactivate Supplier' : 'Activate Supplier'}
                     >
-                      {sup.is_active ? <PowerOff className="w-4 h-4 inline" /> : <Power className="w-4 h-4 inline" />}
+                      {sup.is_active ? <PowerOffIcon className="w-4 h-4 inline" /> : <PowerOnIcon className="w-4 h-4 inline" />}
                     </button>
                   </td>
                 </tr>
@@ -350,7 +350,7 @@ export function Suppliers() {
                 onClick={handleCloseDrawer}
                 className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -445,7 +445,7 @@ export function Suppliers() {
                 disabled={submitting}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>{submitting ? 'Saving...' : editingSupplier ? 'Update Supplier' : 'Register Supplier'}</span>
               </button>
             </div>

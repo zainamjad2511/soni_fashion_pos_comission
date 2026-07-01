@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import {
-  Receipt,
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  Calendar,
-  Filter,
-  Banknote,
-  Tag,
-  User,
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  RefreshCw,
-  X,
-  TrendingDown
-} from 'lucide-react'
+  ReceiptIcon,
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  CalendarIcon,
+  FilterIcon,
+  BanknoteIcon,
+  TagIcon,
+  CustomerIcon,
+  DocumentIcon,
+  AlertIcon,
+  CheckIcon,
+  RefreshIcon,
+  CloseIcon,
+  TrendingDownIcon,
+} from '../components/icons/TechnicalIcons.jsx'
+import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
 
 const EXPENSE_CATEGORIES = [
@@ -244,7 +244,7 @@ export function Expenses() {
           onClick={() => handleOpenDrawer()}
           className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
         >
-          <Plus className="w-4 h-4" />
+          <PlusIcon className="w-4 h-4" />
           <span>Record Expense</span>
         </button>
       </div>
@@ -281,7 +281,7 @@ export function Expenses() {
         <div className="flex flex-wrap items-center gap-6 flex-1">
           {/* Search */}
           <div className="relative min-w-[260px] flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-0 top-3 text-[#7A6F69]" />
+            <SearchIcon className="w-4 h-4 absolute left-0 top-3 text-[#7A6F69]" />
             <input
               type="text"
               placeholder="Search description, category or notes..."
@@ -294,7 +294,7 @@ export function Expenses() {
                 onClick={() => setSearchTerm('')}
                 className="absolute right-0 top-3 text-[#7A6F69] hover:text-[#2E2822]"
               >
-                <X className="w-4 h-4" />
+                <CloseIcon className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -313,7 +313,7 @@ export function Expenses() {
 
           {/* Date Range */}
           <div className="flex items-center gap-2 py-2 border-b border-[#C9C0B5] text-xs font-sans font-semibold text-[#2E2822]">
-            <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
+            <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69]" />
             <input
               type="date"
               value={startDate}
@@ -335,7 +335,7 @@ export function Expenses() {
           className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
           title="Refresh List"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -368,7 +368,7 @@ export function Expenses() {
               <tr>
                 <td colSpan={6} className="py-20 text-center">
                   <div className="flex flex-col items-center justify-center text-[#7A6F69]">
-                    <Receipt className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
+                    <ReceiptIcon className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
                     <p className="text-base font-display font-bold text-[#2E2822]">No expenses recorded for this period</p>
                     <p className="text-sm font-sans text-[#7A6F69] mt-1">Try adjusting your filters or click "Record Expense"</p>
                   </div>
@@ -405,14 +405,14 @@ export function Expenses() {
                       className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                       title="Edit Expense"
                     >
-                      <Edit2 className="w-4 h-4 inline" />
+                      <EditIcon className="w-4 h-4 inline" />
                     </button>
                     <button
                       onClick={() => setDeletingExpense(item)}
                       className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                       title="Delete Expense"
                     >
-                      <Trash2 className="w-4 h-4 inline" />
+                      <TrashIcon className="w-4 h-4 inline" />
                     </button>
                   </td>
                 </tr>
@@ -440,7 +440,7 @@ export function Expenses() {
                 onClick={handleCloseDrawer}
                 className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -555,7 +555,7 @@ export function Expenses() {
                 disabled={submitting}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>{editingExpense ? 'Update Expense' : 'Save Expense'}</span>
               </button>
             </div>
@@ -610,7 +610,7 @@ export function Expenses() {
                 disabled={submitting}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>Delete Permanently</span>
               </button>
             </div>

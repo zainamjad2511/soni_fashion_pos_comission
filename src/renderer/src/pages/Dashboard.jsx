@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import {
-  LayoutDashboard,
-  Package,
-  AlertTriangle,
-  Banknote,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
-  ShieldAlert,
-  Truck,
-  Users,
-  CheckCircle2,
-  Tag,
-  ChevronRight,
-  Receipt,
-  ShoppingCart,
-  Award,
-  Clock,
-  Wallet
-} from 'lucide-react'
+  DashboardIcon,
+  PackageIcon,
+  AlertTriangleIcon,
+  BanknoteIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  RefreshIcon,
+  ArrowUpRightIcon,
+  ArrowDownRightIcon,
+  ShieldAlertIcon,
+  TruckIcon,
+  UsersIcon,
+  CheckIcon,
+  TagIcon,
+  ChevronRightIcon,
+  ReceiptIcon,
+  CartIcon,
+  AwardIcon,
+  ClockIcon,
+  WalletIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { useNavigate } from 'react-router-dom'
 
 export function Dashboard() {
@@ -138,7 +138,7 @@ export function Dashboard() {
             disabled={loading}
             className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] flex items-center gap-2.5 text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
         </div>

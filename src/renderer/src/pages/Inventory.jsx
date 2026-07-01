@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react'
+import {
+  PackageIcon,
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  PowerOnIcon,
+  PowerOffIcon,
+  AlertTriangleIcon,
+  CheckIcon,
+  AlertIcon,
+  RefreshIcon,
+  CloseIcon,
+  FilterIcon,
+  LayersIcon,
+  BanknoteIcon,
+  TagIcon,
+  HistoryIcon,
+  TruckIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { createPortal } from 'react-dom'
-import {
-  Package,
-  Search,
-  Plus,
-  Edit2,
-  Power,
-  PowerOff,
-  AlertTriangle,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  X,
-  Filter,
-  Layers,
-  Banknote,
-  Tag,
-  History,
-  Truck
-} from 'lucide-react'
 import { StockInModal } from '../components/StockInModal.jsx'
 import { StockMovementsModal } from '../components/StockMovementsModal.jsx'
 import { Toast } from '../components/Toast.jsx'
@@ -243,7 +243,7 @@ export function Inventory() {
             onClick={() => setIsStockInOpen(true)}
             className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
           >
-            <Truck className="w-4 h-4 text-[#2E2822]" />
+            <TruckIcon className="w-4 h-4 text-[#2E2822]" />
             <span>Receive Shipment</span>
           </button>
 
@@ -251,7 +251,7 @@ export function Inventory() {
             onClick={() => handleOpenDrawer()}
             className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
           >
-            <Plus className="w-4 h-4" />
+            <PlusIcon className="w-4 h-4" />
             <span>Register Article</span>
           </button>
         </div>
@@ -260,7 +260,7 @@ export function Inventory() {
       {/* Filter & Search Toolbar — Borderless Spatial Row */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
+          <SearchIcon className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
           <input
             type="text"
             value={searchTerm}
@@ -321,7 +321,7 @@ export function Inventory() {
                 : 'bg-transparent text-[#7A6F69] hover:text-[#2E2822]'
             }`}
           >
-            <Filter className="w-3.5 h-3.5" />
+            <FilterIcon className="w-3.5 h-3.5" />
             <span>{filterActiveOnly ? 'Active Only' : 'All SKUs'}</span>
           </button>
 
@@ -330,7 +330,7 @@ export function Inventory() {
             className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
             title="Refresh Catalog"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
@@ -339,13 +339,13 @@ export function Inventory() {
       <div className="w-full overflow-x-auto">
         {loading && articles.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
             <span className="font-sans text-xs tracking-[0.18em] uppercase">Synchronizing Catalog...</span>
           </div>
         ) : articles.length === 0 ? (
           <div className="py-20 text-center">
             <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
-              <Package className="w-6 h-6" />
+              <PackageIcon className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
               No Articles Found
@@ -360,7 +360,7 @@ export function Inventory() {
                 onClick={() => handleOpenDrawer()}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase hover:bg-[#4A423A] transition-all inline-flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
+                <PlusIcon className="w-4 h-4" />
                 <span>Register First Article</span>
               </button>
             )}
@@ -390,7 +390,7 @@ export function Inventory() {
                   >
                     <td className="py-5 pr-4 whitespace-nowrap">
                       <span className="font-mono text-sm font-bold text-[#2E2822] tracking-wider inline-flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-[#7A6F69]" />
+                        <TagIcon className="w-4 h-4 text-[#7A6F69]" />
                         <span>{art.sku}</span>
                       </span>
                     </td>
@@ -438,21 +438,21 @@ export function Inventory() {
                         className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                         title="View Stock Movement Ledger"
                       >
-                        <History className="w-4 h-4 inline" />
+                        <HistoryIcon className="w-4 h-4 inline" />
                       </button>
                       <button
                         onClick={() => handleOpenDrawer(art)}
                         className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                         title="Edit Article & Pricing"
                       >
-                        <Edit2 className="w-4 h-4 inline" />
+                        <EditIcon className="w-4 h-4 inline" />
                       </button>
                       <button
                         onClick={() => handleToggleStatus(art)}
                         className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                         title={art.is_active ? 'Archive Article' : 'Activate Article'}
                       >
-                        {art.is_active ? <PowerOff className="w-4 h-4 inline" /> : <Power className="w-4 h-4 inline" />}
+                        {art.is_active ? <PowerOffIcon className="w-4 h-4 inline" /> : <PowerOnIcon className="w-4 h-4 inline" />}
                       </button>
                     </td>
                   </tr>
@@ -481,7 +481,7 @@ export function Inventory() {
                 onClick={handleCloseDrawer}
                 className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -680,7 +680,7 @@ export function Inventory() {
                 disabled={submitting}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>{submitting ? 'Saving...' : editingArticle ? 'Update Article' : 'Register Article'}</span>
               </button>
             </div>

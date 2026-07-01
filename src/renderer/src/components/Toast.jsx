@@ -1,5 +1,5 @@
 import React from 'react'
-import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { CheckIcon, AlertIcon } from './icons/TechnicalIcons.jsx'
 
 /**
  * Toast — Soni Fashion "Borderless Editorial" notification chip.
@@ -42,8 +42,8 @@ export function Toast({ type = 'success', message }) {
           style={{ color: isSuccess ? '#4A5D4E' : '#8C3A3A' }}
         >
           {isSuccess
-            ? <CheckCircle2 className="w-4 h-4" strokeWidth={2} />
-            : <AlertCircle  className="w-4 h-4" strokeWidth={2} />
+            ? <CheckIcon className="w-4 h-4" strokeWidth={1.25} />
+            : <AlertIcon  className="w-4 h-4" strokeWidth={1.25} />
           }
         </div>
 

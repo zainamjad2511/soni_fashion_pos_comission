@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import {
-  Users,
-  Search,
-  Plus,
-  Edit2,
-  Power,
-  PowerOff,
-  Phone,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  X,
-  Filter,
-  UserCheck,
-  Percent
-} from 'lucide-react'
+  UsersIcon,
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  PowerOnIcon,
+  PowerOffIcon,
+  PhoneIcon,
+  DocumentIcon,
+  CheckIcon,
+  AlertIcon,
+  RefreshIcon,
+  CloseIcon,
+  FilterIcon,
+  UserCheckIcon,
+  PercentIcon,
+} from '../components/icons/TechnicalIcons.jsx'
+import { createPortal } from 'react-dom'
 import { Commissions } from './Commissions.jsx'
 import { Toast } from '../components/Toast.jsx'
 
@@ -176,7 +176,7 @@ export function Salespersons() {
             onClick={() => handleOpenDrawer()}
             className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
           >
-            <Plus className="w-4 h-4" />
+            <PlusIcon className="w-4 h-4" />
             <span>Register Salesperson</span>
           </button>
         )}
@@ -211,7 +211,7 @@ export function Salespersons() {
           {/* Filter & Search Toolbar — Borderless Spatial Row */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
             <div className="relative w-full sm:max-w-md">
-              <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
+              <SearchIcon className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
               <input
                 type="text"
                 value={searchTerm}
@@ -230,7 +230,7 @@ export function Salespersons() {
                     : 'bg-transparent text-[#7A6F69] hover:text-[#2E2822]'
                 }`}
               >
-                <Filter className="w-3.5 h-3.5" />
+                <FilterIcon className="w-3.5 h-3.5" />
                 <span>{filterActiveOnly ? 'Active Only' : 'All Staff'}</span>
               </button>
               <button
@@ -238,7 +238,7 @@ export function Salespersons() {
                 className="p-2 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                 title="Refresh List"
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
@@ -247,13 +247,13 @@ export function Salespersons() {
           <div className="w-full overflow-x-auto">
             {loading && salespersons.length === 0 ? (
               <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
-                <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+                <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
                 <span className="font-sans text-xs tracking-[0.18em] uppercase">Synchronizing Staff Registry...</span>
               </div>
             ) : salespersons.length === 0 ? (
               <div className="py-20 text-center">
                 <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
-                  <UserCheck className="w-6 h-6" />
+                  <UserCheckIcon className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
                   No Salespersons Found
@@ -268,7 +268,7 @@ export function Salespersons() {
                     onClick={() => handleOpenDrawer()}
                     className="px-6 py-3 rounded-[2px] bg-[#2E2822] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase hover:bg-[#4A423A] transition-all inline-flex items-center gap-2"
                   >
-                    <Plus className="w-4 h-4" />
+                    <PlusIcon className="w-4 h-4" />
                     <span>Register First Member</span>
                   </button>
                 )}
@@ -307,7 +307,7 @@ export function Salespersons() {
                       <td className="py-5 px-6 text-[#2E2822]">
                         {staff.contact ? (
                           <div className="flex items-center gap-2 text-sm font-mono font-medium">
-                            <Phone className="w-4 h-4 text-[#7A6F69] shrink-0" />
+                            <PhoneIcon className="w-4 h-4 text-[#7A6F69] shrink-0" />
                             <span>{staff.contact}</span>
                           </div>
                         ) : (
@@ -317,7 +317,7 @@ export function Salespersons() {
                       <td className="py-5 px-6 text-[#7A6F69] max-w-xs truncate text-sm">
                         {staff.notes ? (
                           <div className="flex items-center gap-2 text-[#2E2822] truncate">
-                            <FileText className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
+                            <DocumentIcon className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
                             <span className="truncate">{staff.notes}</span>
                           </div>
                         ) : (
@@ -339,14 +339,14 @@ export function Salespersons() {
                           className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                           title="Edit Staff Member"
                         >
-                          <Edit2 className="w-4 h-4 inline" />
+                          <EditIcon className="w-4 h-4 inline" />
                         </button>
                         <button
                           onClick={() => handleToggleStatus(staff)}
                           className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
                           title={staff.is_active ? 'Deactivate Staff Member' : 'Activate Staff Member'}
                         >
-                          {staff.is_active ? <PowerOff className="w-4 h-4 inline" /> : <Power className="w-4 h-4 inline" />}
+                          {staff.is_active ? <PowerOffIcon className="w-4 h-4 inline" /> : <PowerOnIcon className="w-4 h-4 inline" />}
                         </button>
                       </td>
                     </tr>
@@ -378,7 +378,7 @@ export function Salespersons() {
                 onClick={handleCloseDrawer}
                 className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -444,7 +444,7 @@ export function Salespersons() {
                 disabled={submitting}
                 className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
               >
-                {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>{submitting ? 'Saving...' : editingSalesperson ? 'Update Profile' : 'Register Member'}</span>
               </button>
             </div>

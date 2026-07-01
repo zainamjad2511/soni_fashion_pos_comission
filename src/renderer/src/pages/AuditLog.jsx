@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import {
-  ShieldAlert,
-  Search,
-  Calendar,
-  Filter,
-  RefreshCw,
-  FileText,
-  Eye,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Database,
-  Lock,
-  X,
-  ArrowRight,
-  History
-} from 'lucide-react'
+  ShieldAlertIcon,
+  SearchIcon,
+  CalendarIcon,
+  FilterIcon,
+  RefreshIcon,
+  DocumentIcon,
+  EyeIcon,
+  AlertIcon,
+  CheckIcon,
+  ClockIcon,
+  DatabaseIcon,
+  LockIcon,
+  CloseIcon,
+  ArrowRightIcon,
+  HistoryIcon,
+} from '../components/icons/TechnicalIcons.jsx'
+import { StandardModal, StandardModalAction } from '../components/StandardModal.jsx'
 import { Toast } from '../components/Toast.jsx'
 
 export function AuditLog() {
@@ -186,7 +186,7 @@ export function AuditLog() {
           disabled={loading}
           className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Ledger</span>
         </button>
       </div>
@@ -216,7 +216,7 @@ export function AuditLog() {
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
         <form onSubmit={handleSearchSubmit} className="flex items-center gap-4 flex-1 max-w-md">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
+            <SearchIcon className="w-4 h-4 text-[#7A6F69] absolute left-0 top-3" />
             <input
               type="text"
               placeholder="Search descriptions, entities, or keywords..."
@@ -251,7 +251,7 @@ export function AuditLog() {
           </div>
 
           <div className="flex items-center gap-2 py-1 border-b border-[#C9C0B5] text-xs font-sans font-semibold text-[#2E2822]">
-            <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
+            <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69]" />
             <input
               type="date"
               value={startDate}
@@ -282,13 +282,13 @@ export function AuditLog() {
       <div className="w-full overflow-x-auto">
         {loading && logs.length === 0 ? (
           <div className="py-20 flex flex-col items-center justify-center text-[#7A6F69]">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
             <span className="font-sans text-xs tracking-[0.18em] uppercase">Scanning secure audit records...</span>
           </div>
         ) : logs.length === 0 ? (
           <div className="py-20 text-center">
             <div className="w-12 h-12 rounded-[2px] bg-[#EFEBE3] flex items-center justify-center text-[#7A6F69] mx-auto mb-4">
-              <ShieldAlert className="w-6 h-6" />
+              <ShieldAlertIcon className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-display font-bold text-[#2E2822] mb-1">
               No Audit Records Found
@@ -349,37 +349,33 @@ export function AuditLog() {
         )}
       </div>
 
-      {/* State Diff Inspection Modal — Borderless Editorial */}
-      {selectedLog && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#2E2822]/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] max-w-3xl w-full p-8 space-y-6 shadow-none animate-scale-up max-h-[85vh] flex flex-col text-[#2E2822]">
-            <div className="flex items-baseline justify-between border-b border-[#C9C0B5] pb-4">
-              <div>
-                <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
-                  Event Inspection #{selectedLog.id}
-                </span>
-                <h3 className="font-display font-bold text-2xl text-[#2E2822]">
-                  {selectedLog.action_type} — {selectedLog.entity_type}
-                </h3>
-                <p className="text-xs text-[#7A6F69] font-mono mt-1">
-                  Recorded at {selectedLog.performed_at}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 bg-[#EFEBE3] text-sm text-[#2E2822] font-sans font-medium">
+      <StandardModal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        eyebrow={`Event Inspection #${selectedLog?.id}`}
+        title={selectedLog ? `${selectedLog.action_type} — ${selectedLog.entity_type}` : ''}
+        subtitle={selectedLog ? `Recorded at ${selectedLog.performed_at}` : ''}
+        headerVariant="editorial"
+        maxWidth="2xl"
+        showCloseButton
+        zIndex={100}
+        footer={
+          <div className="flex justify-end">
+            <StandardModalAction onClick={() => setSelectedLog(null)} className="w-auto px-6">
+              Close Inspection
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {selectedLog && (
+          <>
+            <div className="p-6 bg-[#EFEBE3] text-sm text-[#2E2822] font-sans font-medium mb-6">
               <span className="font-bold text-[#7A6F69] uppercase tracking-wider text-[10px] block mb-1">Event Description</span>
               {selectedLog.description}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar flex-1">
-              <div className="p-6 bg-[#EFEBE3] border-l-2 border-[#7A6F69] space-y-2 flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-[#EFEBE3] space-y-2 flex flex-col border-b border-[#C9C0B5]">
                 <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-2">
                   <span className="text-xs font-bold text-[#2E2822] uppercase tracking-wider">Before (Old State)</span>
                 </div>
@@ -388,7 +384,7 @@ export function AuditLog() {
                 </pre>
               </div>
 
-              <div className="p-6 bg-[#EFEBE3] border-l-2 border-[#2E2822] space-y-2 flex flex-col">
+              <div className="p-6 bg-[#EFEBE3] space-y-2 flex flex-col border-b border-[#C9C0B5]">
                 <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-2">
                   <span className="text-xs font-bold text-[#2E2822] uppercase tracking-wider">After (New State)</span>
                 </div>
@@ -397,19 +393,9 @@ export function AuditLog() {
                 </pre>
               </div>
             </div>
-
-            <div className="flex justify-end pt-4 border-t border-[#C9C0B5]">
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
-              >
-                Close Inspection
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </>
+        )}
+      </StandardModal>
     </div>
   )
 }

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Store,
-  MapPin,
-  Phone,
-  Receipt,
-  Printer,
-  Percent,
-  Hash,
-  Save,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Sliders,
-  Sparkles,
-  Lock
-} from 'lucide-react'
+  StoreIcon,
+  LocationIcon,
+  PhoneIcon,
+  ReceiptIcon,
+  PrintIcon,
+  PercentIcon,
+  HashIcon,
+  SaveIcon,
+  CheckIcon,
+  AlertIcon,
+  RefreshIcon,
+  SlidersIcon,
+  SparklesIcon,
+  LockIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
 
 export function Settings() {
@@ -114,7 +114,7 @@ export function Settings() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-[#7A6F69]">
-        <RefreshCw className="w-8 h-8 animate-spin text-[#2E2822] mb-4" />
+        <RefreshIcon className="w-8 h-8 animate-spin text-[#2E2822] mb-4" />
         <span className="font-sans text-xs tracking-[0.18em] uppercase">Loading settings from database...</span>
       </div>
     )
@@ -145,9 +145,9 @@ export function Settings() {
           className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           {saving ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <RefreshIcon className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Save className="w-4 h-4" />
+            <SaveIcon className="w-4 h-4" />
           )}
           <span>{saving ? 'Persisting...' : 'Save Configuration'}</span>
         </button>
@@ -278,7 +278,7 @@ export function Settings() {
                     }}
                     className="text-[11px] font-bold text-[#2E2822] uppercase tracking-[0.1em] hover:underline flex items-center gap-1"
                   >
-                    <RefreshCw className="w-3 h-3" />
+                    <RefreshIcon className="w-3 h-3" />
                     <span>Refresh Printers</span>
                   </button>
                 </div>

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Percent,
-  Calendar,
-  Banknote,
-  TrendingUp,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Save,
-  Award,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Check
-} from 'lucide-react'
+  PercentIcon,
+  CalendarIcon,
+  BanknoteIcon,
+  TrendingUpIcon,
+  ClockIcon,
+  CheckIcon,
+  AlertIcon,
+  RefreshIcon,
+  SaveIcon,
+  AwardIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  DocumentIcon,
+  CheckMarkIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
 
 export function Commissions() {
@@ -239,7 +239,7 @@ export function Commissions() {
       {/* Month Selector Toolbar — Open Spatial Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
         <div className="flex items-center gap-3">
-          <Calendar className="w-4 h-4 text-[#7A6F69] shrink-0" />
+          <CalendarIcon className="w-4 h-4 text-[#7A6F69] shrink-0" />
           <span className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#2E2822]">Target Accounting Month:</span>
           <input
             type="month"
@@ -254,7 +254,7 @@ export function Commissions() {
           className="px-4 py-2.5 rounded-[2px] bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] transition-all flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-[0.12em]"
           title="Refresh Commissions"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
@@ -263,7 +263,7 @@ export function Commissions() {
       <div>
         {loading && listData.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-[#7A6F69]">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+            <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
             <span className="font-sans text-xs uppercase tracking-[0.18em] font-bold text-[#2E2822]">Calculating monthly sales and commission ledgers...</span>
           </div>
         ) : listData.length === 0 ? (
@@ -308,7 +308,7 @@ export function Commissions() {
                             className="p-1 rounded-[2px] text-[#7A6F69] hover:text-[#2E2822] transition-all"
                             title={isExpanded ? 'Collapse Attributions' : 'View Individual Sales'}
                           >
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
                           </button>
                         </td>
                         <td className="py-5 pr-6 font-bold text-[#2E2822]">
@@ -344,9 +344,9 @@ export function Commissions() {
                                 title="Save New Rate"
                               >
                                 {savingRateId === item.salesperson_id ? (
-                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  <RefreshIcon className="w-3 h-3 animate-spin" />
                                 ) : (
-                                  <Save className="w-3 h-3" />
+                                  <SaveIcon className="w-3 h-3" />
                                 )}
                                 <span>Save</span>
                               </button>
@@ -371,9 +371,9 @@ export function Commissions() {
                               title="Mark Pending Commissions as Paid"
                             >
                               {markingPaidId === item.salesperson_id ? (
-                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <RefreshIcon className="w-3 h-3 animate-spin" />
                               ) : (
-                                <Check className="w-3 h-3" />
+                                <CheckMarkIcon className="w-3 h-3" />
                               )}
                               <span>Mark Paid</span>
                             </button>
@@ -390,7 +390,7 @@ export function Commissions() {
                             <div className="space-y-4">
                               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-3">
                                 <div className="flex items-center gap-2 text-base font-bold text-[#2E2822]">
-                                  <FileText className="w-4 h-4" />
+                                  <DocumentIcon className="w-4 h-4" />
                                   <span>Individual Sale Attributions for {item.name} ({selectedMonth})</span>
                                 </div>
                                 <span className="text-sm text-[#7A6F69]">
@@ -400,7 +400,7 @@ export function Commissions() {
 
                               {drillDownLoading ? (
                                 <div className="py-8 flex items-center justify-center gap-2 text-[#7A6F69] text-sm font-bold uppercase tracking-wider">
-                                  <RefreshCw className="w-4 h-4 animate-spin text-[#2E2822]" />
+                                  <RefreshIcon className="w-4 h-4 animate-spin text-[#2E2822]" />
                                   <span>Loading commission items...</span>
                                 </div>
                               ) : drillDownItems.length === 0 ? (

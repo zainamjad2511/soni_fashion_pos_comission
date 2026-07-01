@@ -1,5 +1,5 @@
 import React from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangleIcon, RefreshIcon } from './icons/TechnicalIcons.jsx'
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -26,7 +26,7 @@ export class ErrorBoundary extends React.Component {
         <div className="min-h-screen w-full bg-[#F7F5F0] flex items-center justify-center p-8 font-sans text-[#2E2822]">
           <div className="max-w-xl w-full p-8 border-b border-[#2E2822] flex flex-col items-start text-left animate-fade-in">
             <div className="flex items-center gap-3 text-[#2E2822] mb-4">
-              <AlertTriangle className="w-6 h-6 animate-pulse" />
+              <AlertTriangleIcon className="w-6 h-6 animate-pulse" />
               <span className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Runtime Exception</span>
             </div>
             <h2 className="text-3xl font-display font-bold text-[#2E2822] mb-3 tracking-tight">
@@ -44,7 +44,7 @@ export class ErrorBoundary extends React.Component {
               onClick={this.handleReload}
               className="py-3 px-6 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] flex items-center gap-2 transition-all"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshIcon className="w-4 h-4" />
               <span>Reload Application</span>
             </button>
           </div>

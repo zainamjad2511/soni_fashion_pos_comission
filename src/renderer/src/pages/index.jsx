@@ -10,17 +10,6 @@ import { Returns as ReturnsComponent } from './Returns.jsx'
 import { Expenses as ExpensesComponent } from './Expenses.jsx'
 import { Reports as ReportsComponent } from './Reports.jsx'
 import { AuditLog as AuditLogComponent } from './AuditLog.jsx'
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  RotateCcw,
-  Receipt,
-  BarChart3,
-  Users,
-  Settings,
-  ShieldAlert
-} from 'lucide-react'
 
 export function DashboardPage() {
   return <DashboardComponent />

@@ -1,33 +1,33 @@
 import React, { useState, useEffect } from 'react'
+import {
+  ReturnIcon,
+  SearchIcon,
+  DocumentIcon,
+  AlertIcon,
+  CheckIcon,
+  ArrowRightIcon,
+  HistoryIcon,
+  PlusCircleIcon,
+  ShoppingBagIcon,
+  CustomerIcon,
+  CalendarIcon,
+  TagIcon,
+  PackageIcon,
+  XCircleIcon,
+  PlusIcon,
+  MinusIcon,
+  TrashIcon,
+  RefreshIcon,
+  PrintIcon,
+  CreditCardIcon,
+  BanknoteIcon,
+  AlertTriangleIcon,
+  EyeIcon,
+  FilterIcon,
+  CloseIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { createPortal } from 'react-dom'
-import {
-  RotateCcw,
-  Search,
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-  History,
-  PlusCircle,
-  ShoppingBag,
-  User,
-  Calendar,
-  Tag,
-  Package,
-  XCircle,
-  Plus,
-  Minus,
-  Trash2,
-  RefreshCw,
-  Printer,
-  CreditCard,
-  Banknote,
-  AlertTriangle,
-  Eye,
-  Filter,
-  X
-} from 'lucide-react'
 import { Toast } from '../components/Toast.jsx'
 
 export function Returns() {
@@ -541,7 +541,7 @@ export function Returns() {
               : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
-          <FileText className="w-4 h-4" />
+          <DocumentIcon className="w-4 h-4" />
           <span>Invoice Processing</span>
         </button>
         <button
@@ -552,7 +552,7 @@ export function Returns() {
               : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
-          <Search className="w-4 h-4" />
+          <SearchIcon className="w-4 h-4" />
           <span>Article SKU Search</span>
         </button>
         <button
@@ -563,7 +563,7 @@ export function Returns() {
               : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircleIcon className="w-4 h-4" />
           <span>Manual Return</span>
         </button>
         <button
@@ -574,7 +574,7 @@ export function Returns() {
               : 'border-transparent text-[#7A6F69] hover:text-[#2E2822]'
           }`}
         >
-          <History className="w-4 h-4" />
+          <HistoryIcon className="w-4 h-4" />
           <span>Returns History Log</span>
         </button>
       </div>
@@ -586,7 +586,7 @@ export function Returns() {
           <div className="py-6 border-b border-[#C9C0B5]">
             <form onSubmit={handleInvoiceLookup} className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={invoiceQuery}
@@ -616,11 +616,11 @@ export function Returns() {
                 className="bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] font-bold px-8 py-3 rounded-[2px] transition-all uppercase tracking-[0.12em] flex items-center justify-center gap-2 text-xs shrink-0 w-full md:w-auto"
               >
                 {loadingLookup ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshIcon className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
                     <span>Lookup Sale</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRightIcon className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -628,7 +628,7 @@ export function Returns() {
 
             {lookupError && (
               <div className="mt-4 p-4 bg-[#EFEBE3] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
-                <XCircle className="w-4 h-4 shrink-0" />
+                <XCircleIcon className="w-4 h-4 shrink-0" />
                 <span>{lookupError}</span>
               </div>
             )}
@@ -639,7 +639,7 @@ export function Returns() {
             <div className="bg-[#EFEBE3] p-8 space-y-6 animate-fade-in">
               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-5">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-[#2E2822]" />
+                  <CheckIcon className="w-6 h-6 text-[#2E2822]" />
                   <div>
                     <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Transaction Successfully Processed</h2>
                     <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {processResult.returnNumber}</p>
@@ -649,7 +649,7 @@ export function Returns() {
                   onClick={() => { setSelectedSale(null); setProcessResult(null); setInvoiceQuery(''); }}
                   className="px-4 py-2 bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] rounded-[2px] text-xs font-bold uppercase tracking-[0.1em] transition-all flex items-center gap-2"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Start New Return
+                  <RefreshIcon className="w-3.5 h-3.5" /> Start New Return
                 </button>
               </div>
 
@@ -680,7 +680,7 @@ export function Returns() {
                   onClick={() => handlePrintReturnVoucher(processResult)}
                   className="px-6 py-3 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-[0.12em] transition-all flex items-center gap-2"
                 >
-                  <Printer className="w-4 h-4" /> Print Return / Exchange Slip
+                  <PrintIcon className="w-4 h-4" /> Print Return / Exchange Slip
                 </button>
               </div>
             </div>
@@ -694,7 +694,7 @@ export function Returns() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-1.5 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> [Verified Completed Sale]
+                      <CheckIcon className="w-3.5 h-3.5" /> [Verified Completed Sale]
                     </span>
                     <h2 className="text-xl font-bold text-[#2E2822] font-mono">{selectedSale.invoice_number}</h2>
                   </div>
@@ -712,14 +712,14 @@ export function Returns() {
                     title="Standard refunds are temporarily disabled. Only exchanges are permitted."
                     className="px-4 py-2 rounded-[2px] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 text-[#7A6F69] cursor-not-allowed bg-[#EFEBE3]"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" /> Standard Refund (Disabled)
+                    <ReturnIcon className="w-3.5 h-3.5" /> Standard Refund (Disabled)
                   </button>
                   <button
                     type="button"
                     onClick={() => setReturnType('exchange')}
                     className="px-4 py-2 rounded-[2px] font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#2E2822] text-[#F7F5F0]"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Item Exchange
+                    <RefreshIcon className="w-3.5 h-3.5" /> Item Exchange
                   </button>
                 </div>
               </div>
@@ -728,7 +728,7 @@ export function Returns() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4" /> Select Items to Return
+                    <ShoppingBagIcon className="w-4 h-4" /> Select Items to Return
                   </h3>
                   <span className="text-xs text-[#2E2822] font-mono font-bold">Total Refund Credit: {formatCurrency(refundCredit)}</span>
                 </div>
@@ -770,7 +770,7 @@ export function Returns() {
                                   onClick={() => handleQtyChange(item.id, -1, item.available_to_return)}
                                   className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] disabled:opacity-30 rounded-[2px] transition-all"
                                 >
-                                  <Minus className="w-3.5 h-3.5" />
+                                  <MinusIcon className="w-3.5 h-3.5" />
                                 </button>
                                 <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{currentQty}</span>
                                 <button
@@ -779,7 +779,7 @@ export function Returns() {
                                   onClick={() => handleQtyChange(item.id, 1, item.available_to_return)}
                                   className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] disabled:opacity-30 rounded-[2px] transition-all"
                                 >
-                                  <Plus className="w-3.5 h-3.5" />
+                                  <PlusIcon className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -799,10 +799,10 @@ export function Returns() {
                 <div className="border-t border-[#C9C0B5] pt-6 space-y-4 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
+                      <RefreshIcon className="w-4 h-4" /> Add Replacement Articles (Exchange Cart)
                     </h3>
                     <div className="relative w-full sm:w-80">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
+                      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
                       <input
                         type="text"
                         value={articleSearchQuery}
@@ -863,7 +863,7 @@ export function Returns() {
                                     onClick={() => updateReplacementQty(item.article_id, -1)}
                                     className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                                   >
-                                    <Minus className="w-3.5 h-3.5" />
+                                    <MinusIcon className="w-3.5 h-3.5" />
                                   </button>
                                   <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</span>
                                   <button
@@ -871,7 +871,7 @@ export function Returns() {
                                     onClick={() => updateReplacementQty(item.article_id, 1)}
                                     className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                                   >
-                                    <Plus className="w-3.5 h-3.5" />
+                                    <PlusIcon className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </td>
@@ -882,7 +882,7 @@ export function Returns() {
                                   onClick={() => removeReplacementItem(item.article_id)}
                                   className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <TrashIcon className="w-4 h-4" />
                                 </button>
                               </td>
                             </tr>
@@ -965,10 +965,10 @@ export function Returns() {
                     className="w-full py-3.5 rounded-[2px] font-bold text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2 mt-2 bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50"
                   >
                     {processingReturn ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <RefreshIcon className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 className="w-4 h-4" />
+                        <CheckIcon className="w-4 h-4" />
                         <span>Confirm &amp; Complete {returnType === 'refund' ? 'Refund [F12]' : 'Exchange [F12]'}</span>
                       </>
                     )}
@@ -986,7 +986,7 @@ export function Returns() {
           <div className="py-6 border-b border-[#C9C0B5]">
             <form onSubmit={handleSkuSearch} className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={skuQuery}
@@ -1001,11 +1001,11 @@ export function Returns() {
                 className="bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] font-bold px-8 py-3 rounded-[2px] transition-all uppercase tracking-[0.12em] flex items-center justify-center gap-2 text-xs shrink-0 w-full md:w-auto"
               >
                 {loadingSku ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshIcon className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
                     <span>Search Sales</span>
-                    <Search className="w-4 h-4" />
+                    <SearchIcon className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -1013,7 +1013,7 @@ export function Returns() {
 
             {skuError && (
               <div className="mt-4 p-4 bg-[#EFEBE3] flex items-center gap-3 text-[#2E2822] text-xs font-bold font-sans">
-                <XCircle className="w-4 h-4 shrink-0" />
+                <XCircleIcon className="w-4 h-4 shrink-0" />
                 <span>{skuError}</span>
               </div>
             )}
@@ -1024,7 +1024,7 @@ export function Returns() {
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-4">
                 <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                  <Package className="w-4 h-4" />
+                  <PackageIcon className="w-4 h-4" />
                   Matching Historical Sales ({matchingSales.length})
                 </h3>
                 <span className="text-xs text-[#7A6F69]">Click &quot;Select Sale&quot; to inspect items and process return.</span>
@@ -1054,7 +1054,7 @@ export function Returns() {
                             className="px-4 py-1.5 border border-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mx-auto"
                           >
                             <span>Select Sale</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <ArrowRightIcon className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
@@ -1075,7 +1075,7 @@ export function Returns() {
             <div className="bg-[#EFEBE3] p-8 space-y-6 animate-fade-in">
               <div className="flex items-center justify-between border-b border-[#C9C0B5] pb-5">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-[#2E2822]" />
+                  <CheckIcon className="w-6 h-6 text-[#2E2822]" />
                   <div>
                     <h2 className="text-xl font-display font-bold text-[#2E2822] uppercase tracking-wider">Manual Return Processed &amp; Stock Restored</h2>
                     <p className="text-xs text-[#7A6F69] font-mono mt-0.5">Return Reference: {manualResult.returnNumber}</p>
@@ -1085,7 +1085,7 @@ export function Returns() {
                   onClick={() => setManualResult(null)}
                   className="px-4 py-2 bg-[#2E2822] text-[#F7F5F0] hover:bg-[#4A423A] rounded-[2px] text-xs font-bold uppercase tracking-[0.1em] transition-all flex items-center gap-2"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Process Another Manual Return
+                  <RefreshIcon className="w-3.5 h-3.5" /> Process Another Manual Return
                 </button>
               </div>
 
@@ -1098,7 +1098,7 @@ export function Returns() {
                   onClick={() => handlePrintReturnVoucher(manualResult)}
                   className="px-6 py-3 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-[0.12em] transition-all flex items-center gap-2"
                 >
-                  <Printer className="w-4 h-4" /> Print Credit Voucher
+                  <PrintIcon className="w-4 h-4" /> Print Credit Voucher
                 </button>
               </div>
             </div>
@@ -1109,14 +1109,14 @@ export function Returns() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C9C0B5] pb-5">
                 <div>
                   <h2 className="text-lg font-bold text-[#2E2822] flex items-center gap-2">
-                    <PlusCircle className="w-5 h-5" /> Manual Return Processing (No Original Receipt)
+                    <PlusCircleIcon className="w-5 h-5" /> Manual Return Processing (No Original Receipt)
                   </h2>
                   <p className="text-xs text-[#7A6F69] mt-1">
                     Direct inventory selection for customer returns when original invoice is missing. Automatically restores inventory stock.
                   </p>
                 </div>
                 <div className="bg-[#EFEBE3] px-3.5 py-2 rounded-[2px] flex items-center gap-2 text-[#2E2822] text-xs font-bold uppercase tracking-wider shrink-0">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <AlertTriangleIcon className="w-4 h-4 shrink-0" />
                   <span>Mandatory Reason Note Required</span>
                 </div>
               </div>
@@ -1124,7 +1124,7 @@ export function Returns() {
               {/* Search Article Bar */}
               <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-[#EFEBE3] p-4 rounded-[2px]">
                 <div className="text-xs font-bold uppercase tracking-wider text-[#2E2822] flex items-center gap-2 w-full sm:w-auto">
-                  <Search className="w-4 h-4 shrink-0" />
+                  <SearchIcon className="w-4 h-4 shrink-0" />
                   <span>Search &amp; Add Article to Return Cart:</span>
                 </div>
                 <div className="relative w-full sm:w-96">
@@ -1189,7 +1189,7 @@ export function Returns() {
                                 onClick={() => updateManualQty(item.article_id, -1)}
                                 className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                               >
-                                <Minus className="w-3.5 h-3.5" />
+                                <MinusIcon className="w-3.5 h-3.5" />
                               </button>
                               <span className="w-8 text-center font-mono font-bold text-[#2E2822]">{item.quantity}</span>
                               <button
@@ -1197,7 +1197,7 @@ export function Returns() {
                                 onClick={() => updateManualQty(item.article_id, 1)}
                                 className="p-1 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
                               >
-                                <Plus className="w-3.5 h-3.5" />
+                                <PlusIcon className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
@@ -1219,7 +1219,7 @@ export function Returns() {
                               onClick={() => removeManualItem(item.article_id)}
                               className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                           </td>
                         </tr>
@@ -1273,10 +1273,10 @@ export function Returns() {
                     className="w-full py-3.5 rounded-[2px] font-bold bg-[#2E2822] hover:bg-[#4A423A] disabled:opacity-50 text-[#F7F5F0] text-xs uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-2"
                   >
                     {processingManual ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <RefreshIcon className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle2 className="w-4 h-4" />
+                        <CheckIcon className="w-4 h-4" />
                         <span>Confirm &amp; Issue Manual Credit Voucher</span>
                       </>
                     )}
@@ -1300,20 +1300,20 @@ export function Returns() {
           <div className="py-6 border-b border-[#C9C0B5] space-y-4">
             <div className="flex items-center justify-between pb-2">
               <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
-                <Filter className="w-4 h-4" /> Filter Historical Returns &amp; Exchanges
+                <FilterIcon className="w-4 h-4" /> Filter Historical Returns &amp; Exchanges
               </h3>
               <button
                 onClick={fetchReturnsHistory}
                 disabled={loadingHistory}
                 className="px-4 py-1.5 bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} /> Refresh Log
+                <RefreshIcon className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} /> Refresh Log
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
+                <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
                 <input
                   type="text"
                   value={historySearch}
@@ -1375,7 +1375,7 @@ export function Returns() {
                   {loadingHistory ? (
                     <tr>
                       <td colSpan="7" className="py-12 text-center text-[#7A6F69] font-sans">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 text-[#2E2822]" />
+                        <RefreshIcon className="w-6 h-6 animate-spin mx-auto mb-3 text-[#2E2822]" />
                         <span className="text-xs font-bold uppercase tracking-wider">Loading historical returns...</span>
                       </td>
                     </tr>
@@ -1408,14 +1408,14 @@ export function Returns() {
                               title="Inspect Details"
                               className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
                             >
-                              <Eye className="w-4 h-4" />
+                              <EyeIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handlePrintReturnVoucher(ret)}
                               title="Reprint Thermal Voucher"
                               className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
                             >
-                              <Printer className="w-4 h-4" />
+                              <PrintIcon className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -1435,7 +1435,7 @@ export function Returns() {
           <div className="bg-[#F7F5F0] rounded-[2px] max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col font-sans shadow-none">
             <div className="p-6 border-b border-[#C9C0B5] flex items-center justify-between sticky top-0 bg-[#F7F5F0] z-10">
               <div className="flex items-center gap-3">
-                <FileText className="w-6 h-6 text-[#2E2822]" />
+                <DocumentIcon className="w-6 h-6 text-[#2E2822]" />
                 <div>
                   <h3 className="text-lg font-bold text-[#2E2822] font-mono">{selectedHistoryDetail.return_number}</h3>
                   <p className="text-xs text-[#7A6F69] font-mono">{new Date(selectedHistoryDetail.return_date).toLocaleString()}</p>
@@ -1445,7 +1445,7 @@ export function Returns() {
                 onClick={() => setSelectedHistoryDetail(null)}
                 className="p-2 text-[#7A6F69] hover:text-[#2E2822] rounded-[2px] hover:bg-[#EFEBE3] transition-colors"
               >
-                <X className="w-5 h-5" />
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
 
@@ -1479,7 +1479,7 @@ export function Returns() {
               {/* Returned Items Table */}
               <div>
                 <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5" /> Returned Items Restored to Inventory
+                  <ReturnIcon className="w-3.5 h-3.5" /> Returned Items Restored to Inventory
                 </h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
@@ -1512,7 +1512,7 @@ export function Returns() {
               {(selectedHistoryDetail.replacement_items || []).length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
-                    <RefreshCw className="w-3.5 h-3.5" /> Issued Replacement Articles (Exchange Sale #{selectedHistoryDetail.exchange_new_sale_id})
+                    <RefreshIcon className="w-3.5 h-3.5" /> Issued Replacement Articles (Exchange Sale #{selectedHistoryDetail.exchange_new_sale_id})
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
@@ -1554,7 +1554,7 @@ export function Returns() {
                 onClick={() => handlePrintReturnVoucher(selectedHistoryDetail)}
                 className="px-6 py-2.5 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
               >
-                <Printer className="w-4 h-4" /> Print Thermal Voucher
+                <PrintIcon className="w-4 h-4" /> Print Thermal Voucher
               </button>
             </div>
           </div>

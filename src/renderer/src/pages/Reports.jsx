@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import {
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Banknote,
-  Package,
-  Calendar,
-  Printer,
-  RefreshCw,
-  FileText,
-  PieChart,
-  Award,
-  AlertCircle,
-  CheckCircle2,
-  Layers,
-  ArrowRight
-} from 'lucide-react'
+  BarChartIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  BanknoteIcon,
+  PackageIcon,
+  CalendarIcon,
+  PrintIcon,
+  RefreshIcon,
+  DocumentIcon,
+  PieChartIcon,
+  AwardIcon,
+  AlertIcon,
+  CheckIcon,
+  LayersIcon,
+  ArrowRightIcon,
+} from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
 
 export function Reports() {
@@ -175,14 +175,14 @@ export function Reports() {
             className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.12em] flex items-center gap-2 transition-all"
             title="Refresh Report Data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
           <button
             onClick={handlePrint}
             className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] flex items-center gap-2.5 transition-all"
           >
-            <Printer className="w-3.5 h-3.5" />
+            <PrintIcon className="w-3.5 h-3.5" />
             <span>Print Report</span>
           </button>
         </div>
@@ -230,7 +230,7 @@ export function Reports() {
         <div className="flex flex-wrap items-center gap-6 justify-end">
           {activeTab !== 'inventory' ? (
             <div className="flex items-center gap-2 py-1 text-xs font-sans font-semibold text-[#2E2822]">
-              <Calendar className="w-3.5 h-3.5 text-[#7A6F69]" />
+              <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69]" />
               <span className="text-[#7A6F69] uppercase tracking-wider font-bold">From</span>
               <input
                 type="date"
@@ -274,7 +274,7 @@ export function Reports() {
       {/* Loading Indicator */}
       {loading ? (
         <div className="py-24 flex flex-col items-center justify-center text-[#7A6F69]">
-          <RefreshCw className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
+          <RefreshIcon className="w-6 h-6 animate-spin text-[#2E2822] mb-3" />
           <p className="font-sans text-xs tracking-[0.18em] uppercase font-bold text-[#2E2822]">Compiling Financial Ledger Data...</p>
           <p className="text-xs text-[#7A6F69] mt-1 font-sans">Aggregating database transactions and computing KPIs</p>
         </div>
