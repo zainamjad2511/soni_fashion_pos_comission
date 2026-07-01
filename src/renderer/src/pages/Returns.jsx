@@ -330,7 +330,12 @@ export function Returns() {
       }
       setReplacementCart(replacementCart.map((item) =>
         item.article_id === article.id
-          ? { ...item, quantity: item.quantity + 1, line_total: (item.quantity + 1) * item.retail_price_snapshot }
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+              final_amount_input: (item.quantity + 1) * item.retail_price_snapshot - (item.discount_amount || 0),
+              line_total: (item.quantity + 1) * item.retail_price_snapshot - (item.discount_amount || 0),
+            }
           : item
       ))
     } else {
@@ -349,6 +354,7 @@ export function Returns() {
           retail_price_snapshot: Number(article.retail_price || article.selling_price || 0),
           wholesale_price_snapshot: Number(article.wholesale_price || article.purchase_price || 0),
           discount_amount: 0,
+          final_amount_input: Number(article.retail_price || article.selling_price || 0),
           line_total: Number(article.retail_price || article.selling_price || 0)
         }
       ])
@@ -361,9 +367,50 @@ export function Returns() {
     setReplacementCart(replacementCart.map((item) => {
       if (item.article_id === articleId) {
         const nextQty = Math.max(1, Math.min(item.max_quantity, item.quantity + delta))
-        return { ...item, quantity: nextQty, line_total: nextQty * item.retail_price_snapshot }
+        const subtotal = nextQty * item.retail_price_snapshot
+        const finalVal = item.final_amount_input !== undefined && item.final_amount_input !== ''
+          ? Number(item.final_amount_input)
+          : subtotal - (item.discount_amount || 0)
+        const discount = subtotal - finalVal
+        return {
+          ...item,
+          quantity: nextQty,
+          discount_amount: discount,
+          final_amount_input: finalVal,
+          line_total: finalVal,
+        }
       }
       return item
+    }))
+  }
+
+  const updateReplacementFinalAmount = (articleId, finalAmountInput) => {
+    setReplacementCart(replacementCart.map((item) => {
+      if (item.article_id !== articleId) return item
+
+      const subtotal = item.retail_price_snapshot * item.quantity
+      if (finalAmountInput === '' || finalAmountInput === null || finalAmountInput === undefined) {
+        return { ...item, final_amount_input: '', discount_amount: 0, line_total: subtotal }
+      }
+
+      const target = Number(finalAmountInput)
+      if (Number.isNaN(target)) return item
+      if (target > subtotal) {
+        showToast('error', `Final amount cannot exceed retail subtotal (${formatCurrency(subtotal)}).`)
+        return item
+      }
+      if (target <= 0) {
+        showToast('error', 'Final amount must be greater than zero.')
+        return item
+      }
+
+      const discount = subtotal - target
+      return {
+        ...item,
+        final_amount_input: finalAmountInput,
+        discount_amount: discount,
+        line_total: target,
+      }
     }))
   }
 
@@ -372,7 +419,7 @@ export function Returns() {
   }
 
   const calculateReplacementTotal = () => {
-    return replacementCart.reduce((sum, item) => sum + item.line_total, 0)
+    return replacementCart.reduce((sum, item) => sum + Number(item.line_total || 0), 0)
   }
   const replacementTotal = calculateReplacementTotal()
   const netSettlement = replacementTotal - refundCredit
@@ -874,6 +921,8 @@ export function Returns() {
                           <th className="py-3 pr-4">Replacement Article</th>
                           <th className="py-3 px-4 text-right">Unit Price</th>
                           <th className="py-3 px-4 text-center">Quantity</th>
+                          <th className="py-3 px-4 text-right">Final Amount</th>
+                          <th className="py-3 px-4 text-right">Discount</th>
                           <th className="py-3 px-4 text-right">Line Total</th>
                           <th className="py-3 pl-4 text-center">Action</th>
                         </tr>
@@ -881,7 +930,7 @@ export function Returns() {
                       <tbody className="divide-y divide-[#C9C0B5]">
                         {replacementCart.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">No replacement items added yet. Search and select articles above.</td>
+                            <td colSpan="7" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">No replacement items added yet. Search and select articles above.</td>
                           </tr>
                         ) : (
                           replacementCart.map((item) => (
@@ -909,6 +958,20 @@ export function Returns() {
                                     <PlusIcon className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={item.final_amount_input !== undefined ? item.final_amount_input : item.line_total}
+                                  onFocus={(e) => e.target.select()}
+                                  onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
+                                  onChange={(e) => updateReplacementFinalAmount(item.article_id, e.target.value)}
+                                  className="w-24 py-1 px-2 text-right bg-[#F7F5F0] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:bg-white border-b border-[#C9C0B5]"
+                                />
+                              </td>
+                              <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
+                                {(item.discount_amount || 0) > 0 ? formatCurrency(item.discount_amount) : '0'}
                               </td>
                               <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.line_total)}</td>
                               <td className="py-3.5 pl-4 text-center">

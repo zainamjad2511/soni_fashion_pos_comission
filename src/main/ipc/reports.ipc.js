@@ -50,13 +50,43 @@ export function registerReportsHandlers() {
     }
 
     query += ' GROUP BY s.id ORDER BY s.sale_date DESC'
-    const rows = db.prepare(query).all(...params)
+    const saleRows = db.prepare(query).all(...params)
 
-    const total_sales = rows.length
-    const total_items = rows.reduce((acc, r) => acc + Number(r.total_items), 0)
-    const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total), 0)
+    const returnRows = db.prepare(`
+      SELECT
+        r.id,
+        r.return_number AS invoice_number,
+        r.return_date AS sale_date,
+        r.refund_credit AS subtotal,
+        0 AS total_discount,
+        -ABS(r.refund_credit) AS grand_total,
+        r.return_type AS payment_method,
+        'return' AS status,
+        sp.name AS salesperson_name,
+        COALESCE((
+          SELECT SUM(ri.quantity_returned)
+          FROM return_items ri
+          WHERE ri.return_id = r.id
+        ), 0) AS total_items,
+        'return' AS record_type
+      FROM returns r
+      LEFT JOIN salespersons sp ON r.processed_by = sp.id
+      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
+      ORDER BY r.return_date DESC
+    `).all(startDate, endDate)
 
-    return { sales: rows, summary: { total_sales, total_items, total_revenue } }
+    const sales = saleRows.map((row) => ({ ...row, record_type: 'sale' }))
+    const returns = returnRows.map((row) => ({ ...row, record_type: 'return' }))
+    const rows = [...sales, ...returns].sort(
+      (a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime()
+    )
+
+    const total_sales = sales.length
+    const total_returns = returns.length
+    const total_items = rows.reduce((acc, r) => acc + Number(r.total_items || 0), 0)
+    const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total || 0), 0)
+
+    return { sales: rows, summary: { total_sales, total_returns, total_items, total_revenue } }
   }
   handleIpc('reports:salesSummary', handleSalesSummary)
   handleIpc('reports:dailySales', handleSalesSummary) // Backward compatibility alias
@@ -75,19 +105,54 @@ export function registerReportsHandlers() {
       WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
     `).get(startDate, endDate)
 
+    const returnsRes = db.prepare(`
+      SELECT COALESCE(SUM(r.refund_credit), 0) AS return_revenue
+      FROM returns r
+      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
+    `).get(startDate, endDate)
+
+    const returnCogsRes = db.prepare(`
+      SELECT COALESCE(SUM(
+        CASE
+          WHEN si.id IS NOT NULL THEN si.wholesale_price_snapshot * ri.quantity_returned
+          ELSE a.wholesale_price * ri.quantity_returned
+        END
+      ), 0) AS return_cogs
+      FROM return_items ri
+      JOIN returns r ON ri.return_id = r.id
+      LEFT JOIN sale_items si ON ri.sale_item_id = si.id
+      JOIN articles a ON ri.article_id = a.id
+      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
+    `).get(startDate, endDate)
+
     const expRes = db.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total_expenses
       FROM expenses
       WHERE expense_date >= ? AND expense_date <= ?
     `).get(startDate, endDate)
 
-    const revenue = Number(salesRes?.revenue || 0)
-    const cogs = Number(salesRes?.cogs || 0)
+    const grossSalesRevenue = Number(salesRes?.revenue || 0)
+    const returnRevenue = Number(returnsRes?.return_revenue || 0)
+    const grossSalesCogs = Number(salesRes?.cogs || 0)
+    const returnCogs = Number(returnCogsRes?.return_cogs || 0)
+
+    const revenue = grossSalesRevenue - returnRevenue
+    const cogs = Math.max(0, grossSalesCogs - returnCogs)
     const gross_profit = revenue - cogs
     const total_expenses = Number(expRes?.total_expenses || 0)
     const net_profit = gross_profit - total_expenses
 
-    return { revenue, cogs, gross_profit, total_expenses, net_profit }
+    return {
+      revenue,
+      cogs,
+      gross_profit,
+      total_expenses,
+      net_profit,
+      gross_sales_revenue: grossSalesRevenue,
+      return_revenue: returnRevenue,
+      gross_sales_cogs: grossSalesCogs,
+      return_cogs: returnCogs,
+    }
   }
   handleIpc('reports:profitSummary', handleProfitSummary)
   handleIpc('reports:monthlyProfit', handleProfitSummary) // Backward compatibility alias

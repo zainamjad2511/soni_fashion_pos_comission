@@ -60,8 +60,15 @@ export function Dashboard() {
           }
         }
 
-        // Fetch today's sales telemetry
-        if (window.electronAPI.sales) {
+        // Fetch today's sales telemetry (includes SF-RET return vouchers as negative entries)
+        if (window.electronAPI.reports) {
+          const salesRes = await window.electronAPI.reports.salesSummary({ start_date: todayStr, end_date: todayStr })
+          if (salesRes?.success && salesRes.data?.summary) {
+            const { total_sales, total_returns, total_revenue } = salesRes.data.summary
+            setTodaySalesCount(Number(total_sales || 0) + Number(total_returns || 0))
+            setTodayRevenue(Number(total_revenue || 0))
+          }
+        } else if (window.electronAPI.sales) {
           const salesRes = await window.electronAPI.sales.list({ start_date: todayStr, end_date: todayStr, status: 'completed' })
           const salesList = (salesRes && salesRes.success && Array.isArray(salesRes.data)) ? salesRes.data : (Array.isArray(salesRes) ? salesRes : [])
           setTodaySalesCount(salesList.length)

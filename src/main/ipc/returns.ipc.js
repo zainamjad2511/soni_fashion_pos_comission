@@ -227,15 +227,25 @@ export function registerReturnsHandlers() {
           const retail = Number(rItem.retail_price_snapshot ?? art.retail_price)
           const wholesale = Number(rItem.wholesale_price_snapshot ?? art.wholesale_price)
           const disc = Number(rItem.discount_amount ?? 0)
-          const lineTotal = (retail * q) - disc
-          subtotal += retail * q
-          itemsTotalDiscount += disc
+          const lineSubtotal = retail * q
+          const lineTotal = rItem.line_total != null ? Number(rItem.line_total) : lineSubtotal - disc
+
+          if (lineTotal <= 0) {
+            throw new Error(`Final amount for "${art.name}" must be greater than zero.`)
+          }
+          if (lineTotal > lineSubtotal) {
+            throw new Error(`Final amount for "${art.name}" cannot exceed retail subtotal (Rs. ${lineSubtotal.toLocaleString()}).`)
+          }
+
+          const resolvedDiscount = lineSubtotal - lineTotal
+          subtotal += lineSubtotal
+          itemsTotalDiscount += resolvedDiscount
           return {
             article_id: art.id,
             quantity: q,
             retail_price_snapshot: retail,
             wholesale_price_snapshot: wholesale,
-            discount_amount: disc,
+            discount_amount: resolvedDiscount,
             line_total: lineTotal
           }
         })

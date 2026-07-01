@@ -334,8 +334,13 @@ export function Reports() {
                       </tr>
                     ) : (
                       salesData.sales.map(s => (
-                        <tr key={s.id} className="hover:bg-[#EFEBE3] transition-colors">
-                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-sm">{s.invoice_number}</td>
+                        <tr key={`${s.record_type || 'sale'}-${s.id}`} className={`hover:bg-[#EFEBE3] transition-colors ${s.record_type === 'return' ? 'text-[#7A6F69]' : ''}`}>
+                          <td className="py-5 pr-4 font-mono font-bold text-[#2E2822] text-sm">
+                            {s.invoice_number}
+                            {s.record_type === 'return' && (
+                              <span className="ml-2 text-[10px] uppercase tracking-wider text-[#7A6F69]">Return</span>
+                            )}
+                          </td>
                           <td className="py-5 px-4 text-[#7A6F69] font-mono text-sm">{s.sale_date}</td>
                           <td className="py-5 px-4 text-[#2E2822] font-semibold text-base">{s.salesperson_name || 'Counter Staff'}</td>
                           <td className="py-5 px-4">
