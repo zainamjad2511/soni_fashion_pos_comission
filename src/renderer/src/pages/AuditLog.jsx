@@ -45,73 +45,23 @@ export function AuditLog() {
   const fetchAuditLogs = async () => {
     setLoading(true)
     try {
-      if (window.electronAPI && window.electronAPI.audit) {
-        const filters = {
-          search: searchQuery,
-          actionType: actionTypeFilter,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined
-        }
-        const res = await window.electronAPI.audit.list(filters)
-        const list = (res && res.success && Array.isArray(res.data))
-          ? res.data
-          : (Array.isArray(res) ? res : [])
-        setLogs(list)
-      } else {
-        // Mock fallback for non-electron environment
-        setLogs([
-          {
-            id: 1005,
-            action_type: 'PAYOUT',
-            entity_type: 'Commission',
-            entity_id: 1,
-            description: 'Marked pending commissions as PAID for Ahmed Zahid (Period: 2026-06)',
-            old_value: '{"status":"pending","amount":4500}',
-            new_value: '{"status":"paid","amount":4500}',
-            performed_at: '2026-06-28 18:45:12'
-          },
-          {
-            id: 1004,
-            action_type: 'UPDATE',
-            entity_type: 'CommissionRate',
-            entity_id: 1,
-            description: 'Updated monthly commission rate for Ahmed Zahid to 5%',
-            old_value: '{"rate_percent":3.5}',
-            new_value: '{"rate_percent":5}',
-            performed_at: '2026-06-28 18:40:05'
-          },
-          {
-            id: 1003,
-            action_type: 'DELETE',
-            entity_type: 'Expense',
-            entity_id: 15,
-            description: 'Voided expense record for Office Supplies (Rs. 2,500)',
-            old_value: '{"category":"Office Supplies","amount":2500,"note":"Printer paper"}',
-            new_value: null,
-            performed_at: '2026-06-28 16:15:22'
-          },
-          {
-            id: 1002,
-            action_type: 'CREATE',
-            entity_type: 'Expense',
-            entity_id: 18,
-            description: 'Logged new expense under Tea & Refreshments (Rs. 1,200)',
-            old_value: null,
-            new_value: '{"category":"Tea & Refreshments","amount":1200}',
-            performed_at: '2026-06-28 14:10:00'
-          },
-          {
-            id: 1001,
-            action_type: 'RETURN',
-            entity_type: 'SaleReturn',
-            entity_id: 88,
-            description: 'Processed customer return for Invoice #INV-2026-015 (Refund: Rs. 6,500)',
-            old_value: '{"invoice_status":"completed"}',
-            new_value: '{"invoice_status":"returned","refund":6500}',
-            performed_at: '2026-06-28 11:30:45'
-          }
-        ])
+      if (!window.electronAPI?.audit) {
+        showToast('error', 'Application API unavailable.')
+        setLogs([])
+        return
       }
+
+      const filters = {
+        search: searchQuery,
+        actionType: actionTypeFilter,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
+      }
+      const res = await window.electronAPI.audit.list(filters)
+      const list = (res && res.success && Array.isArray(res.data))
+        ? res.data
+        : (Array.isArray(res) ? res : [])
+      setLogs(list)
     } catch (err) {
       console.error('[AuditLog] Fetch error:', err)
       showToast('error', 'Failed to retrieve tamper-evident audit ledger.')

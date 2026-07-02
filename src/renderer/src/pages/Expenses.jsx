@@ -83,26 +83,24 @@ export function Expenses() {
   const fetchExpenses = async () => {
     setLoading(true)
     try {
-      if (window.electronAPI && window.electronAPI.expenses) {
-        const filters = {
-          search: searchTerm,
-          category: selectedCategory,
-          startDate: startDate || undefined,
-          endDate: endDate || undefined
-        }
-        const res = await window.electronAPI.expenses.list(filters)
-        if (res.success) {
-          setExpenses(Array.isArray(res.data) ? res.data : [])
-        } else {
-          showToast('error', res.error || 'Could not load expenses.')
-          setExpenses([])
-        }
+      if (!window.electronAPI?.expenses) {
+        showToast('error', 'Application API unavailable.')
+        setExpenses([])
+        return
+      }
+
+      const filters = {
+        search: searchTerm,
+        category: selectedCategory,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
+      }
+      const res = await window.electronAPI.expenses.list(filters)
+      if (res.success) {
+        setExpenses(Array.isArray(res.data) ? res.data : [])
       } else {
-        // Mock fallback for non-electron environment
-        setExpenses([
-          { id: 1, category: 'Rent & Utilities', description: 'Electricity Bill - June', amount: 24500, expense_date: todayStr, recorded_by: 'Owner' },
-          { id: 2, category: 'Tea & Refreshments', description: 'Afternoon tea for guests', amount: 850, expense_date: todayStr, recorded_by: 'Staff' }
-        ])
+        showToast('error', res.error || 'Could not load expenses.')
+        setExpenses([])
       }
     } catch (err) {
       console.error('Failed to fetch expenses:', err)
@@ -157,23 +155,23 @@ export function Expenses() {
 
     setSubmitting(true)
     try {
-      if (window.electronAPI && window.electronAPI.expenses) {
-        let res
-        if (editingExpense) {
-          res = await window.electronAPI.expenses.update(editingExpense.id, formData)
-        } else {
-          res = await window.electronAPI.expenses.create(formData)
-        }
-        if (res && res.success) {
-          showToast('success', editingExpense ? 'Expense updated successfully!' : 'New expense recorded successfully!')
-          fetchExpenses()
-          handleCloseDrawer()
-        } else {
-          showToast('error', (res && res.error) || 'Failed to save expense.')
-        }
+      if (!window.electronAPI?.expenses) {
+        showToast('error', 'Application API unavailable.')
+        return
+      }
+
+      let res
+      if (editingExpense) {
+        res = await window.electronAPI.expenses.update(editingExpense.id, formData)
       } else {
-        showToast('success', editingExpense ? 'Updated (Mock)' : 'Created (Mock)')
+        res = await window.electronAPI.expenses.create(formData)
+      }
+      if (res && res.success) {
+        showToast('success', editingExpense ? 'Expense updated successfully!' : 'New expense recorded successfully!')
+        fetchExpenses()
         handleCloseDrawer()
+      } else {
+        showToast('error', (res && res.error) || 'Failed to save expense.')
       }
     } catch (err) {
       console.error('Failed to save expense:', err)
@@ -187,19 +185,18 @@ export function Expenses() {
     if (!deletingExpense) return
     setSubmitting(true)
     try {
-      if (window.electronAPI && window.electronAPI.expenses) {
-        const res = await window.electronAPI.expenses.delete(deletingExpense.id)
-        if (res && res.success) {
-          showToast('success', 'Expense deleted successfully.')
-          fetchExpenses()
-          setDeletingExpense(null)
-        } else {
-          showToast('error', (res && res.error) || 'Failed to delete expense.')
-        }
-      } else {
-        setExpenses(prev => prev.filter(e => e.id !== deletingExpense.id))
-        showToast('success', 'Deleted (Mock)')
+      if (!window.electronAPI?.expenses) {
+        showToast('error', 'Application API unavailable.')
+        return
+      }
+
+      const res = await window.electronAPI.expenses.delete(deletingExpense.id)
+      if (res && res.success) {
+        showToast('success', 'Expense deleted successfully.')
+        fetchExpenses()
         setDeletingExpense(null)
+      } else {
+        showToast('error', (res && res.error) || 'Failed to delete expense.')
       }
     } catch (err) {
       console.error('Failed to delete expense:', err)

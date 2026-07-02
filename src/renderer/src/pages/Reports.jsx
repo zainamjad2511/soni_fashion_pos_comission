@@ -50,77 +50,45 @@ export function Reports() {
   const fetchReportData = async () => {
     setLoading(true)
     try {
-      if (window.electronAPI && window.electronAPI.reports) {
-        const filters = { startDate, endDate, limit: topLimit }
+      if (!window.electronAPI?.reports) {
+        showToast('error', 'Application API unavailable.')
+        return
+      }
 
-        if (activeTab === 'sales') {
-          const res = await window.electronAPI.reports.salesSummary(filters)
-          if (res && res.success && res.data) {
-            setSalesData({
-              sales: Array.isArray(res.data.sales) ? res.data.sales : [],
-              summary: res.data.summary || { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 }
-            })
-          }
-        } else if (activeTab === 'profit') {
-          const res = await window.electronAPI.reports.profitSummary(filters)
-          if (res && res.success && res.data) {
-            setProfitData(res.data)
-          }
-        } else if (activeTab === 'inventory') {
-          const res = await window.electronAPI.reports.inventoryValuation()
-          if (res && res.success && res.data) {
-            setInventoryData({
-              articles: Array.isArray(res.data.articles) ? res.data.articles : [],
-              summary: res.data.summary || { total_articles: 0, total_units: 0, grand_total_cost: 0, grand_total_retail: 0 }
-            })
-          }
-        } else if (activeTab === 'top') {
-          const res = await window.electronAPI.reports.topArticles(filters)
-          if (res && res.success && res.data) {
-            setTopArticlesData(Array.isArray(res.data.articles) ? res.data.articles : [])
-          }
-        } else if (activeTab === 'expenses') {
-          const res = await window.electronAPI.reports.expenseSummary(filters)
-          if (res && res.success && res.data) {
-            setExpenseData({
-              categories: Array.isArray(res.data.categories) ? res.data.categories : [],
-              summary: res.data.summary || { grand_total: 0 }
-            })
-          }
-        }
-      } else {
-        // Mock data fallback for non-electron environment
-        if (activeTab === 'sales') {
+      const filters = { startDate, endDate, limit: topLimit }
+
+      if (activeTab === 'sales') {
+        const res = await window.electronAPI.reports.salesSummary(filters)
+        if (res && res.success && res.data) {
           setSalesData({
-            sales: [
-              { id: 1, invoice_number: 'INV-2026-001', sale_date: `${todayStr} 10:30`, salesperson_name: 'Ahmed Zahid', payment_method: 'Cash', total_items: 3, subtotal: 13000, total_discount: 500, grand_total: 12500, gross_profit: 4200 },
-              { id: 2, invoice_number: 'INV-2026-002', sale_date: `${todayStr} 14:15`, salesperson_name: 'Bilal Khan', payment_method: 'Card', total_items: 1, subtotal: 4500, total_discount: 0, grand_total: 4500, gross_profit: 1800 }
-            ],
-            summary: { total_sales: 2, total_items: 4, total_revenue: 17000, total_gross_profit: 6000 }
+            sales: Array.isArray(res.data.sales) ? res.data.sales : [],
+            summary: res.data.summary || { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 }
           })
-        } else if (activeTab === 'profit') {
-          setProfitData({ revenue: 150000, cogs: 90000, gross_profit: 60000, total_expenses: 18500, net_profit: 41500 })
-        } else if (activeTab === 'inventory') {
+        }
+      } else if (activeTab === 'profit') {
+        const res = await window.electronAPI.reports.profitSummary(filters)
+        if (res && res.success && res.data) {
+          setProfitData(res.data)
+        }
+      } else if (activeTab === 'inventory') {
+        const res = await window.electronAPI.reports.inventoryValuation()
+        if (res && res.success && res.data) {
           setInventoryData({
-            articles: [
-              { id: 10, sku: 'SF-101', name: 'Bridal Lehenga Gold', category: 'Bridal Wear', quantity: 5, wholesale_price: 45000, retail_price: 65000, total_cost_value: 225000, total_retail_value: 325000 },
-              { id: 11, sku: 'SF-102', name: 'Designer Silk Saree', category: 'Formal Wear', quantity: 12, wholesale_price: 8000, retail_price: 14000, total_cost_value: 96000, total_retail_value: 168000 }
-            ],
-            summary: { total_articles: 2, total_units: 17, grand_total_cost: 321000, grand_total_retail: 493000 }
+            articles: Array.isArray(res.data.articles) ? res.data.articles : [],
+            summary: res.data.summary || { total_articles: 0, total_units: 0, grand_total_cost: 0, grand_total_retail: 0 }
           })
-        } else if (activeTab === 'top') {
-          setTopArticlesData([
-            { id: 10, sku: 'SF-101', name: 'Bridal Lehenga Gold', category: 'Bridal Wear', total_quantity_sold: 8, total_revenue: 520000 },
-            { id: 11, sku: 'SF-102', name: 'Designer Silk Saree', category: 'Formal Wear', total_quantity_sold: 15, total_revenue: 210000 }
-          ])
-        } else if (activeTab === 'expenses') {
+        }
+      } else if (activeTab === 'top') {
+        const res = await window.electronAPI.reports.topArticles(filters)
+        if (res && res.success && res.data) {
+          setTopArticlesData(Array.isArray(res.data.articles) ? res.data.articles : [])
+        }
+      } else if (activeTab === 'expenses') {
+        const res = await window.electronAPI.reports.expenseSummary(filters)
+        if (res && res.success && res.data) {
           setExpenseData({
-            categories: [
-              { category: 'Rent & Utilities', expense_count: 2, total_amount: 35000 },
-              { category: 'Salaries & Wages', expense_count: 4, total_amount: 120000 },
-              { category: 'Tea & Refreshments', expense_count: 12, total_amount: 4500 }
-            ],
-            summary: { grand_total: 159500 }
+            categories: Array.isArray(res.data.categories) ? res.data.categories : [],
+            summary: res.data.summary || { grand_total: 0 }
           })
         }
       }

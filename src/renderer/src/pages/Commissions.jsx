@@ -127,33 +127,24 @@ export function Commissions() {
   const fetchSummary = async (month) => {
     setLoading(true)
     try {
-      if (window.electronAPI && window.electronAPI.commissions) {
-        const res = await window.electronAPI.commissions.getSummary(month)
-        const list = (res && res.success && res.data && Array.isArray(res.data.summary))
-          ? res.data.summary
-          : (Array.isArray(res?.summary) ? res.summary : [])
-        
-        setSummaryList(list)
-
-        // Initialize rate input state
-        const initialRates = {}
-        list.forEach((item) => {
-          initialRates[item.salesperson_id] = item.rate_percent ?? 1
-        })
-        setRateInputs(initialRates)
-      } else {
-        // Mock fallback for non-electron environment
-        const mockList = [
-          { salesperson_id: 1, name: 'Ahmed Zahid', contact: '0300-1112233', is_active: 1, rate_percent: 5, total_sales: 150000, total_commission: 7500, pending_commission: 4500, paid_commission: 3000 },
-          { salesperson_id: 2, name: 'Bilal Khan', contact: '0321-4455667', is_active: 1, rate_percent: 3.5, total_sales: 85000, total_commission: 2975, pending_commission: 0, paid_commission: 2975 }
-        ]
-        setSummaryList(mockList)
-        const initialRates = {}
-        mockList.forEach((item) => {
-          initialRates[item.salesperson_id] = item.rate_percent ?? 1
-        })
-        setRateInputs(initialRates)
+      if (!window.electronAPI?.commissions) {
+        showToast('error', 'Application API unavailable.')
+        setSummaryList([])
+        return
       }
+
+      const res = await window.electronAPI.commissions.getSummary(month)
+      const list = (res && res.success && res.data && Array.isArray(res.data.summary))
+        ? res.data.summary
+        : (Array.isArray(res?.summary) ? res.summary : [])
+
+      setSummaryList(list)
+
+      const initialRates = {}
+      list.forEach((item) => {
+        initialRates[item.salesperson_id] = item.rate_percent ?? 1
+      })
+      setRateInputs(initialRates)
     } catch (err) {
       console.error('[Commissions] Fetch error:', err)
       showToast('error', err.message || 'Error communicating with database.')
@@ -181,22 +172,22 @@ export function Commissions() {
 
     setSavingRateId(salespersonId)
     try {
-      if (window.electronAPI && window.electronAPI.commissions) {
-        const res = await window.electronAPI.commissions.setRate({
-          salesperson_id: salespersonId,
-          month: selectedMonth,
-          rate_percent: ratePercent
-        })
+      if (!window.electronAPI?.commissions) {
+        showToast('error', 'Application API unavailable.')
+        return
+      }
 
-        if (res && res.success) {
-          showToast('success', `Assigned ${ratePercent}% commission rate to ${staffName} for ${selectedMonth}!`)
-          fetchSummary(selectedMonth)
-        } else {
-          showToast('error', (res && res.error) || 'Failed to save commission rate.')
-        }
-      } else {
-        showToast('success', `Assigned ${ratePercent}% (Mock)`)
+      const res = await window.electronAPI.commissions.setRate({
+        salesperson_id: salespersonId,
+        month: selectedMonth,
+        rate_percent: ratePercent
+      })
+
+      if (res && res.success) {
+        showToast('success', `Assigned ${ratePercent}% commission rate to ${staffName} for ${selectedMonth}!`)
         fetchSummary(selectedMonth)
+      } else {
+        showToast('error', (res && res.error) || 'Failed to save commission rate.')
       }
     } catch (err) {
       console.error('[Commissions] Save rate error:', err)
@@ -277,35 +268,34 @@ export function Commissions() {
 
     setMarkingPaidId(payoutModal.salesperson_id)
     try {
-      if (window.electronAPI && window.electronAPI.commissions) {
-        const res = await window.electronAPI.commissions.recordPayout({
-          salesperson_id: payoutModal.salesperson_id,
-          month: selectedMonth,
-          amount,
-        })
+      if (!window.electronAPI?.commissions) {
+        showToast('error', 'Application API unavailable.')
+        return
+      }
 
-        if (res?.success) {
-          const remaining = Number(res.data?.remaining_pending ?? 0)
-          showToast(
-            'success',
-            remaining > 0
-              ? `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Remaining pending: Rs. ${remaining.toLocaleString()}. Expense recorded in Staff Commissions.`
-              : `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Commission fully settled for ${selectedMonth}. Expense recorded in Staff Commissions.`
-          )
-          const paidStaffId = payoutModal.salesperson_id
-          setPayoutModal(null)
-          setPayoutAmount('')
-          fetchSummary(selectedMonth)
-          if (expandedRowId === paidStaffId) {
-            loadDrillDownItems(paidStaffId)
-          }
-        } else {
-          showToast('error', (res && res.error) || 'Failed to process commission payment.')
+      const res = await window.electronAPI.commissions.recordPayout({
+        salesperson_id: payoutModal.salesperson_id,
+        month: selectedMonth,
+        amount,
+      })
+
+      if (res?.success) {
+        const remaining = Number(res.data?.remaining_pending ?? 0)
+        showToast(
+          'success',
+          remaining > 0
+            ? `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Remaining pending: Rs. ${remaining.toLocaleString()}. Expense recorded in Staff Commissions.`
+            : `Paid Rs. ${amount.toLocaleString()} to ${payoutModal.name}. Commission fully settled for ${selectedMonth}. Expense recorded in Staff Commissions.`
+        )
+        const paidStaffId = payoutModal.salesperson_id
+        setPayoutModal(null)
+        setPayoutAmount('')
+        fetchSummary(selectedMonth)
+        if (expandedRowId === paidStaffId) {
+          loadDrillDownItems(paidStaffId)
         }
       } else {
-        showToast('success', `Paid Rs. ${amount.toLocaleString()} (Mock) for ${payoutModal.name}`)
-        closePayoutModal()
-        fetchSummary(selectedMonth)
+        showToast('error', (res && res.error) || 'Failed to process commission payment.')
       }
     } catch (err) {
       console.error('[Commissions] Payout error:', err)

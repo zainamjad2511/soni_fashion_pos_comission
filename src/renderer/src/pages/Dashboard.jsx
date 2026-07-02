@@ -42,71 +42,58 @@ export function Dashboard() {
   const loadDashboardMetrics = async () => {
     setLoading(true)
     try {
-      if (window.electronAPI) {
-        const todayStr = localDateFilter()
+      if (!window.electronAPI) {
+        console.error('[Dashboard] Application API unavailable.')
+        return
+      }
 
-        // Fetch active articles
-        if (window.electronAPI.articles) {
-          const artRes = await window.electronAPI.articles.list({ is_active: 1 })
-          if (artRes.success) {
-            setArticles(Array.isArray(artRes.data) ? artRes.data : [])
-          }
-        }
+      const todayStr = localDateFilter()
 
-        // Fetch suppliers count
-        if (window.electronAPI.suppliers) {
-          const supRes = await window.electronAPI.suppliers.list({ is_active: 1 })
-          if (supRes.success) {
-            setSuppliersCount(Array.isArray(supRes.data) ? supRes.data.length : 0)
-          }
+      if (window.electronAPI.articles) {
+        const artRes = await window.electronAPI.articles.list({ is_active: 1 })
+        if (artRes.success) {
+          setArticles(Array.isArray(artRes.data) ? artRes.data : [])
         }
+      }
 
-        // Fetch today's sales telemetry (includes SF-RET return vouchers as negative entries)
-        if (window.electronAPI.reports) {
-          const salesRes = await window.electronAPI.reports.salesSummary({ start_date: todayStr, end_date: todayStr })
-          if (salesRes?.success && salesRes.data?.summary) {
-            const { total_sales, total_returns, total_revenue } = salesRes.data.summary
-            setTodaySalesCount(Number(total_sales || 0) + Number(total_returns || 0))
-            setTodayRevenue(Number(total_revenue || 0))
-          }
-        } else if (window.electronAPI.sales) {
-          const salesRes = await window.electronAPI.sales.list({ start_date: todayStr, end_date: todayStr, status: 'completed' })
-          const salesList = (salesRes && salesRes.success && Array.isArray(salesRes.data)) ? salesRes.data : (Array.isArray(salesRes) ? salesRes : [])
-          setTodaySalesCount(salesList.length)
-          const rev = salesList.reduce((sum, s) => sum + Number(s.grand_total || 0), 0)
-          setTodayRevenue(rev)
+      if (window.electronAPI.suppliers) {
+        const supRes = await window.electronAPI.suppliers.list({ is_active: 1 })
+        if (supRes.success) {
+          setSuppliersCount(Array.isArray(supRes.data) ? supRes.data.length : 0)
         }
+      }
 
-        // Fetch Today's Profit Summary
-        if (window.electronAPI.reports) {
-          const profitRes = await window.electronAPI.reports.profitSummary({ start_date: todayStr, end_date: todayStr })
-          if (profitRes && profitRes.success && profitRes.data) {
-            setTodayGrossProfit(Number(profitRes.data.gross_profit || 0))
-          }
+      if (window.electronAPI.reports) {
+        const salesRes = await window.electronAPI.reports.salesSummary({ start_date: todayStr, end_date: todayStr })
+        if (salesRes?.success && salesRes.data?.summary) {
+          const { total_sales, total_returns, total_revenue } = salesRes.data.summary
+          setTodaySalesCount(Number(total_sales || 0) + Number(total_returns || 0))
+          setTodayRevenue(Number(total_revenue || 0))
         }
+      } else if (window.electronAPI.sales) {
+        const salesRes = await window.electronAPI.sales.list({ start_date: todayStr, end_date: todayStr, status: 'completed' })
+        const salesList = (salesRes && salesRes.success && Array.isArray(salesRes.data)) ? salesRes.data : (Array.isArray(salesRes) ? salesRes : [])
+        setTodaySalesCount(salesList.length)
+        const rev = salesList.reduce((sum, s) => sum + Number(s.grand_total || 0), 0)
+        setTodayRevenue(rev)
+      }
 
-        // Fetch Today's Cash Flow
-        if (window.electronAPI.reports) {
-          const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: todayStr })
-          if (cfRes && cfRes.success && cfRes.data) {
-            setCashFlow({
-              cash_in: Number(cfRes.data.cash_in || 0),
-              cash_out: Number(cfRes.data.cash_out || 0),
-              net_cash: Number(cfRes.data.net_cash || 0)
-            })
-          }
+      if (window.electronAPI.reports) {
+        const profitRes = await window.electronAPI.reports.profitSummary({ start_date: todayStr, end_date: todayStr })
+        if (profitRes && profitRes.success && profitRes.data) {
+          setTodayGrossProfit(Number(profitRes.data.gross_profit || 0))
         }
-      } else {
-        // Mock fallback for non-electron environment
-        setArticles([
-          { id: 1, sku: 'SF-101', name: 'Bridal Lehenga Gold', supplier_article_code: 'SUP-01', quantity: 2, reorder_level: 5, wholesale_price: 45000, retail_price: 65000 },
-          { id: 2, sku: 'SF-102', name: 'Designer Silk Saree', supplier_article_code: 'SUP-02', quantity: 15, reorder_level: 5, wholesale_price: 8000, retail_price: 14000 }
-        ])
-        setSuppliersCount(6)
-        setTodaySalesCount(8)
-        setTodayRevenue(54000)
-        setTodayGrossProfit(18500)
-        setCashFlow({ cash_in: 54000, cash_out: 4500, net_cash: 49500 })
+      }
+
+      if (window.electronAPI.reports) {
+        const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: todayStr })
+        if (cfRes && cfRes.success && cfRes.data) {
+          setCashFlow({
+            cash_in: Number(cfRes.data.cash_in || 0),
+            cash_out: Number(cfRes.data.cash_out || 0),
+            net_cash: Number(cfRes.data.net_cash || 0)
+          })
+        }
       }
     } catch (err) {
       console.error('[Dashboard] Error loading metrics:', err)
