@@ -157,7 +157,7 @@
       }
 
       document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
-      document.getElementById('inv-date').textContent = data.sale_date || new Date().toLocaleString();
+      document.getElementById('inv-date').textContent = data.sale_date_display || data.sale_date || '—';
       document.getElementById('inv-cashier').textContent = data.salesperson_name || 'Cashier';
 
       const tbody = document.getElementById('items-body');

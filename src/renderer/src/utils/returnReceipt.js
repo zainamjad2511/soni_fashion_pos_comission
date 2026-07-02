@@ -3,14 +3,14 @@
  * Uses SF-RET as the primary document reference; exchange lines include
  * both [RETURN] credits and [NEW] replacement charges on one receipt.
  */
+import { formatSaleDateTimeShort } from './localDateTime.js'
+
 export function buildReturnReceiptPayload(fullRet) {
   const refundCredit = Number(fullRet.refund_credit || fullRet.refundCredit || 0)
   const replacementItems = fullRet.replacement_items || []
   const hasExchange = replacementItems.length > 0 || fullRet.exchange_new_sale_id
 
-  const saleDate = fullRet.return_date
-    ? new Date(fullRet.return_date).toLocaleString()
-    : new Date().toLocaleString()
+  const saleDate = formatSaleDateTimeShort(fullRet.return_date)
   const staffName = fullRet.processed_by_name || 'Returns Staff'
   const returnRef = fullRet.return_number || fullRet.returnNumber || 'RETURN VOUCHER'
 

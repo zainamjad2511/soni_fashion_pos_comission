@@ -16,6 +16,7 @@ import {
 } from './icons/TechnicalIcons.jsx'
 import { StandardModal, StandardModalAction } from './StandardModal.jsx'
 import { buildReturnReceiptPayload, formatReceiptLineTotal } from '../utils/returnReceipt.js'
+import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 export function ReprintModal({ isOpen, onClose }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -261,7 +262,7 @@ export function ReprintModal({ isOpen, onClose }) {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4 text-xs text-[#7A6F69]">
-                        <span>{new Date(txn.date).toLocaleString()}</span>
+                        <span>{formatSaleDateTimeShort(txn.date)}</span>
                         <span>•</span>
                         <span>Staff: <strong className="text-[#2E2822]">{txn.staffName}</strong></span>
                         <span>•</span>
@@ -344,7 +345,7 @@ export function ReprintModal({ isOpen, onClose }) {
 
             <div className="space-y-1 border-b border-dashed border-black pb-3 mb-3 text-[11px]">
               <div><strong className="font-bold">Voucher #:</strong> {previewReceipt.invoice_number}</div>
-              <div><strong className="font-bold">Date:</strong> {previewReceipt.sale_date || new Date().toLocaleString()}</div>
+              <div><strong className="font-bold">Date:</strong> {formatSaleDateTimeShort(previewReceipt.sale_date || previewReceipt.return_date)}</div>
               <div><strong className="font-bold">Staff:</strong> {previewReceipt.salesperson_name || 'Staff'}</div>
             </div>
 

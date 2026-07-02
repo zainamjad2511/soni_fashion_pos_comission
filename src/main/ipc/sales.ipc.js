@@ -3,6 +3,7 @@ import { getDb } from '../db/database.js'
 import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission } from '../services/commission.service.js'
+import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
 
 export function registerSalesHandlers() {
   handleIpc('sales:create', (_, payload) => {
@@ -73,7 +74,8 @@ export function registerSalesHandlers() {
       const grandTotal = Math.max(0, subtotal - totalDiscount)
 
       // 3. Generate sequential invoice number using invoice_prefix setting
-      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const todayStr = localDateKey()
+      const saleDateTime = localDateTimeString()
       const basePrefix = getRequiredSetting(db, 'invoice_prefix').replace(/-+$/, '')
       const prefix = `${basePrefix}-${todayStr}-`
       const lastSale = db.prepare('SELECT invoice_number FROM sales WHERE invoice_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
@@ -88,9 +90,9 @@ export function registerSalesHandlers() {
       // 4. Insert Sale Header
       const insertSaleStmt = db.prepare(`
         INSERT INTO sales (invoice_number, salesperson_id, subtotal, total_discount, grand_total, payment_method, notes, status, exchange_return_id, sale_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)
       `)
-      const saleResult = insertSaleStmt.run(invoiceNumber, salespersonId, subtotal, totalDiscount, grandTotal, paymentMethod, notes, exchangeReturnId)
+      const saleResult = insertSaleStmt.run(invoiceNumber, salespersonId, subtotal, totalDiscount, grandTotal, paymentMethod, notes, exchangeReturnId, saleDateTime)
       const saleId = saleResult.lastInsertRowid
 
       // 5. Insert Sale Items & Update Stock & Log Stock Movements

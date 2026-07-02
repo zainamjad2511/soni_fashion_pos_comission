@@ -28,6 +28,7 @@ import {
 } from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
+import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 const INVOICE_SEARCH_PREFIX = 'SF-INV-'
 
@@ -982,7 +983,7 @@ export function Returns() {
                     <h2 className="text-xl font-bold text-[#2E2822] font-mono">{selectedSale.invoice_number}</h2>
                   </div>
                   <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-[#7A6F69] pt-1">
-                    <span className="flex items-center gap-1.5 font-mono"> {new Date(selectedSale.sale_date).toLocaleString()}</span>
+                    <span className="flex items-center gap-1.5 font-mono"> {formatSaleDateTimeShort(selectedSale.sale_date)}</span>
                     <span className="flex items-center gap-1.5"> Original Staff: {selectedSale.salesperson_name || 'N/A'}</span>
                   </div>
                 </div>
@@ -1345,7 +1346,7 @@ export function Returns() {
                     {(Array.isArray(matchingSales) ? matchingSales : []).map((sale) => (
                       <tr key={sale.id}>
                         <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">{sale.invoice_number}</td>
-                        <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{new Date(sale.sale_date).toLocaleString()}</td>
+                        <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{formatSaleDateTimeShort(sale.sale_date)}</td>
                         <td className="py-3.5 px-4 text-[#2E2822] font-bold">{sale.salesperson_name || 'N/A'}</td>
                         <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(sale.grand_total)}</td>
                         <td className="py-3.5 pl-4 text-center">

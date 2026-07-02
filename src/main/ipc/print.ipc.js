@@ -3,6 +3,7 @@ import { BrowserWindow } from 'electron'
 import { join } from 'path'
 import fs from 'fs'
 import { getDb } from '../db/database.js'
+import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 let receiptWindow = null
 
@@ -152,7 +153,8 @@ export function registerPrintHandlers() {
           shop_address: settingsMap.shop_address || 'Machli Bazar, Daska',
           shop_contact: settingsMap.shop_contact || '03246470929',
           receipt_footer: settingsMap.receipt_footer || 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
-          ...receiptData
+          ...receiptData,
+          sale_date_display: formatSaleDateTimeShort(receiptData.sale_date || receiptData.return_date),
         }
 
         receiptWindow.webContents.once('did-finish-load', async () => {

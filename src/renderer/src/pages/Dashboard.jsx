@@ -22,6 +22,7 @@ import {
   WalletIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { useNavigate } from 'react-router-dom'
+import { localDateFilter } from '../utils/localDateTime.js'
 
 export function Dashboard() {
   const [articles, setArticles] = useState([])
@@ -42,7 +43,7 @@ export function Dashboard() {
     setLoading(true)
     try {
       if (window.electronAPI) {
-        const todayStr = new Date().toISOString().slice(0, 10)
+        const todayStr = localDateFilter()
 
         // Fetch active articles
         if (window.electronAPI.articles) {

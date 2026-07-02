@@ -17,14 +17,15 @@ import {
   ArrowRightIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
+import { localDateFilter, formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 export function Reports() {
   const [activeTab, setActiveTab] = useState('sales')
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
-  // Default dates: 1st of current month to today
-  const todayStr = new Date().toISOString().slice(0, 10)
+  // Default dates: 1st of current month to today (local)
+  const todayStr = localDateFilter()
   const startOfMonth = `${todayStr.slice(0, 7)}-01`
   const [startDate, setStartDate] = useState(startOfMonth)
   const [endDate, setEndDate] = useState(todayStr)
@@ -350,7 +351,7 @@ export function Reports() {
                               <span className="ml-2 text-[10px] uppercase tracking-wider text-[#7A6F69]">Return</span>
                             )}
                           </td>
-                          <td className="py-5 px-4 text-[#7A6F69] font-mono text-sm">{s.sale_date}</td>
+                          <td className="py-5 px-4 text-[#7A6F69] font-mono text-sm">{formatSaleDateTimeShort(s.sale_date)}</td>
                           <td className="py-5 px-4 text-[#2E2822] font-semibold text-base">{s.salesperson_name || 'Counter Staff'}</td>
                           <td className="py-5 px-4">
                             <span className="font-mono text-sm uppercase tracking-wider font-bold text-[#2E2822]">

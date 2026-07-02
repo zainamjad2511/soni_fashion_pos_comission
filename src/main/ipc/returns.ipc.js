@@ -3,6 +3,7 @@ import { getDb } from '../db/database.js'
 import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
+import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
 
 function findSaleByInvoiceOrReturnNumber(db, invoiceNo) {
   const queryStr = String(invoiceNo).trim()
@@ -144,7 +145,8 @@ export function registerReturnsHandlers() {
       }
 
       // Generate sequential return number using return_prefix setting
-      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const todayStr = localDateKey()
+      const returnDateTime = localDateTimeString()
       const baseRetPrefix = getRequiredSetting(db, 'return_prefix').replace(/-+$/, '')
       const prefix = `${baseRetPrefix}-${todayStr}-`
       const lastRet = db.prepare('SELECT return_number FROM returns WHERE return_number LIKE ? ORDER BY id DESC LIMIT 1').get(`${prefix}%`)
@@ -161,9 +163,9 @@ export function registerReturnsHandlers() {
       // Insert Return header
       const insertRetStmt = db.prepare(`
         INSERT INTO returns (return_number, original_sale_id, return_type, processed_by, refund_amount, refund_credit, notes, return_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      const retResult = insertRetStmt.run(returnNumber, original_sale_id || null, return_type, staffId, refundCredit, refundCredit, notes || null)
+      const retResult = insertRetStmt.run(returnNumber, original_sale_id || null, return_type, staffId, refundCredit, refundCredit, notes || null, returnDateTime)
       const returnId = retResult.lastInsertRowid
 
       // Process Return Items & Restore Stock
@@ -270,12 +272,12 @@ export function registerReturnsHandlers() {
         // Insert new sale
         const insertSaleStmt = db.prepare(`
           INSERT INTO sales (invoice_number, salesperson_id, subtotal, total_discount, grand_total, payment_method, notes, status, exchange_return_id, sale_date)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, CURRENT_TIMESTAMP)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?)
         `)
         const saleNotes = return_type === 'manual'
           ? `Manual exchange for Return #${returnNumber}`
           : `Exchange for Return #${returnNumber}`
-        const saleRes = insertSaleStmt.run(newInvoiceNumber, exStaffId, subtotal, totalDiscount, grandTotal, payment_method || 'cash', saleNotes, returnId)
+        const saleRes = insertSaleStmt.run(newInvoiceNumber, exStaffId, subtotal, totalDiscount, grandTotal, payment_method || 'cash', saleNotes, returnId, returnDateTime)
         newSaleId = saleRes.lastInsertRowid
 
         // Update return with new sale link
