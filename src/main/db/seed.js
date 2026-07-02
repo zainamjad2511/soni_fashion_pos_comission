@@ -4,7 +4,7 @@ export function runSeed(db) {
   const seedSettings = [
     ['shop_name', 'Soni Fashion | سونی فیشن'],
     ['shop_tagline', 'Jahan Fashion enters your life'],
-    ['shop_address', 'Machli Bazar, Daska'],
+    ['shop_address', 'Qazi Market,Machli Bazar, Daska'],
     ['shop_contact', '03246470929'],
     ['sku_prefix', 'SF'],
     ['invoice_prefix', 'SF-INV'],

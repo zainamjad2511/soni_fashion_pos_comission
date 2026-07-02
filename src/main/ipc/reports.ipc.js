@@ -360,8 +360,26 @@ export function registerReportsHandlers() {
         params.push(filters.endDate)
       }
       if (filters.actionType && filters.actionType !== 'All') {
-        query += ' AND action_type = ?'
-        params.push(filters.actionType)
+        switch (filters.actionType) {
+          case 'CREATE':
+            query += " AND action_type LIKE '%CREATE%'"
+            break
+          case 'UPDATE':
+            query += " AND action_type LIKE '%UPDATE%'"
+            break
+          case 'DELETE':
+            query += " AND (action_type LIKE '%DELETE%' OR action_type LIKE '%VOID%' OR action_type LIKE '%DEACTIVATE%')"
+            break
+          case 'PAYOUT':
+            query += " AND (action_type LIKE '%PAYOUT%' OR action_type LIKE '%PAID%')"
+            break
+          case 'RETURN':
+            query += " AND action_type LIKE '%RETURN%'"
+            break
+          default:
+            query += ' AND action_type = ?'
+            params.push(filters.actionType)
+        }
       }
       if (filters.search && filters.search.trim() !== '') {
         query += ' AND (description LIKE ? OR entity_type LIKE ? OR action_type LIKE ?)'
@@ -372,6 +390,6 @@ export function registerReportsHandlers() {
 
     query += ' ORDER BY performed_at DESC, id DESC LIMIT 500'
     const stmt = db.prepare(query)
-    return { logs: stmt.all(...params) }
+    return stmt.all(...params)
   })
 }
