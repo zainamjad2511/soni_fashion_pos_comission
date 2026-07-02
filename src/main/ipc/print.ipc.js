@@ -3,16 +3,22 @@ import { BrowserWindow } from 'electron'
 import { join } from 'path'
 import fs from 'fs'
 import { getDb } from '../db/database.js'
-import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
+import { formatSaleDateLabel, formatSaleTimeLabel } from '../utils/localDateTime.js'
 
 let receiptWindow = null
 
-function getReceiptHtmlTemplate() {
+function getReceiptHtmlPath() {
   const receiptPath = join(__dirname, '../receipt/receipt.html')
   if (!fs.existsSync(receiptPath)) {
     throw new Error(`Receipt template not found at ${receiptPath}`)
   }
-  return fs.readFileSync(receiptPath, 'utf-8')
+  return receiptPath
+}
+
+function getLogoDataUrl() {
+  const logoPath = join(__dirname, '../receipt/logo.png')
+  if (!fs.existsSync(logoPath)) return null
+  return `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
 }
 
 export function registerPrintHandlers() {
@@ -42,7 +48,7 @@ export function registerPrintHandlers() {
           receiptWindow = new BrowserWindow({
             show: false,
             width: 320,
-            height: 600,
+            height: 800,
             webPreferences: {
               nodeIntegration: true,
               contextIsolation: false
@@ -50,28 +56,30 @@ export function registerPrintHandlers() {
           })
         }
 
-        const htmlTemplate = getReceiptHtmlTemplate()
-        const encodedHtml = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlTemplate)
-
+        const receiptPath = getReceiptHtmlPath()
         const settingsRows = db.prepare('SELECT key, value FROM settings').all()
         const settingsMap = {}
         settingsRows.forEach(r => { settingsMap[r.key] = r.value })
 
+        const saleDateSource = receiptData.sale_date || receiptData.return_date
         const enrichedData = {
-          shop_name: settingsMap.shop_name || 'Soni Fashion | سونی فیشن',
-          shop_tagline: settingsMap.shop_tagline || 'Jahan Fashion enters your life',
-          shop_address: settingsMap.shop_address || 'Machli Bazar, Daska',
-          shop_contact: settingsMap.shop_contact || '03246470929',
-          receipt_footer: settingsMap.receipt_footer || 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
+          shop_name: settingsMap.shop_name || 'SONI FASHION | سونی فیشن',
+          shop_tagline: settingsMap.shop_tagline || 'Where Fashion Comes to your life',
+          shop_address: settingsMap.shop_address || 'Qazi Market, Machli Bazar, Daska',
+          shop_contact: settingsMap.shop_contact || '03246470929 | 03456861996',
+          receipt_footer: settingsMap.receipt_footer || 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED.',
+          logo_data_url: getLogoDataUrl(),
           ...receiptData,
-          sale_date_display: formatSaleDateTimeShort(receiptData.sale_date || receiptData.return_date),
+          sale_date_label: formatSaleDateLabel(saleDateSource),
+          sale_time_label: formatSaleTimeLabel(saleDateSource),
         }
 
         receiptWindow.webContents.once('did-finish-load', async () => {
           try {
-            await receiptWindow.webContents.executeJavaScript(`renderReceipt(${JSON.stringify(enrichedData)});`)
-            
-            // Give layout engine 250ms to settle DOM height and styles
+            await receiptWindow.webContents.executeJavaScript(
+              `(async () => { await renderReceipt(${JSON.stringify(enrichedData)}); })()`
+            )
+
             setTimeout(() => {
               const printOptions = {
                 silent: true,
@@ -86,17 +94,17 @@ export function registerPrintHandlers() {
                 if (success) {
                   resolve({ success: true, message: 'Receipt sent to thermal printer.' })
                 } else {
-                  console.warn(`[Print Engine] Silent print failed (${failureReason}). Attempting OS default print...`)
+                  console.warn(`[Print Engine] Silent print failed (${failureReason}).`)
                   resolve({ success: false, error: failureReason })
                 }
               })
-            }, 250)
+            }, 450)
           } catch (execErr) {
             reject(execErr)
           }
         })
 
-        receiptWindow.loadURL(encodedHtml)
+        receiptWindow.loadFile(receiptPath)
       } catch (err) {
         console.error('[Print Engine] Error triggering print:', err)
         reject(err)

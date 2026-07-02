@@ -4,195 +4,291 @@
   <meta charset="UTF-8">
   <title>POS Thermal Receipt</title>
   <style>
-    @page {
-      margin: 0;
-      size: 80mm auto;
-    }
+    @page { margin: 0; size: 80mm auto; }
+  </style>
+  <style>
     body {
       margin: 0;
-      padding: 10px;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 12px;
-      color: #000;
+      padding: 0;
       background: #fff;
-      width: 280px;
+      font-family: 'Courier New', Courier, monospace;
+      color: #000;
+    }
+    .receipt-container {
+      width: 80mm;
+      box-sizing: border-box;
+      padding: 6mm;
+      font-size: 12px;
+      line-height: 1.35;
     }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .bold { font-weight: bold; }
-    .header {
-      margin-bottom: 10px;
-      border-bottom: 1px dashed #000;
-      padding-bottom: 8px;
+
+    .header { text-align: center; }
+    .logo-img {
+      max-width: 50mm;
+      max-height: 22mm;
+      object-fit: contain;
+      margin-bottom: 4px;
+      filter: grayscale(100%) contrast(150%);
     }
-    .store-name {
-      font-size: 16px;
+    .store-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 2px;
+      flex-wrap: wrap;
+    }
+    .english-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+    .urdu-nastaleeq {
+      font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Nafees Regular', serif;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 700;
+      direction: rtl;
+      position: relative;
+      top: -3px;
+    }
+    .store-tagline { font-size: 10.5px; color: #333; }
+    .store-address { font-size: 10.5px; }
+    .contact-line { font-size: 10px; font-weight: bold; }
+
+    .divider { border-top: 1px dashed #000; margin: 6px 0; }
+    .divider-solid { border-top: 1px solid #000; margin: 6px 0; }
+
+    .meta-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .salesman-row {
+      border-top: 1px dotted #888;
+      border-bottom: 1px dotted #888;
+      padding: 3px 0;
+      margin-top: 4px;
       font-weight: bold;
-      letter-spacing: 1px;
-    }
-    .info-line { font-size: 11px; margin: 2px 0; }
-    .divider {
-      border-top: 1px dashed #000;
-      margin: 6px 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-    }
-    th {
-      text-align: left;
-      border-bottom: 1px solid #000;
-      padding: 4px 0;
-    }
-    td {
-      padding: 4px 0;
-      vertical-align: top;
-    }
-    .totals {
-      margin-top: 8px;
-      font-size: 12px;
-    }
-    .totals-row {
       display: flex;
       justify-content: space-between;
-      margin: 3px 0;
     }
-    .grand-total {
-      font-size: 14px;
+
+    table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+    th { text-align: left; border-bottom: 1px solid #000; padding: 3px 0; font-weight: bold; }
+    td { padding: 4px 0; vertical-align: top; }
+    .item-name { font-weight: bold; font-size: 11.5px; }
+    .item-sub { font-size: 9.5px; color: #444; }
+
+    .totals-row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .grand-total-row {
+      font-size: 13.5px;
       font-weight: bold;
       border-top: 1px solid #000;
       border-bottom: 1px solid #000;
       padding: 4px 0;
-      margin: 6px 0;
+      margin: 4px 0;
     }
-    .footer {
-      margin-top: 12px;
-      font-size: 10px;
-      text-align: center;
+
+    .footer { text-align: center; margin-top: 8px; }
+    .thank-you { font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+    .policy-box { font-size: 9.5px; line-height: 1.35; margin: 4px 0; color: #222; }
+
+    .social-section {
+      margin-top: 10px;
+      padding-top: 6px;
       border-top: 1px dashed #000;
-      padding-top: 8px;
+      text-align: center;
+    }
+    .social-title { font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+    .qr-img { width: 75px; height: 75px; display: block; margin: 0 auto; }
+    .receipt-type-title {
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
   </style>
 </head>
 <body>
-  <div id="receipt-content">
-    <div class="header text-center">
-      <div class="store-name" id="store-name">SONI FASHION | سونی فیشن</div>
-      <div class="info-line" id="store-tagline">Jahan Fashion enters your life</div>
-      <div class="info-line" id="store-address">Machli Bazar, Daska</div>
-      <div class="info-line" id="store-contact">WhatsApp/Ph: 03246470929</div>
-      <div class="info-line bold" id="receipt-title" style="display:none; margin-top: 6px; text-transform: uppercase;"></div>
+  <div class="receipt-container" id="receipt-content">
+    <div class="header">
+      <img id="store-logo" src="logo.png" alt="Soni Fashion" class="logo-img" />
+      <div class="store-title">
+        <span class="english-title" id="store-name-en">SONI FASHION</span>
+        <span>|</span>
+        <span class="urdu-nastaleeq" id="store-name-ur">سونی فیشن</span>
+      </div>
+      <div class="store-tagline" id="store-tagline">Where Fashion Comes to your life</div>
+      <div class="store-address" id="store-address">Qazi Market, Machli Bazar, Daska</div>
+      <div class="contact-line" id="store-contact">WhatsApp/Call : 03246470929 | 03456861996</div>
+      <div class="receipt-type-title" id="receipt-title" style="display:none;"></div>
     </div>
 
-    <div class="info-line"><span class="bold" id="inv-label">Inv #:</span> <span id="inv-no">INV-20260628-0001</span></div>
-    <div class="info-line"><span class="bold">Date:</span> <span id="inv-date">28-Jun-2026 14:30</span></div>
-    <div class="info-line"><span class="bold">Cashier:</span> <span id="inv-cashier">Staff</span></div>
+    <div class="divider-solid"></div>
+
+    <div class="meta-row">
+      <span><span class="bold" id="inv-label">Inv #:</span> <span id="inv-no">—</span></span>
+      <span id="inv-date">—</span>
+    </div>
+    <div class="meta-row">
+      <span>Time: <span id="inv-time">—</span></span>
+      <span>Items: <span id="item-count">0</span></span>
+    </div>
+    <div class="salesman-row">
+      <span>Salesman:</span>
+      <span id="inv-cashier">—</span>
+    </div>
 
     <div class="divider"></div>
 
     <table>
       <thead>
         <tr>
-          <th>Item</th>
-          <th class="text-center">Qty</th>
-          <th class="text-right">Total</th>
+          <th style="width: 20%;">SKU</th>
+          <th style="width: 40%;">Item</th>
+          <th class="text-center" style="width: 10%;">Qty</th>
+          <th class="text-right" style="width: 30%;">Total (Rs)</th>
         </tr>
       </thead>
-      <tbody id="items-body">
-        <!-- Dynamic items -->
-      </tbody>
+      <tbody id="items-body"></tbody>
     </table>
 
     <div class="divider"></div>
 
-    <div class="totals">
-      <div class="totals-row">
-        <span>Subtotal:</span>
-        <span id="subtotal">Rs. 0</span>
-      </div>
-      <div class="totals-row">
-        <span>Discount:</span>
-        <span id="discount">Rs. 0</span>
-      </div>
-      <div class="totals-row grand-total">
-        <span>TOTAL:</span>
-        <span id="grand-total">Rs. 0</span>
-      </div>
-      <div class="totals-row info-line">
-        <span>Payment:</span>
-        <span id="payment-method" style="text-transform: uppercase;">CASH</span>
-      </div>
-    </div>
+    <div class="totals-row"><span>Subtotal:</span><span id="subtotal">Rs. 0</span></div>
+    <div class="totals-row"><span>Discount:</span><span id="discount">Rs. 0</span></div>
+    <div class="totals-row grand-total-row"><span>TOTAL PAYABLE:</span><span id="grand-total">Rs. 0</span></div>
 
     <div class="footer">
-      <div>THANK YOU FOR SHOPPING WITH US!</div>
-      <div style="margin-top: 4px; font-weight: bold;" id="store-footer">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED</div>
-      <div style="margin-top: 6px; font-size: 9px; color: #555;">Software by Antigravity POS</div>
+      <div class="thank-you" id="thank-you-line">THANK YOU FOR SHOPPING WITH SONI FASHION!</div>
+      <div class="policy-box" id="store-footer">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED.</div>
+    </div>
+
+    <div class="social-section" id="social-section">
+      <div class="social-title">Follow us on TikTok @sonifashion</div>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data=https://tiktok.com/@sonifashion&amp;margin=0" alt="TikTok QR Code" class="qr-img" />
+      <div style="font-size: 9px; margin-top: 3px;">Scan for New Arrivals &amp; Offers</div>
     </div>
   </div>
 
   <script>
+    function formatMoney(value) {
+      const num = Number(value || 0);
+      if (num < 0) return '-Rs. ' + Math.abs(num).toLocaleString();
+      return 'Rs. ' + num.toLocaleString();
+    }
+
+    function formatLineTotal(value) {
+      const num = Number(value || 0);
+      if (num < 0) return '-' + Math.abs(num).toLocaleString();
+      return num.toLocaleString();
+    }
+
+    function applyThermalLogo(logo) {
+      if (!logo || !logo.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = logo.naturalWidth || logo.width;
+          canvas.height = logo.naturalHeight || logo.height;
+          ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const value = brightness > 160 ? 255 : 0;
+            data[i] = value;
+            data[i + 1] = value;
+            data[i + 2] = value;
+          }
+          ctx.putImageData(imageData, 0, 0);
+          logo.src = canvas.toDataURL('image/png');
+        } catch (err) {
+          console.warn('[Receipt] Logo thermal processing skipped:', err);
+        }
+        resolve();
+      });
+    }
+
+    function splitShopName(shopName) {
+      const raw = String(shopName || 'SONI FASHION | سونی فیشن');
+      const parts = raw.split('|').map((p) => p.trim()).filter(Boolean);
+      return {
+        en: parts[0] || 'SONI FASHION',
+        ur: parts[1] || 'سونی فیشن',
+      };
+    }
+
     function renderReceipt(data) {
-      if (!data) return;
-      if (document.getElementById('store-name') && data.shop_name) document.getElementById('store-name').textContent = data.shop_name;
-      if (document.getElementById('store-tagline') && data.shop_tagline) document.getElementById('store-tagline').textContent = data.shop_tagline;
-      if (document.getElementById('store-address') && data.shop_address) document.getElementById('store-address').textContent = data.shop_address;
-      if (document.getElementById('store-contact') && data.shop_contact) document.getElementById('store-contact').textContent = 'WhatsApp/Ph: ' + data.shop_contact;
-      if (document.getElementById('store-footer') && data.receipt_footer) document.getElementById('store-footer').textContent = data.receipt_footer;
+      if (!data) return Promise.resolve();
+
+      const names = splitShopName(data.shop_name);
+      document.getElementById('store-name-en').textContent = names.en.toUpperCase();
+      document.getElementById('store-name-ur').textContent = names.ur;
+      if (data.shop_tagline) document.getElementById('store-tagline').textContent = data.shop_tagline;
+      if (data.shop_address) document.getElementById('store-address').textContent = data.shop_address;
+      if (data.shop_contact) {
+        const contact = String(data.shop_contact).trim();
+        document.getElementById('store-contact').textContent = contact.toLowerCase().includes('whatsapp')
+          ? contact
+          : 'WhatsApp/Call : ' + contact;
+      }
+      if (data.receipt_footer) document.getElementById('store-footer').textContent = data.receipt_footer;
 
       const titleEl = document.getElementById('receipt-title');
-      if (titleEl) {
-        if (data.receipt_title) {
-          titleEl.textContent = data.receipt_title;
-          titleEl.style.display = 'block';
-        } else {
-          titleEl.style.display = 'none';
-        }
+      if (data.receipt_title) {
+        titleEl.textContent = data.receipt_title;
+        titleEl.style.display = 'block';
+      } else {
+        titleEl.style.display = 'none';
       }
 
-      const invLabel = document.getElementById('inv-label');
-      if (invLabel) {
-        invLabel.textContent = data.receipt_title ? 'Voucher #:' : 'Inv #:';
-      }
-
+      document.getElementById('inv-label').textContent = data.receipt_title ? 'Voucher #:' : 'Inv #:';
       document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
-      document.getElementById('inv-date').textContent = data.sale_date_display || data.sale_date || '—';
+      document.getElementById('inv-date').textContent = data.sale_date_label || '—';
+      document.getElementById('inv-time').textContent = data.sale_time_label || '—';
       document.getElementById('inv-cashier').textContent = data.salesperson_name || 'Cashier';
+
+      const items = data.items || [];
+      const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+      document.getElementById('item-count').textContent = String(itemCount);
 
       const tbody = document.getElementById('items-body');
       tbody.innerHTML = '';
-
-      const items = data.items || [];
-      items.forEach(item => {
+      items.forEach((item) => {
         const tr = document.createElement('tr');
-        const nameTd = document.createElement('td');
-        nameTd.innerHTML = `<div class="bold">${item.name || item.article_name || 'Item'}</div><div style="font-size: 9px; color: #444;">@ Rs.${Number(item.retail_price_snapshot).toLocaleString()}${item.discount_amount > 0 ? ` (-Rs.${item.discount_amount})` : ''}</div>`;
-        
-        const qtyTd = document.createElement('td');
-        qtyTd.className = 'text-center';
-        qtyTd.textContent = item.quantity;
+        const sku = item.sku || item.article_sku || '—';
+        const retail = Number(item.retail_price_snapshot || 0);
+        const discount = Number(item.discount_amount || 0);
+        const subLine = discount > 0
+          ? '@ ' + retail.toLocaleString() + ' (-' + discount.toLocaleString() + ')'
+          : '@ ' + retail.toLocaleString();
 
-        const totalTd = document.createElement('td');
-        totalTd.className = 'text-right bold';
-        const lineVal = Number(item.line_total);
-        totalTd.textContent = lineVal < 0
-          ? `-Rs.${Math.abs(lineVal).toLocaleString()}`
-          : `Rs.${lineVal.toLocaleString()}`;
-
-        tr.appendChild(nameTd);
-        tr.appendChild(qtyTd);
-        tr.appendChild(totalTd);
+        tr.innerHTML =
+          '<td style="font-size: 10.5px; font-weight: bold; color: #333;">' + sku + '</td>' +
+          '<td><div class="item-name">' + (item.name || item.article_name || 'Item') + '</div>' +
+          '<div class="item-sub">' + subLine + '</div></td>' +
+          '<td class="text-center bold">' + item.quantity + '</td>' +
+          '<td class="text-right bold" style="font-size: 12.5px;">' + formatLineTotal(item.line_total) + '</td>';
         tbody.appendChild(tr);
       });
 
-      document.getElementById('subtotal').textContent = `Rs. ${Number(data.subtotal || 0).toLocaleString()}`;
-      document.getElementById('discount').textContent = `Rs. ${Number(data.total_discount || 0).toLocaleString()}`;
-      const grandVal = Number(data.grand_total || 0);
-      document.getElementById('grand-total').textContent = grandVal < 0
-        ? `-Rs. ${Math.abs(grandVal).toLocaleString()}`
-        : `Rs. ${grandVal.toLocaleString()}`;
-      document.getElementById('payment-method').textContent = (data.payment_method || 'CASH').replace(/_/g, ' ');
+      const totalDiscount = Number(data.total_discount || 0);
+      document.getElementById('subtotal').textContent = formatMoney(data.subtotal || 0);
+      document.getElementById('discount').textContent = totalDiscount > 0
+        ? '- Rs. ' + totalDiscount.toLocaleString()
+        : 'Rs. 0';
+      document.getElementById('grand-total').textContent = formatMoney(data.grand_total || 0);
+
+      const logo = document.getElementById('store-logo');
+      if (data.logo_data_url) logo.src = data.logo_data_url;
+      if (logo.complete) return applyThermalLogo(logo);
+      return new Promise((resolve) => {
+        logo.onload = () => applyThermalLogo(logo).then(resolve);
+        logo.onerror = () => resolve();
+      });
     }
 
     if (window.receiptAPI && window.receiptAPI.onReceiptData) {

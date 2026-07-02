@@ -2,10 +2,10 @@ export function runSeed(db) {
   console.log('[Seed] Seeding and personalizing configuration settings...')
 
   const seedSettings = [
-    ['shop_name', 'Soni Fashion | سونی فیشن'],
-    ['shop_tagline', 'Jahan Fashion enters your life'],
-    ['shop_address', 'Qazi Market,Machli Bazar, Daska'],
-    ['shop_contact', '03246470929'],
+    ['shop_name', 'SONI FASHION | سونی فیشن'],
+    ['shop_tagline', 'Where Fashion Comes to your life'],
+    ['shop_address', 'Qazi Market, Machli Bazar, Daska'],
+    ['shop_contact', '03246470929 | 03456861996'],
     ['sku_prefix', 'SF'],
     ['invoice_prefix', 'SF-INV'],
     ['return_prefix', 'SF-RET'],

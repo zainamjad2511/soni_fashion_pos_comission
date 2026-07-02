@@ -72,3 +72,21 @@ export function formatSaleDateTimeShort(value) {
   if (!parsed) return value ? String(value) : '—'
   return format(parsed, 'yyyy-MM-dd  hh:mm a')
 }
+
+/**
+ * Receipt header date label e.g. 29-Jun-2026
+ */
+export function formatSaleDateLabel(value) {
+  const parsed = parseStoredDateTime(value)
+  if (!parsed) return '—'
+  return format(parsed, 'dd-MMM-yyyy')
+}
+
+/**
+ * Receipt header time label e.g. 01:35 PM
+ */
+export function formatSaleTimeLabel(value) {
+  const parsed = parseStoredDateTime(value)
+  if (!parsed) return '—'
+  return format(parsed, 'hh:mm a')
+}
