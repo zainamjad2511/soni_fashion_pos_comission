@@ -31,7 +31,7 @@ export function Reports() {
   const [topLimit, setTopLimit] = useState(10)
 
   // Report Data States
-  const [salesData, setSalesData] = useState({ sales: [], summary: { total_sales: 0, total_items: 0, total_revenue: 0 } })
+  const [salesData, setSalesData] = useState({ sales: [], summary: { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 } })
   const [profitData, setProfitData] = useState({ revenue: 0, cogs: 0, gross_profit: 0, total_expenses: 0, net_profit: 0 })
   const [inventoryData, setInventoryData] = useState({ articles: [], summary: { total_articles: 0, total_units: 0, grand_total_cost: 0, grand_total_retail: 0 } })
   const [topArticlesData, setTopArticlesData] = useState([])
@@ -57,7 +57,7 @@ export function Reports() {
           if (res && res.success && res.data) {
             setSalesData({
               sales: Array.isArray(res.data.sales) ? res.data.sales : [],
-              summary: res.data.summary || { total_sales: 0, total_items: 0, total_revenue: 0 }
+              summary: res.data.summary || { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 }
             })
           }
         } else if (activeTab === 'profit') {
@@ -92,10 +92,10 @@ export function Reports() {
         if (activeTab === 'sales') {
           setSalesData({
             sales: [
-              { id: 1, invoice_number: 'INV-2026-001', sale_date: `${todayStr} 10:30`, salesperson_name: 'Ahmed Zahid', payment_method: 'Cash', total_items: 3, grand_total: 12500 },
-              { id: 2, invoice_number: 'INV-2026-002', sale_date: `${todayStr} 14:15`, salesperson_name: 'Bilal Khan', payment_method: 'Card', total_items: 1, grand_total: 4500 }
+              { id: 1, invoice_number: 'INV-2026-001', sale_date: `${todayStr} 10:30`, salesperson_name: 'Ahmed Zahid', payment_method: 'Cash', total_items: 3, subtotal: 13000, total_discount: 500, grand_total: 12500, gross_profit: 4200 },
+              { id: 2, invoice_number: 'INV-2026-002', sale_date: `${todayStr} 14:15`, salesperson_name: 'Bilal Khan', payment_method: 'Card', total_items: 1, subtotal: 4500, total_discount: 0, grand_total: 4500, gross_profit: 1800 }
             ],
-            summary: { total_sales: 2, total_items: 4, total_revenue: 17000 }
+            summary: { total_sales: 2, total_items: 4, total_revenue: 17000, total_gross_profit: 6000 }
           })
         } else if (activeTab === 'profit') {
           setProfitData({ revenue: 150000, cogs: 90000, gross_profit: 60000, total_expenses: 18500, net_profit: 41500 })
@@ -284,7 +284,7 @@ export function Reports() {
           {activeTab === 'sales' && (
             <div className="space-y-12 animate-fade-in">
               {/* Sales KPIs — Open Spatial Blocks */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-[#C9C0B5]">
                 <div className="space-y-1">
                   <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Completed Invoices</span>
                   <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
@@ -293,7 +293,7 @@ export function Reports() {
                   <span className="text-xs font-sans text-[#7A6F69] block">Total customer checkouts</span>
                 </div>
 
-                <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+                <div className="space-y-1 lg:border-l lg:border-[#C9C0B5] lg:pl-8">
                   <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Units Dispatched</span>
                   <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
                     {salesData.summary.total_items}
@@ -301,12 +301,20 @@ export function Reports() {
                   <span className="text-xs font-sans text-[#7A6F69] block">Garment volume sold</span>
                 </div>
 
-                <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+                <div className="space-y-1 lg:border-l lg:border-[#C9C0B5] lg:pl-8">
                   <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Gross Sales Revenue</span>
                   <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     Rs. {Number(salesData.summary.total_revenue).toLocaleString()}
                   </h3>
                   <span className="text-xs font-sans text-[#7A6F69] block">Inclusive of discounts</span>
+                </div>
+
+                <div className="space-y-1 lg:border-l lg:border-[#C9C0B5] lg:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Total Gross Profit</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
+                    Rs. {Number(salesData.summary.total_gross_profit || 0).toLocaleString()}
+                  </h3>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Revenue minus wholesale cost</span>
                 </div>
               </div>
 
@@ -322,13 +330,14 @@ export function Reports() {
                       <th className="py-4 px-4 text-center">Items</th>
                       <th className="py-4 px-4 text-right">Subtotal</th>
                       <th className="py-4 px-4 text-right">Discount</th>
-                      <th className="py-4 pl-4 text-right">Grand Total</th>
+                      <th className="py-4 px-4 text-right">Grand Total</th>
+                      <th className="py-4 pl-4 text-right">Gross Profit</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
                     {salesData.sales.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-[#7A6F69] text-sm">
+                        <td colSpan={9} className="py-12 text-center text-[#7A6F69] text-sm">
                           No sales records found within this date range.
                         </td>
                       </tr>
@@ -353,7 +362,10 @@ export function Reports() {
                           <td className="py-5 px-4 text-right font-mono text-[#7A6F69] text-base">
                             {Number(s.total_discount || 0) > 0 ? `- Rs. ${Number(s.total_discount).toLocaleString()}` : '—'}
                           </td>
-                          <td className="py-5 pl-4 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
+                          <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-lg">Rs. {Number(s.grand_total || 0).toLocaleString()}</td>
+                          <td className={`py-5 pl-4 text-right font-mono font-bold text-base ${Number(s.gross_profit || 0) < 0 ? 'text-[#9A4A4A]' : 'text-[#2E2822]'}`}>
+                            Rs. {Number(s.gross_profit || 0).toLocaleString()}
+                          </td>
                         </tr>
                       ))
                     )}

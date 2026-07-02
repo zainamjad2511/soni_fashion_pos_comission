@@ -36,7 +36,8 @@ export function registerReportsHandlers() {
       SELECT
         s.id, s.invoice_number, s.sale_date, s.subtotal, s.total_discount, s.grand_total, s.payment_method, s.status,
         sp.name AS salesperson_name,
-        COALESCE(SUM(si.quantity), 0) AS total_items
+        COALESCE(SUM(si.quantity), 0) AS total_items,
+        COALESCE(SUM(si.line_total), 0) - COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS gross_profit
       FROM sales s
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
       LEFT JOIN sale_items si ON s.id = si.sale_id
@@ -68,6 +69,18 @@ export function registerReportsHandlers() {
           FROM return_items ri
           WHERE ri.return_id = r.id
         ), 0) AS total_items,
+        COALESCE((
+          SELECT SUM(
+            CASE
+              WHEN si.id IS NOT NULL THEN si.wholesale_price_snapshot * ri.quantity_returned
+              ELSE a.wholesale_price * ri.quantity_returned
+            END
+          )
+          FROM return_items ri
+          LEFT JOIN sale_items si ON ri.sale_item_id = si.id
+          JOIN articles a ON ri.article_id = a.id
+          WHERE ri.return_id = r.id
+        ), 0) - r.refund_credit AS gross_profit,
         'return' AS record_type
       FROM returns r
       LEFT JOIN salespersons sp ON r.processed_by = sp.id
@@ -85,8 +98,9 @@ export function registerReportsHandlers() {
     const total_returns = returns.length
     const total_items = rows.reduce((acc, r) => acc + Number(r.total_items || 0), 0)
     const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total || 0), 0)
+    const total_gross_profit = rows.reduce((acc, r) => acc + Number(r.gross_profit || 0), 0)
 
-    return { sales: rows, summary: { total_sales, total_returns, total_items, total_revenue } }
+    return { sales: rows, summary: { total_sales, total_returns, total_items, total_revenue, total_gross_profit } }
   }
   handleIpc('reports:salesSummary', handleSalesSummary)
   handleIpc('reports:dailySales', handleSalesSummary) // Backward compatibility alias
