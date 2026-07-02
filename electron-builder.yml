@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: soni-fashion-pos
+appId: com.zainamjad.sonifashion
+productName: Soni Fashion POS
 directories:
   buildResources: build
 files:
@@ -10,12 +10,20 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
 asarUnpack:
   - resources/**
+  - out/main/receipt/**
+  - node_modules/better-sqlite3/**
 win:
+  target:
+    - nsis
   executableName: soni-fashion-pos
+  icon: build/icon.png
+  artifactName: Soni-Fashion-POS-${version}-setup.${ext}
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Soni Fashion POS
+  uninstallDisplayName: Soni Fashion POS
   createDesktopShortcut: always
 mac:
   entitlementsInherit: build/entitlements.mac.plist
@@ -30,13 +38,9 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
     - deb
   maintainer: electronjs.org
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
-npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+npmRebuild: true

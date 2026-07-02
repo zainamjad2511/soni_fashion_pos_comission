@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import appIcon from '../../build/icon.png?asset'
 import { getDb, closeDb } from './db/database.js'
 import { registerSettingsHandlers } from './ipc/settings.ipc.js'
 import { registerSuppliersHandlers } from './ipc/suppliers.ipc.js'
@@ -19,6 +19,10 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox')
 }
 
+function getWindowIcon() {
+  return appIcon
+}
+
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -26,7 +30,8 @@ function createWindow() {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    title: 'SoniFashion POS by Zain Amjad',
+    icon: getWindowIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -56,8 +61,8 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  // Set app user model id for Windows taskbar/start menu grouping
+  electronApp.setAppUserModelId('com.zainamjad.sonifashion')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

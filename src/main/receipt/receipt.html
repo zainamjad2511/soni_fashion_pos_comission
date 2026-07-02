@@ -7,14 +7,45 @@
     @page { margin: 0; size: 80mm auto; }
   </style>
   <style>
+    @font-face {
+      font-family: 'Noto Nastaliq Urdu';
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url('fonts/noto-nastaliq-urdu-arabic-400-normal.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Noto Nastaliq Urdu';
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url('fonts/noto-nastaliq-urdu-arabic-700-normal.woff2') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Courier Prime';
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+      src: url('fonts/courier-prime-latin-400-normal.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Courier Prime';
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+      src: url('fonts/courier-prime-latin-700-normal.woff2') format('woff2');
+    }
+
     body {
       margin: 0;
       padding: 0;
       background: #fff;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: 'Courier Prime', 'Courier New', monospace;
       color: #000;
     }
     .receipt-container {
+      background: #ffffff;
       width: 80mm;
       box-sizing: border-box;
       padding: 6mm;
@@ -108,6 +139,11 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
+    .software-tag {
+      margin-top: 8px;
+      font-size: 8.5px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -167,8 +203,9 @@
 
     <div class="social-section" id="social-section">
       <div class="social-title">Follow us on TikTok @sonifashion</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data=https://tiktok.com/@sonifashion&amp;margin=0" alt="TikTok QR Code" class="qr-img" />
+      <img src="tiktok-qr.png" alt="TikTok QR Code" class="qr-img" />
       <div style="font-size: 9px; margin-top: 3px;">Scan for New Arrivals &amp; Offers</div>
+      <div class="software-tag">Software by Zain Amjad - 0312-7301850</div>
     </div>
   </div>
 

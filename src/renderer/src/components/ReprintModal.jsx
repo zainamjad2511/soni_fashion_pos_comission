@@ -15,7 +15,8 @@ import {
   EyeIcon,
 } from './icons/TechnicalIcons.jsx'
 import { StandardModal, StandardModalAction } from './StandardModal.jsx'
-import { buildReturnReceiptPayload, formatReceiptLineTotal } from '../utils/returnReceipt.js'
+import { ReceiptPreview } from './ReceiptPreview.jsx'
+import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 export function ReprintModal({ isOpen, onClose }) {
@@ -24,13 +25,27 @@ export function ReprintModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false)
   const [printingId, setPrintingId] = useState(null)
   const [previewReceipt, setPreviewReceipt] = useState(null)
+  const [previewShop, setPreviewShop] = useState({})
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
     if (isOpen) {
       fetchTransactions('')
+      loadShopSettings()
     }
   }, [isOpen])
+
+  const loadShopSettings = async () => {
+    try {
+      if (!window.electronAPI?.settings?.getAll) return
+      const res = await window.electronAPI.settings.getAll()
+      if (res?.success && res.data) {
+        setPreviewShop(res.data)
+      }
+    } catch (err) {
+      console.warn('[ReprintModal] Could not load shop settings for preview:', err)
+    }
+  }
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -286,7 +301,7 @@ export function ReprintModal({ isOpen, onClose }) {
                         <button
                           onClick={() => handlePreview(txn)}
                           className="px-3 py-2 rounded-[2px] bg-[#EFEBE3] hover:bg-[#2E2822] hover:text-[#F7F5F0] text-[#2E2822] font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-1.5"
-                          title="View Receipt Structure Mockup"
+                          title="Preview Receipt"
                         >
                           <EyeIcon className="w-3.5 h-3.5" />
                           <span>Preview</span>
@@ -325,72 +340,14 @@ export function ReprintModal({ isOpen, onClose }) {
           title="Receipt Preview"
           maxWidth="sm"
           zIndex={110}
-          bodyClassName="p-0"
+          bodyClassName="receipt-preview-modal-body overflow-y-auto max-h-[75vh]"
           footer={
             <StandardModalAction onClick={() => setPreviewReceipt(null)}>
               Close Preview
             </StandardModalAction>
           }
         >
-          <div className="bg-white text-black p-6 w-full font-mono text-xs max-h-[60vh] overflow-y-auto">
-            <div className="text-center border-b border-dashed border-black pb-3 mb-3">
-              <div className="font-bold text-base tracking-wide">SONI FASHION | سونی فیشن</div>
-              <div className="text-[11px] mt-1">Jahan Fashion enters your life</div>
-              <div className="text-[11px]">Machli Bazar, Daska</div>
-              <div className="text-[11px]">WhatsApp/Ph: 03246470929</div>
-              {previewReceipt.receipt_title && (
-                <div className="text-[11px] font-bold mt-2 uppercase">{previewReceipt.receipt_title}</div>
-              )}
-            </div>
-
-            <div className="space-y-1 border-b border-dashed border-black pb-3 mb-3 text-[11px]">
-              <div><strong className="font-bold">Voucher #:</strong> {previewReceipt.invoice_number}</div>
-              <div><strong className="font-bold">Date:</strong> {formatSaleDateTimeShort(previewReceipt.sale_date || previewReceipt.return_date)}</div>
-              <div><strong className="font-bold">Staff:</strong> {previewReceipt.salesperson_name || 'Staff'}</div>
-            </div>
-
-            <table className="w-full text-left border-collapse mb-3 text-[11px]">
-              <thead>
-                <tr className="border-b border-black font-bold">
-                  <th className="py-1">Item</th>
-                  <th className="py-1 text-center">Qty</th>
-                  <th className="py-1 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(previewReceipt.items || []).length === 0 ? (
-                  <tr><td colSpan={3} className="py-2 text-center italic text-gray-500">No item details recorded</td></tr>
-                ) : (
-                  previewReceipt.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="py-1.5">
-                        <div className="font-bold">{item.name || item.article_name || 'Item'}</div>
-                        <div className="text-[9px] text-gray-600">@ Rs.{Number(item.retail_price_snapshot || 0).toLocaleString()}</div>
-                      </td>
-                      <td className="py-1.5 text-center">{item.quantity}</td>
-                      <td className="py-1.5 text-right font-bold">{formatReceiptLineTotal(item.line_total)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            <div className="border-t border-dashed border-black pt-2 space-y-1 text-right text-[11px]">
-              <div className="flex justify-between"><span>Subtotal:</span><span>Rs. {Number(previewReceipt.subtotal || previewReceipt.grand_total || 0).toLocaleString()}</span></div>
-              <div className="flex justify-between"><span>Discount:</span><span>Rs. {Number(previewReceipt.total_discount || 0).toLocaleString()}</span></div>
-              <div className="flex justify-between font-bold text-sm border-y border-black py-1 my-1">
-                <span>NET TOTAL:</span>
-                <span>{formatReceiptLineTotal(previewReceipt.grand_total)}</span>
-              </div>
-              <div className="flex justify-between uppercase"><span>Settlement:</span><span>{previewReceipt.payment_method || 'CASH'}</span></div>
-            </div>
-
-            <div className="border-t border-dashed border-black mt-4 pt-3 text-center text-[10px] space-y-1">
-              <div>THANK YOU FOR SHOPPING WITH US!</div>
-              <div className="font-bold mt-1">Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED</div>
-              <div className="text-[9px] text-gray-500 mt-2">Software by Antigravity POS</div>
-            </div>
-          </div>
+          <ReceiptPreview receipt={previewReceipt} shop={previewShop} />
         </StandardModal>
       )}
     </>

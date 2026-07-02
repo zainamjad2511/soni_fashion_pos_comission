@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import logoImg from '../assets/logo.jpg'
+import logoImg from '../assets/image.png'
 import {
   DashboardIcon,
   CartIcon,
@@ -56,7 +56,7 @@ export function Sidebar() {
       >
         {/* Brand */}
         <div style={{ borderBottom: `1px solid ${C.border}`, padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 14, minHeight: 70 }}>
-          <img src={logoImg} alt="SF" style={{ width: 38, height: 38, objectFit: 'cover', flexShrink: 0 }} />
+          <img src={logoImg} alt="Soni Fashion" style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }} />
           <div style={{ overflow: 'hidden', opacity: expanded ? 1 : 0, transition: 'opacity 0.15s ease', whiteSpace: 'nowrap' }}>
             <div style={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, fontSize: '1.1rem', color: C.ink, letterSpacing: '-0.01em' }}>Soni Fashion</div>
             <div style={{ fontFamily: '"Lato", sans-serif', fontSize: '0.68rem', color: C.muted, letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: 2 }}>POS Catalog</div>

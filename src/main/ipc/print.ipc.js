@@ -1,24 +1,22 @@
 import { handleIpc } from './envelope.js'
 import { BrowserWindow } from 'electron'
-import { join } from 'path'
 import fs from 'fs'
 import { getDb } from '../db/database.js'
 import { formatSaleDateLabel, formatSaleTimeLabel } from '../utils/localDateTime.js'
+import { getReceiptAssetPath, getReceiptHtmlPath } from '../utils/receiptPaths.js'
 
 let receiptWindow = null
 
-function getReceiptHtmlPath() {
-  const receiptPath = join(__dirname, '../receipt/receipt.html')
-  if (!fs.existsSync(receiptPath)) {
-    throw new Error(`Receipt template not found at ${receiptPath}`)
-  }
-  return receiptPath
-}
-
 function getLogoDataUrl() {
-  const logoPath = join(__dirname, '../receipt/logo.png')
+  const logoPath = getReceiptAssetPath('logo.png')
   if (!fs.existsSync(logoPath)) return null
   return `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+}
+
+function getConfiguredPrinterName(db) {
+  const receiptPrinter = db.prepare("SELECT value FROM settings WHERE key = 'receipt_printer_name'").get()
+  const legacyPrinter = db.prepare("SELECT value FROM settings WHERE key = 'thermal_printer_name'").get()
+  return String(receiptPrinter?.value || legacyPrinter?.value || '').trim()
 }
 
 export function registerPrintHandlers() {
@@ -41,8 +39,7 @@ export function registerPrintHandlers() {
     return new Promise((resolve, reject) => {
       try {
         const db = getDb()
-        const settingRow = db.prepare("SELECT value FROM settings WHERE key = 'thermal_printer_name'").get()
-        const printerName = settingRow ? settingRow.value : null
+        const printerName = getConfiguredPrinterName(db)
 
         if (!receiptWindow || receiptWindow.isDestroyed()) {
           receiptWindow = new BrowserWindow({
@@ -61,12 +58,17 @@ export function registerPrintHandlers() {
         const settingsMap = {}
         settingsRows.forEach(r => { settingsMap[r.key] = r.value })
 
+        let shopContact = settingsMap.shop_contact || '03246470929 | 03456861996'
+        if (!String(shopContact).trim().includes('|')) {
+          shopContact = '03246470929 | 03456861996'
+        }
+
         const saleDateSource = receiptData.sale_date || receiptData.return_date
         const enrichedData = {
           shop_name: settingsMap.shop_name || 'SONI FASHION | سونی فیشن',
           shop_tagline: settingsMap.shop_tagline || 'Where Fashion Comes to your life',
           shop_address: settingsMap.shop_address || 'Qazi Market, Machli Bazar, Daska',
-          shop_contact: settingsMap.shop_contact || '03246470929 | 03456861996',
+          shop_contact: shopContact,
           receipt_footer: settingsMap.receipt_footer || 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED.',
           logo_data_url: getLogoDataUrl(),
           ...receiptData,
@@ -84,10 +86,10 @@ export function registerPrintHandlers() {
               const printOptions = {
                 silent: true,
                 printBackground: true,
-                margins: { marginType: 'none' }
+                margins: { marginType: 'none' },
               }
-              if (printerName && printerName.trim() !== '') {
-                printOptions.deviceName = printerName.trim()
+              if (printerName) {
+                printOptions.deviceName = printerName
               }
 
               receiptWindow.webContents.print(printOptions, (success, failureReason) => {

@@ -23,10 +23,10 @@ export function Settings() {
   const [toast, setToast] = useState(null)
   const [availablePrinters, setAvailablePrinters] = useState([])
   const [formData, setFormData] = useState({
-    shop_name: 'Soni Fashion | سونی فیشن',
-    shop_tagline: 'Jahan Fashion enters your life',
-    shop_address: 'Machli Bazar, Daska',
-    shop_contact: '03246470929',
+    shop_name: 'SONI FASHION | سونی فیشن',
+    shop_tagline: 'Where Fashion Comes to your life',
+    shop_address: 'Qazi Market, Machli Bazar, Daska',
+    shop_contact: '03246470929 | 03456861996',
     receipt_footer: 'Exchange allowed within 7 days with original receipt. No cash refund. ONLY EXCHANGE IS ALLOWED',
     receipt_printer_name: '',
     default_commission: '1',
@@ -48,7 +48,12 @@ export function Settings() {
       if (window.electronAPI && window.electronAPI.settings) {
         const res = await window.electronAPI.settings.getAll()
         if (res.success && res.data) {
-          setFormData((prev) => ({ ...prev, ...res.data }))
+          setFormData((prev) => ({
+            ...prev,
+            ...res.data,
+            receipt_printer_name:
+              res.data.receipt_printer_name || res.data.thermal_printer_name || prev.receipt_printer_name,
+          }))
         } else {
           showToast('error', res.error || 'Failed to load store settings.')
         }
@@ -92,7 +97,8 @@ export function Settings() {
         ...updatePayload
       } = formData
 
-      // Ensure both key variations are saved for printer engine compatibility
+      // Persist Windows printer selection under both keys for compatibility
+      updatePayload.receipt_printer_name = formData.receipt_printer_name || ''
       updatePayload.thermal_printer_name = formData.receipt_printer_name || ''
 
       if (window.electronAPI && window.electronAPI.settings) {
