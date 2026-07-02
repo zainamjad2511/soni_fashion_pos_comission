@@ -36,7 +36,6 @@ export function registerSalesHandlers() {
       const validatedItems = items.map((item) => {
         const articleId = Number(item.article_id)
         const qty = parseInt(item.quantity, 10)
-        const disc = Math.max(0, Number(item.discount_amount || 0))
 
         if (isNaN(qty) || qty <= 0) {
           throw new Error('Item quantity must be a positive integer.')
@@ -53,10 +52,21 @@ export function registerSalesHandlers() {
         const retailSnap = Number(item.retail_price_snapshot || article.retail_price || 0)
         const wholesaleSnap = Number(item.wholesale_price_snapshot || article.wholesale_price || 0)
         const lineSubtotal = retailSnap * qty
-        const lineTotal = Math.max(0, lineSubtotal - disc)
+        const lineTotal = item.line_total != null && item.line_total !== ''
+          ? Number(item.line_total)
+          : Math.max(0, lineSubtotal - Math.max(0, Number(item.discount_amount || 0)))
+
+        if (isNaN(lineTotal) || lineTotal < 0) {
+          throw new Error(`Invalid line total for "${article.name}".`)
+        }
+        if (lineTotal > lineSubtotal) {
+          throw new Error(`Final amount for "${article.name}" cannot exceed retail subtotal (Rs. ${lineSubtotal.toLocaleString()}).`)
+        }
+
+        const resolvedDiscount = lineSubtotal - lineTotal
 
         subtotal += lineSubtotal
-        itemsTotalDiscount += disc
+        itemsTotalDiscount += resolvedDiscount
 
         return {
           article_id: articleId,
@@ -65,7 +75,7 @@ export function registerSalesHandlers() {
           quantity: qty,
           retail_price_snapshot: retailSnap,
           wholesale_price_snapshot: wholesaleSnap,
-          discount_amount: disc,
+          discount_amount: resolvedDiscount,
           line_total: lineTotal
         }
       })

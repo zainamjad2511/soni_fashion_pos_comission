@@ -142,8 +142,11 @@ export const useCartStore = create((set, get) => ({
   },
 
   setOrderDiscount: (amount) => {
-    const disc = amount === '' ? '' : Math.max(0, Number(amount) || 0)
-    set({ orderDiscount: disc })
+    if (amount === '' || amount === null || amount === undefined) {
+      set({ orderDiscount: 0 })
+      return
+    }
+    set({ orderDiscount: Math.max(0, Number(amount) || 0) })
   },
 
   setPaymentMethod: (method) => set({ paymentMethod: method }),
@@ -168,7 +171,7 @@ export const useCartStore = create((set, get) => ({
   getTotalDiscount: () => {
     const { items, orderDiscount } = get()
     const itemsDiscount = items.reduce((sum, item) => sum + (item.discount_amount || 0), 0)
-    return itemsDiscount + orderDiscount
+    return itemsDiscount + (Number(orderDiscount) || 0)
   },
 
   getGrandTotal: () => {

@@ -204,14 +204,23 @@ export function POSSale() {
       if (window.electronAPI && window.electronAPI.sales) {
         const payload = {
           salesperson_id: salesperson.id,
-          items: items.map((i) => ({
-            article_id: i.article_id,
-            quantity: i.quantity,
-            discount_amount: i.discount_amount,
-            retail_price_snapshot: i.retail_price_snapshot,
-            wholesale_price_snapshot: i.wholesale_price_snapshot
-          })),
-          order_discount: orderDiscount,
+          items: items.map((i) => {
+            const subtotal = i.retail_price_snapshot * i.quantity
+            const lineTotal = Math.max(0, Number(
+              i.final_amount_input !== undefined && i.final_amount_input !== ''
+                ? i.final_amount_input
+                : subtotal - (i.discount_amount || 0)
+            ))
+            return {
+              article_id: i.article_id,
+              quantity: i.quantity,
+              retail_price_snapshot: i.retail_price_snapshot,
+              wholesale_price_snapshot: i.wholesale_price_snapshot,
+              discount_amount: Math.max(0, subtotal - lineTotal),
+              line_total: lineTotal,
+            }
+          }),
+          order_discount: Number(orderDiscount) || 0,
           payment_method: paymentMethod,
           notes: notes
         }
@@ -327,13 +336,20 @@ export function POSSale() {
         </div>
 
         {/* Total Header Display (Darker Cream Shade #E4DBC8) */}
-        <div className="flex items-baseline gap-4 bg-[#E4DBC8] px-6 py-2.5 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#332822]">
-            TOTAL
-          </span>
-          <span className="text-4xl sm:text-5xl font-mono font-bold text-[#332822] tracking-tight">
-            {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
+        <div className="flex flex-col items-end bg-[#E4DBC8] px-6 py-2.5 shadow-sm">
+          {Number(orderDiscount) > 0 && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7A6F69] mb-1">
+              Order discount: Rs. {Number(orderDiscount).toLocaleString('en-IN')}
+            </span>
+          )}
+          <div className="flex items-baseline gap-4">
+            <span className="text-xs font-semibold uppercase tracking-widest text-[#332822]">
+              TOTAL
+            </span>
+            <span className="text-4xl sm:text-5xl font-mono font-bold text-[#332822] tracking-tight">
+              {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
       </div>
 
