@@ -12,6 +12,14 @@ import {
 } from '../components/StandardModal.jsx'
 import { POSActionPanel } from '../components/POSActionPanel.jsx'
 
+async function printSaleReceipt(invoiceNumber) {
+  const reprintRes = await window.electronAPI.sales.reprint(invoiceNumber)
+  if (!reprintRes?.success || !reprintRes.data) {
+    throw new Error(reprintRes?.error || 'Could not load receipt data.')
+  }
+  return window.electronAPI.print.receipt(reprintRes.data)
+}
+
 export function POSSale() {
   const [salespersons, setSalespersons] = useState([])
   const [searchResults, setSearchResults] = useState([])
@@ -211,16 +219,21 @@ export function POSSale() {
         const res = await window.electronAPI.sales.create(payload)
         if (res.success && res.data) {
           const newSale = res.data
-          setLastCompletedSale(newSale)
           showToast('success', `Sale Completed! Invoice #${newSale.invoice_number} generated successfully.`)
           clearCart()
           setPendingCheckoutSalesperson(null)
-          if (window.electronAPI?.print?.receipt) {
-            window.electronAPI.print.receipt(newSale).then((printRes) => {
+          setLastCompletedSale(null)
+          if (window.electronAPI?.sales?.reprint && window.electronAPI?.print?.receipt) {
+            try {
+              const printRes = await printSaleReceipt(newSale.invoice_number)
               if (printRes?.success) {
                 console.log('[POS] Silent receipt printed successfully.')
+              } else {
+                console.warn('[POS] Auto print failed:', printRes?.error)
               }
-            }).catch((err) => console.warn('[POS] Auto print error:', err))
+            } catch (err) {
+              console.warn('[POS] Auto print error:', err)
+            }
           }
         } else {
           showToast('error', res?.error || 'Failed to complete transaction.')
@@ -235,24 +248,18 @@ export function POSSale() {
   }
 
 
-  // Keyboard shortcuts for Complete Sale [F12] and Print Receipt [F11 / Ctrl+P]
+  // Keyboard shortcut for Complete Sale [F12]
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'F12') {
         e.preventDefault()
         if (isCheckoutConfirmOpen || processing || items.length === 0) return
         handleInitiateCheckout()
-      } else if (e.key === 'F11' || (e.ctrlKey && e.key.toLowerCase() === 'p')) {
-        e.preventDefault()
-        if (lastCompletedSale && window.electronAPI?.print?.receipt) {
-          window.electronAPI.print.receipt(lastCompletedSale)
-          showToast('success', 'Sending receipt to thermal printer...')
-        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [items, processing, lastCompletedSale, isCheckoutConfirmOpen])
+  }, [items, processing, isCheckoutConfirmOpen])
 
   useEffect(() => {
     if (!isCheckoutConfirmOpen) return undefined
@@ -466,17 +473,18 @@ export function POSSale() {
           itemsLength={items.length}
           onCompleteSale={handleInitiateCheckout}
           onNewDocument={() => {
-            if (items.length > 0 && window.confirm('Clear current active cart?')) clearCart()
-          }}
-          onDeleteLines={() => {
-            if (items.length > 0 && window.confirm('Delete document lines?')) clearCart()
-          }}
-          onPrintDocument={() => {
-            if (lastCompletedSale && window.electronAPI?.print?.receipt) {
-              window.electronAPI.print.receipt(lastCompletedSale)
-              showToast('success', 'Sending receipt to thermal printer...')
+            if (items.length > 0 && window.confirm('Clear current active cart?')) {
+              clearCart()
+              setLastCompletedSale(null)
             }
           }}
+          onDeleteLines={() => {
+            if (items.length > 0 && window.confirm('Delete document lines?')) {
+              clearCart()
+              setLastCompletedSale(null)
+            }
+          }}
+          onPrintDocument={() => {}}
           lastCompletedSale={lastCompletedSale}
           onOpenCashierModal={() => setIsCashierModalOpen(true)}
           onOpenDiscountModal={() => setIsDiscountModalOpen(true)}
