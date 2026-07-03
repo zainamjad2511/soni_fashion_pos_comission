@@ -52,7 +52,7 @@ export function TopBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: C.muted }}>
           <LocationIcon size={13} />
           <span style={{ fontFamily: '"Lato", sans-serif', fontSize: '0.72rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: C.muted }}>
-            Machli Bazar, Daska
+            Qazi Market, Machli Bazar, Daska
           </span>
         </div>
 

@@ -19,6 +19,11 @@ import {
 } from '../components/icons/TechnicalIcons.jsx'
 import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
+import {
+  getOverlayDismissProps,
+  getOverlayPanelProps,
+  useDismissOnEscape,
+} from '../components/StandardModal.jsx'
 
 const EXPENSE_CATEGORIES = [
   'Rent & Utilities',
@@ -140,6 +145,9 @@ export function Expenses() {
     setIsDrawerOpen(false)
     setEditingExpense(null)
   }
+
+  useDismissOnEscape(isDrawerOpen, handleCloseDrawer, submitting)
+  useDismissOnEscape(Boolean(deletingExpense), () => setDeletingExpense(null), submitting)
 
   const handleFormChange = (e) => {
     const { name, value } = e.target
@@ -423,8 +431,14 @@ export function Expenses() {
 
       {/* Side Drawer for Record / Edit Expense — Borderless Editorial */}
       {isDrawerOpen && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-md bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]">
+        <div
+          className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in"
+          {...getOverlayDismissProps(handleCloseDrawer, submitting)}
+        >
+          <div
+            className="w-full max-w-md bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]"
+            {...getOverlayPanelProps()}
+          >
             {/* Drawer Header */}
             <div className="p-8 border-b border-[#C9C0B5] flex items-baseline justify-between">
               <div>
@@ -565,8 +579,14 @@ export function Expenses() {
 
       {/* Delete Confirmation Modal — Borderless Editorial */}
       {deletingExpense && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] p-8 shadow-none space-y-6 text-[#2E2822]">
+        <div
+          className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          {...getOverlayDismissProps(() => setDeletingExpense(null), submitting)}
+        >
+          <div
+            className="w-full max-w-md bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] p-8 shadow-none space-y-6 text-[#2E2822]"
+            {...getOverlayPanelProps()}
+          >
             <div>
               <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
                 Confirm Deletion

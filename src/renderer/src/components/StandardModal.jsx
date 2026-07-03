@@ -10,6 +10,32 @@ const MAX_WIDTH = {
   '2xl': 'max-w-5xl',
 }
 
+export function useDismissOnEscape(isOpen, onClose, disabled = false) {
+  useEffect(() => {
+    if (!isOpen || !onClose || disabled) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose, disabled])
+}
+
+export function getOverlayDismissProps(onClose, disabled = false) {
+  return {
+    onClick: (event) => {
+      if (disabled || !onClose || event.target !== event.currentTarget) return
+      onClose()
+    },
+  }
+}
+
+export function getOverlayPanelProps() {
+  return {
+    onClick: (event) => event.stopPropagation(),
+  }
+}
+
 export function StandardModalLabel({ children, htmlFor, className = '' }) {
   return (
     <label

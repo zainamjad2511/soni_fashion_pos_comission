@@ -19,6 +19,11 @@ import {
 import { createPortal } from 'react-dom'
 import { Commissions } from './Commissions.jsx'
 import { Toast } from '../components/Toast.jsx'
+import {
+  getOverlayDismissProps,
+  getOverlayPanelProps,
+  useDismissOnEscape,
+} from '../components/StandardModal.jsx'
 
 export function Salespersons() {
   const [salespersons, setSalespersons] = useState([])
@@ -92,6 +97,8 @@ export function Salespersons() {
     setIsDrawerOpen(false)
     setEditingSalesperson(null)
   }
+
+  useDismissOnEscape(isDrawerOpen, handleCloseDrawer, submitting)
 
   const handleFormChange = (e) => {
     const { name, value } = e.target
@@ -362,8 +369,14 @@ export function Salespersons() {
 
       {/* Slide-Over Drawer Modal — Borderless Editorial */}
       {isDrawerOpen && createPortal(
-        <div className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-md bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]">
+        <div
+          className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in"
+          {...getOverlayDismissProps(handleCloseDrawer, submitting)}
+        >
+          <div
+            className="w-full max-w-md bg-[#F7F5F0] border-l border-[#C9C0B5] h-full flex flex-col justify-between shadow-none animate-slide-left text-[#2E2822]"
+            {...getOverlayPanelProps()}
+          >
             {/* Drawer Header */}
             <div className="p-8 border-b border-[#C9C0B5] flex items-baseline justify-between">
               <div>
