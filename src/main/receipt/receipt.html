@@ -93,7 +93,41 @@
     .divider { border-top: 1px dashed #000; margin: 6px 0; }
     .divider-solid { border-top: 1px solid #000; margin: 6px 0; }
 
-    .meta-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .meta-row .meta-primary {
+      flex: 1 1 auto;
+      min-width: 0;
+      padding-right: 2px;
+      line-height: 1.35;
+    }
+    .meta-label {
+      font-weight: bold;
+      margin-right: 4px;
+    }
+    .meta-doc-no {
+      font-size: 9.5px;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+      line-height: 1.35;
+    }
+    .meta-row .meta-secondary {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      text-align: right;
+      font-weight: bold;
+    }
+    .meta-row .meta-date {
+      padding-left: 10px;
+      margin-left: 6px;
+      border-left: 1px dotted #888;
+    }
     .salesman-row {
       border-top: 1px dotted #888;
       border-bottom: 1px dotted #888;
@@ -107,6 +141,20 @@
     table { width: 100%; border-collapse: collapse; margin: 4px 0; }
     th { text-align: left; border-bottom: 1px solid #000; padding: 3px 0; font-weight: bold; }
     td { padding: 4px 0; vertical-align: top; }
+    th.col-sku, td.col-sku {
+      width: 16%;
+      padding-right: 8px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #333;
+      line-height: 1.3;
+    }
+    th.col-item, td.col-item {
+      width: 44%;
+      padding-left: 2px;
+    }
+    th.col-qty, td.col-qty { width: 8%; }
+    th.col-total, td.col-total { width: 32%; }
     .item-name { font-weight: bold; font-size: 11.5px; }
     .item-sub { font-size: 9.5px; color: #444; }
 
@@ -164,12 +212,15 @@
     <div class="divider-solid"></div>
 
     <div class="meta-row">
-      <span><span class="bold" id="inv-label">Inv #:</span> <span id="inv-no">—</span></span>
-      <span id="inv-date">—</span>
+      <span class="meta-primary">
+        <span class="meta-label" id="inv-label">Inv #:</span>
+        <span class="meta-doc-no" id="inv-no">—</span>
+      </span>
+      <span class="meta-secondary meta-date" id="inv-date">—</span>
     </div>
     <div class="meta-row">
-      <span>Time: <span id="inv-time">—</span></span>
-      <span>Items: <span id="item-count">0</span></span>
+      <span class="meta-primary">Time: <span id="inv-time">—</span></span>
+      <span class="meta-secondary">Items: <span id="item-count">0</span></span>
     </div>
     <div class="salesman-row">
       <span>Salesman:</span>
@@ -181,10 +232,10 @@
     <table>
       <thead>
         <tr>
-          <th style="width: 20%;">SKU</th>
-          <th style="width: 40%;">Item</th>
-          <th class="text-center" style="width: 10%;">Qty</th>
-          <th class="text-right" style="width: 30%;">Total (Rs)</th>
+          <th class="col-sku">SKU</th>
+          <th class="col-item">Item</th>
+          <th class="text-center col-qty">Qty</th>
+          <th class="text-right col-total">Total (Rs)</th>
         </tr>
       </thead>
       <tbody id="items-body"></tbody>
@@ -258,6 +309,22 @@
       };
     }
 
+    function setReceiptDocNumber(el, value) {
+      if (!el) return
+      const raw = String(value || '—').trim()
+      const lastHyphen = raw.lastIndexOf('-')
+      el.replaceChildren()
+      if (lastHyphen <= 0 || lastHyphen >= raw.length - 1) {
+        el.textContent = raw
+        return
+      }
+      el.append(
+        document.createTextNode(raw.slice(0, lastHyphen + 1)),
+        document.createElement('wbr'),
+        document.createTextNode(raw.slice(lastHyphen + 1))
+      )
+    }
+
     function renderReceipt(data) {
       if (!data) return Promise.resolve();
 
@@ -283,7 +350,7 @@
       }
 
       document.getElementById('inv-label').textContent = data.receipt_title ? 'Voucher #:' : 'Inv #:';
-      document.getElementById('inv-no').textContent = data.invoice_number || 'N/A';
+      setReceiptDocNumber(document.getElementById('inv-no'), data.invoice_number || 'N/A');
       document.getElementById('inv-date').textContent = data.sale_date_label || '—';
       document.getElementById('inv-time').textContent = data.sale_time_label || '—';
       document.getElementById('inv-cashier').textContent = data.salesperson_name || 'Cashier';
@@ -304,11 +371,11 @@
           : '@ ' + retail.toLocaleString();
 
         tr.innerHTML =
-          '<td style="font-size: 10.5px; font-weight: bold; color: #333;">' + sku + '</td>' +
-          '<td><div class="item-name">' + (item.name || item.article_name || 'Item') + '</div>' +
+          '<td class="col-sku">' + sku + '</td>' +
+          '<td class="col-item"><div class="item-name">' + (item.name || item.article_name || 'Item') + '</div>' +
           '<div class="item-sub">' + subLine + '</div></td>' +
-          '<td class="text-center bold">' + item.quantity + '</td>' +
-          '<td class="text-right bold" style="font-size: 12.5px;">' + formatLineTotal(item.line_total) + '</td>';
+          '<td class="text-center bold col-qty">' + item.quantity + '</td>' +
+          '<td class="text-right bold col-total" style="font-size: 12.5px;">' + formatLineTotal(item.line_total) + '</td>';
         tbody.appendChild(tr);
       });
 

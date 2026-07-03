@@ -314,8 +314,42 @@ button { border-radius: 0 !important; cursor: pointer; transition: background 0.
 .receipt-preview-root .receipt-preview-meta-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 2px;
   font-size: 11px;
+  line-height: 1.35;
+}
+
+.receipt-preview-root .receipt-preview-meta-primary {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 2px;
+}
+
+.receipt-preview-root .receipt-preview-meta-label {
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.receipt-preview-root .receipt-preview-meta-doc-no {
+  font-size: 9.5px;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+.receipt-preview-root .receipt-preview-meta-secondary {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: right;
+  font-weight: bold;
+}
+
+.receipt-preview-root .receipt-preview-meta-date {
+  padding-left: 10px;
+  margin-left: 6px;
+  border-left: 1px dotted #888;
 }
 
 .receipt-preview-root .receipt-preview-salesman-row {
@@ -355,6 +389,34 @@ button { border-radius: 0 !important; cursor: pointer; transition: background 0.
   font-weight: bold !important;
   letter-spacing: normal !important;
   text-transform: none !important;
+}
+
+.receipt-preview-root th.col-sku,
+.receipt-preview-root td.col-sku {
+  width: 16%;
+  padding-right: 8px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #333 !important;
+  -webkit-text-fill-color: #333 !important;
+  line-height: 1.3;
+  vertical-align: top;
+}
+
+.receipt-preview-root th.col-item,
+.receipt-preview-root td.col-item {
+  width: 44%;
+  padding-left: 2px;
+}
+
+.receipt-preview-root th.col-qty,
+.receipt-preview-root td.col-qty {
+  width: 8%;
+}
+
+.receipt-preview-root th.col-total,
+.receipt-preview-root td.col-total {
+  width: 32%;
 }
 
 .receipt-preview-root tbody tr {

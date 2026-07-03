@@ -52,3 +52,16 @@ export function formatContactLine(contact) {
   if (raw.toLowerCase().includes('whatsapp')) return raw
   return `WhatsApp/Call : ${raw}`
 }
+
+/** Split at last hyphen so thermal wrap only breaks between prefix and sequence tail. */
+export function splitReceiptDocNumber(value) {
+  const raw = String(value ?? '—').trim()
+  const lastHyphen = raw.lastIndexOf('-')
+  if (lastHyphen <= 0 || lastHyphen >= raw.length - 1) {
+    return { head: raw, tail: null }
+  }
+  return {
+    head: raw.slice(0, lastHyphen + 1),
+    tail: raw.slice(lastHyphen + 1),
+  }
+}

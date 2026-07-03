@@ -8,6 +8,7 @@ import {
   formatReceiptLineAmount,
   formatReceiptMoney,
   resolveReceiptShopInfo,
+  splitReceiptDocNumber,
   splitShopName,
 } from '../utils/receiptDisplay.js'
 
@@ -21,6 +22,7 @@ export function ReceiptPreview({ receipt, shop = {} }) {
   const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   const totalDiscount = Number(receipt.total_discount || 0)
   const isVoucher = Boolean(receipt.receipt_title)
+  const docNumber = splitReceiptDocNumber(receipt.invoice_number)
 
   return (
     <div className="receipt-preview-root">
@@ -44,14 +46,27 @@ export function ReceiptPreview({ receipt, shop = {} }) {
       <div className="receipt-preview-divider-solid" />
 
       <div className="receipt-preview-meta-row">
-        <span>
-          <strong>{isVoucher ? 'Voucher #:' : 'Inv #:'}</strong> {receipt.invoice_number}
+        <span className="receipt-preview-meta-primary">
+          <span className="receipt-preview-meta-label">{isVoucher ? 'Voucher #:' : 'Inv #:'}</span>
+          <span className="receipt-preview-meta-doc-no">
+            {docNumber.tail == null ? (
+              docNumber.head
+            ) : (
+              <>
+                {docNumber.head}
+                <wbr />
+                {docNumber.tail}
+              </>
+            )}
+          </span>
         </span>
-        <span>{formatSaleDateLabel(dateSource)}</span>
+        <span className="receipt-preview-meta-secondary receipt-preview-meta-date">
+          {formatSaleDateLabel(dateSource)}
+        </span>
       </div>
       <div className="receipt-preview-meta-row">
-        <span>Time: {formatSaleTimeLabel(dateSource)}</span>
-        <span>Items: {itemCount}</span>
+        <span className="receipt-preview-meta-primary">Time: {formatSaleTimeLabel(dateSource)}</span>
+        <span className="receipt-preview-meta-secondary">Items: {itemCount}</span>
       </div>
       <div className="receipt-preview-salesman-row">
         <span>Salesman:</span>
@@ -63,10 +78,10 @@ export function ReceiptPreview({ receipt, shop = {} }) {
       <table>
         <thead>
           <tr>
-            <th style={{ width: '20%' }}>SKU</th>
-            <th style={{ width: '40%' }}>Item</th>
-            <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
-            <th style={{ width: '30%', textAlign: 'right' }}>Total (Rs)</th>
+            <th className="col-sku">SKU</th>
+            <th className="col-item">Item</th>
+            <th className="col-qty" style={{ textAlign: 'center' }}>Qty</th>
+            <th className="col-total" style={{ textAlign: 'right' }}>Total (Rs)</th>
           </tr>
         </thead>
         <tbody>
@@ -87,15 +102,13 @@ export function ReceiptPreview({ receipt, shop = {} }) {
 
               return (
                 <tr key={idx}>
-                  <td style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#333' }}>
-                    {item.sku || item.article_sku || '—'}
-                  </td>
-                  <td>
+                  <td className="col-sku">{item.sku || item.article_sku || '—'}</td>
+                  <td className="col-item">
                     <div className="receipt-preview-item-name">{item.name || item.article_name || 'Item'}</div>
                     <div className="receipt-preview-item-sub">{subLine}</div>
                   </td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12.5px' }}>
+                  <td className="col-qty" style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                  <td className="col-total" style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12.5px' }}>
                     {formatReceiptLineAmount(item.line_total)}
                   </td>
                 </tr>
