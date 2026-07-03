@@ -37,7 +37,7 @@ export function registerReportsHandlers() {
         s.id, s.invoice_number, s.sale_date, s.subtotal, s.total_discount, s.grand_total, s.payment_method, s.status,
         sp.name AS salesperson_name,
         COALESCE(SUM(si.quantity), 0) AS total_items,
-        COALESCE(SUM(si.line_total), 0) - COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS gross_profit
+        s.grand_total - COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS gross_profit
       FROM sales s
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
       LEFT JOIN sale_items si ON s.id = si.sale_id
@@ -100,7 +100,35 @@ export function registerReportsHandlers() {
     const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total || 0), 0)
     const total_gross_profit = rows.reduce((acc, r) => acc + Number(r.gross_profit || 0), 0)
 
-    return { sales: rows, summary: { total_sales, total_returns, total_items, total_revenue, total_gross_profit } }
+    let cash_total = 0
+    let online_total = 0
+    for (const row of rows) {
+      const amount = Number(row.grand_total || 0)
+      if (row.record_type === 'return') {
+        // Refunds are paid from the physical drawer unless tracked otherwise.
+        cash_total += amount
+        continue
+      }
+      const method = String(row.payment_method || 'cash').toLowerCase()
+      if (method === 'online') {
+        online_total += amount
+      } else {
+        cash_total += amount
+      }
+    }
+
+    return {
+      sales: rows,
+      summary: {
+        total_sales,
+        total_returns,
+        total_items,
+        total_revenue,
+        total_gross_profit,
+        cash_total,
+        online_total,
+      },
+    }
   }
   handleIpc('reports:salesSummary', handleSalesSummary)
   handleIpc('reports:dailySales', handleSalesSummary) // Backward compatibility alias
@@ -110,10 +138,14 @@ export function registerReportsHandlers() {
     const db = getDb()
     const { startDate, endDate } = unpackDates(arg1, arg2)
 
-    const salesRes = db.prepare(`
-      SELECT
-        COALESCE(SUM(si.line_total), 0) AS revenue,
-        COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS cogs
+    const salesRevenueRes = db.prepare(`
+      SELECT COALESCE(SUM(grand_total), 0) AS revenue
+      FROM sales
+      WHERE status = 'completed' AND DATE(sale_date) >= ? AND DATE(sale_date) <= ?
+    `).get(startDate, endDate)
+
+    const salesCogsRes = db.prepare(`
+      SELECT COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS cogs
       FROM sale_items si
       JOIN sales s ON s.id = si.sale_id
       WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
@@ -145,9 +177,9 @@ export function registerReportsHandlers() {
       WHERE expense_date >= ? AND expense_date <= ?
     `).get(startDate, endDate)
 
-    const grossSalesRevenue = Number(salesRes?.revenue || 0)
+    const grossSalesRevenue = Number(salesRevenueRes?.revenue || 0)
     const returnRevenue = Number(returnsRes?.return_revenue || 0)
-    const grossSalesCogs = Number(salesRes?.cogs || 0)
+    const grossSalesCogs = Number(salesCogsRes?.cogs || 0)
     const returnCogs = Number(returnCogsRes?.return_cogs || 0)
 
     const revenue = grossSalesRevenue - returnRevenue
@@ -342,8 +374,12 @@ export function registerReportsHandlers() {
     const { date } = unpackDates(arg1)
 
     const salesRes = db.prepare(`
-      SELECT COALESCE(SUM(grand_total), 0) AS cash_in
-      FROM sales WHERE status = 'completed' AND DATE(sale_date) = ?
+      SELECT
+        COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'online' THEN grand_total ELSE 0 END), 0) AS online_sales,
+        COALESCE(SUM(CASE WHEN LOWER(payment_method) != 'online' THEN grand_total ELSE 0 END), 0) AS cash_sales,
+        COALESCE(SUM(grand_total), 0) AS total_sales
+      FROM sales
+      WHERE status = 'completed' AND DATE(sale_date) = ?
     `).get(date)
 
     const returnsRes = db.prepare(`
@@ -351,11 +387,22 @@ export function registerReportsHandlers() {
       FROM returns WHERE DATE(return_date) = ? AND return_type IN ('refund', 'exchange', 'manual')
     `).get(date)
 
-    const cash_in = Number(salesRes?.cash_in || 0)
+    const cash_sales = Number(salesRes?.cash_sales || 0)
+    const online_sales = Number(salesRes?.online_sales || 0)
     const cash_out = Number(returnsRes?.cash_out || 0)
-    const net_cash = cash_in - cash_out
+    const net_cash = cash_sales - cash_out
+    const net_online = online_sales
 
-    return { date, cash_in, cash_out, net_cash }
+    return {
+      date,
+      cash_sales,
+      online_sales,
+      total_sales: Number(salesRes?.total_sales || 0),
+      cash_in: cash_sales + online_sales,
+      cash_out,
+      net_cash,
+      net_online,
+    }
   })
 
   // 9. Audit Log Viewer

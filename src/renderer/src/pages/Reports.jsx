@@ -32,7 +32,17 @@ export function Reports() {
   const [topLimit, setTopLimit] = useState(10)
 
   // Report Data States
-  const [salesData, setSalesData] = useState({ sales: [], summary: { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 } })
+  const [salesData, setSalesData] = useState({
+    sales: [],
+    summary: {
+      total_sales: 0,
+      total_items: 0,
+      total_revenue: 0,
+      total_gross_profit: 0,
+      cash_total: 0,
+      online_total: 0,
+    },
+  })
   const [profitData, setProfitData] = useState({ revenue: 0, cogs: 0, gross_profit: 0, total_expenses: 0, net_profit: 0 })
   const [inventoryData, setInventoryData] = useState({ articles: [], summary: { total_articles: 0, total_units: 0, grand_total_cost: 0, grand_total_retail: 0 } })
   const [topArticlesData, setTopArticlesData] = useState([])
@@ -62,7 +72,14 @@ export function Reports() {
         if (res && res.success && res.data) {
           setSalesData({
             sales: Array.isArray(res.data.sales) ? res.data.sales : [],
-            summary: res.data.summary || { total_sales: 0, total_items: 0, total_revenue: 0, total_gross_profit: 0 }
+            summary: res.data.summary || {
+              total_sales: 0,
+              total_items: 0,
+              total_revenue: 0,
+              total_gross_profit: 0,
+              cash_total: 0,
+              online_total: 0,
+            },
           })
         }
       } else if (activeTab === 'profit') {
@@ -284,6 +301,24 @@ export function Reports() {
                     Rs. {Number(salesData.summary.total_gross_profit || 0).toLocaleString()}
                   </h3>
                   <span className="text-xs font-sans text-[#7A6F69] block">Revenue minus wholesale cost</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8 border-b border-[#C9C0B5]">
+                <div className="space-y-1">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Cash Collections</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
+                    Rs. {Number(salesData.summary.cash_total || 0).toLocaleString()}
+                  </h3>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Expected in physical drawer (cash sales minus cash refunds)</span>
+                </div>
+
+                <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+                  <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Online Collections</span>
+                  <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
+                    Rs. {Number(salesData.summary.online_total || 0).toLocaleString()}
+                  </h3>
+                  <span className="text-xs font-sans text-[#7A6F69] block">Expected in bank / digital wallet (online mode sales)</span>
                 </div>
               </div>
 

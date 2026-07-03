@@ -30,7 +30,13 @@ export function Dashboard() {
   const [todaySalesCount, setTodaySalesCount] = useState(0)
   const [todayRevenue, setTodayRevenue] = useState(0)
   const [todayGrossProfit, setTodayGrossProfit] = useState(0)
-  const [cashFlow, setCashFlow] = useState({ cash_in: 0, cash_out: 0, net_cash: 0 })
+  const [cashFlow, setCashFlow] = useState({
+    cash_sales: 0,
+    online_sales: 0,
+    cash_out: 0,
+    net_cash: 0,
+    net_online: 0,
+  })
   const [loading, setLoading] = useState(true)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const navigate = useNavigate()
@@ -89,9 +95,11 @@ export function Dashboard() {
         const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: todayStr })
         if (cfRes && cfRes.success && cfRes.data) {
           setCashFlow({
-            cash_in: Number(cfRes.data.cash_in || 0),
+            cash_sales: Number(cfRes.data.cash_sales || 0),
+            online_sales: Number(cfRes.data.online_sales || 0),
             cash_out: Number(cfRes.data.cash_out || 0),
-            net_cash: Number(cfRes.data.net_cash || 0)
+            net_cash: Number(cfRes.data.net_cash || 0),
+            net_online: Number(cfRes.data.net_online || 0),
           })
         }
       }
@@ -210,10 +218,10 @@ export function Dashboard() {
         <div className="border-b border-[#C9C0B5] pb-6 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
           <div>
             <h3 className="text-2xl font-display font-bold text-[#2E2822]">
-              Daily Cash Flow Ledger
+              Daily Payment Reconciliation
             </h3>
             <p className="font-sans text-xs text-[#7A6F69] mt-1">
-              Physical cash register balance & drawer reconciliation
+              Cash drawer vs online collections for today&apos;s completed sales
             </p>
           </div>
           <span className="font-sans text-xs tracking-[0.14em] uppercase text-[#7A6F69] font-semibold">
@@ -221,22 +229,31 @@ export function Dashboard() {
           </span>
         </div>
 
-        {/* Open Ledger Entries */}
         <div className="divide-y divide-[#C9C0B5]">
           <div className="py-5 flex items-center justify-between">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Gross Cash Inflow</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Sales collections, advances & receipts</span>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Sales</span>
+              <span className="font-sans text-xs text-[#7A6F69]">POS checkouts marked as cash mode</span>
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
-              + Rs. {cashFlow.cash_in.toLocaleString()}
+              + Rs. {cashFlow.cash_sales.toLocaleString()}
             </span>
           </div>
 
           <div className="py-5 flex items-center justify-between">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Outflow</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds, vendor payouts & expenses</span>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Online Sales</span>
+              <span className="font-sans text-xs text-[#7A6F69]">POS checkouts marked as online mode</span>
+            </div>
+            <span className="font-mono font-bold text-base text-[#2E2822]">
+              + Rs. {cashFlow.online_sales.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="py-5 flex items-center justify-between">
+            <div>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Refunds</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds paid from drawer today</span>
             </div>
             <span className="font-mono font-bold text-base text-[#7A6F69]">
               - Rs. {cashFlow.cash_out.toLocaleString()}
@@ -244,19 +261,29 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Anchor Summary Block */}
-        <div className="pt-6 border-t border-[#2E2822] flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+        <div className="pt-6 border-t border-[#2E2822] grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
-              Net Drawer Position ({cashFlow.net_cash >= 0 ? 'Surplus' : 'Deficit'})
+              Expected Cash in Drawer
             </div>
             <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
               Rs. {cashFlow.net_cash.toLocaleString()}
             </div>
+            <p className="text-xs font-sans text-[#7A6F69] mt-2">
+              Cash sales minus refunds — count physical notes in register.
+            </p>
           </div>
-          <p className="text-xs font-sans text-[#7A6F69] max-w-sm sm:text-right">
-            Net physical cash present in register before closing drawer reconciliation.
-          </p>
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
+              Expected Online Total
+            </div>
+            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
+              Rs. {cashFlow.net_online.toLocaleString()}
+            </div>
+            <p className="text-xs font-sans text-[#7A6F69] mt-2">
+              Match against bank app / wallet transfers for online-mode sales.
+            </p>
+          </div>
         </div>
       </div>
     </div>
