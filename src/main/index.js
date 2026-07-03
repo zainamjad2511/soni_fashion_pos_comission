@@ -2,7 +2,13 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import appIcon from '../../build/icon.png?asset'
-import { getDb, closeDb } from './db/database.js'
+import { getDb, getDbIfOpen, closeDb } from './db/database.js'
+import {
+  runShutdownBackup,
+  startHourlyBackupScheduler,
+  stopHourlyBackupScheduler,
+  isBackupInProgress,
+} from './services/backup.service.js'
 import { registerSettingsHandlers } from './ipc/settings.ipc.js'
 import { registerSuppliersHandlers } from './ipc/suppliers.ipc.js'
 import { registerArticlesHandlers } from './ipc/articles.ipc.js'
@@ -76,6 +82,7 @@ app.whenReady().then(() => {
 
   // Initialize SQLite Database
   getDb()
+  startHourlyBackupScheduler(getDbIfOpen)
 
   // Register IPC Handlers
   registerSettingsHandlers()
@@ -99,13 +106,46 @@ app.whenReady().then(() => {
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+let shutdownHandled = false
+
+async function shutdownWithBackup() {
+  if (shutdownHandled) return
+  shutdownHandled = true
+
+  stopHourlyBackupScheduler()
+
+  try {
+    const db = getDbIfOpen()
+    if (db) {
+      while (isBackupInProgress()) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      const result = await runShutdownBackup(db)
+      if (result.paths.length > 0) {
+        console.log('[Backup] Shutdown backup complete:', result.paths.map((p) => p.path).join(' | '))
+      }
+    }
+  } catch (err) {
+    console.error('[Backup] Shutdown backup error:', err)
+  } finally {
+    closeDb()
+  }
+}
+
+app.on('before-quit', (event) => {
+  if (shutdownHandled) return
+  event.preventDefault()
+  shutdownWithBackup().finally(() => {
+    app.exit(0)
+  })
+})
+
+// Quit when all windows are closed, except on macOS.
 app.on('window-all-closed', () => {
-  closeDb()
   if (process.platform !== 'darwin') {
     app.quit()
+  } else if (!shutdownHandled) {
+    shutdownWithBackup()
   }
 })
 
