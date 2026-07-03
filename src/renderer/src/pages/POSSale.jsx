@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { formatCode } from '../utils/formatCode.js'
 import { CustomerIcon, TrashIcon } from '../components/icons/TechnicalIcons.jsx'
-import { useCartStore } from '../store/cartStore.js'
+import { useCartStore, computeItemLineTotals } from '../store/cartStore.js'
 import { ReprintModal } from '../components/ReprintModal.jsx'
 import { Toast } from '../components/Toast.jsx'
 import {
@@ -47,7 +47,6 @@ export function POSSale() {
     addItem,
     removeItem,
     updateQuantity,
-    updateItemDiscount,
     updateItemFinalAmount,
     setOrderDiscount,
     setPaymentMethod,
@@ -163,15 +162,16 @@ export function POSSale() {
     }
 
     for (const item of items) {
-      const subtotal = item.retail_price_snapshot * item.quantity
-      const finalVal = item.final_amount_input !== undefined ? item.final_amount_input : (subtotal - (item.discount_amount || 0))
-      if (finalVal === '' || Number(finalVal) <= 0) {
-        showToast('error', `Cannot finalize sale: Final amount for "${item.name}" cannot be empty or zero.`)
+      const { retail, unitFinal, lineSubtotal, lineTotal } = computeItemLineTotals(item)
+      if (item.final_amount_input === '' || unitFinal <= 0) {
+        showToast('error', `Cannot finalize sale: Unit price for "${item.name}" cannot be empty or zero.`)
         return false
       }
-      const finalAmount = Number(finalVal)
-      if (finalAmount > subtotal) {
-        showToast('error', `Cannot finalize sale: Final amount for "${item.name}" (Rs. ${finalAmount.toLocaleString()}) cannot exceed retail subtotal (Rs. ${subtotal.toLocaleString()}).`)
+      if (unitFinal > retail) {
+        showToast(
+          'error',
+          `Cannot finalize sale: Unit price for "${item.name}" (Rs. ${unitFinal.toLocaleString()}) cannot exceed retail price (Rs. ${retail.toLocaleString()}). Line total would be Rs. ${lineTotal.toLocaleString()} vs Rs. ${lineSubtotal.toLocaleString()}.`
+        )
         return false
       }
     }
@@ -205,18 +205,13 @@ export function POSSale() {
         const payload = {
           salesperson_id: salesperson.id,
           items: items.map((i) => {
-            const subtotal = i.retail_price_snapshot * i.quantity
-            const lineTotal = Math.max(0, Number(
-              i.final_amount_input !== undefined && i.final_amount_input !== ''
-                ? i.final_amount_input
-                : subtotal - (i.discount_amount || 0)
-            ))
+            const { lineTotal, discountAmount } = computeItemLineTotals(i)
             return {
               article_id: i.article_id,
               quantity: i.quantity,
               retail_price_snapshot: i.retail_price_snapshot,
               wholesale_price_snapshot: i.wholesale_price_snapshot,
-              discount_amount: Math.max(0, subtotal - lineTotal),
+              discount_amount: discountAmount,
               line_total: lineTotal,
             }
           }),
@@ -366,8 +361,8 @@ export function POSSale() {
                   <th className="py-3.5 px-4 font-semibold">SKU / ITEM ID</th>
                   <th className="py-3.5 px-4 font-semibold">DESCRIPTION</th>
                   <th className="py-3.5 px-3 text-center w-28 font-semibold">QUANTITY</th>
-                  <th className="py-3.5 px-4 text-right font-semibold">PRICE</th>
-                  <th className="py-3.5 px-3 text-right w-36 font-semibold">FINAL AMOUNT</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">RETAIL</th>
+                  <th className="py-3.5 px-3 text-right w-36 font-semibold">UNIT PRICE</th>
                   <th className="py-3.5 px-4 text-right font-semibold">DISCOUNT</th>
                   <th className="py-3.5 px-4 text-right w-28 font-semibold">TOTAL</th>
                 </tr>
@@ -380,8 +375,14 @@ export function POSSale() {
                     </td>
                   </tr>
                 ) : (
-                  items.map((item) => (
-                    /* Crisp White Table Rows */
+                  items.map((item) => {
+                    const { lineTotal, unitDiscount } = computeItemLineTotals(item)
+                    const unitPriceInput =
+                      item.final_amount_input !== '' && item.final_amount_input !== undefined
+                        ? item.final_amount_input
+                        : item.retail_price_snapshot
+
+                    return (
                     <tr
                       key={item.article_id}
                       className="bg-white hover:bg-[#F7F5F0] transition-colors"
@@ -419,7 +420,8 @@ export function POSSale() {
                         <input
                           type="number"
                           min="0"
-                          value={item.final_amount_input !== undefined ? item.final_amount_input : (item.retail_price_snapshot * item.quantity - (item.discount_amount || 0))}
+                          max={item.retail_price_snapshot}
+                          value={unitPriceInput}
                           onFocus={(e) => e.target.select()}
                           onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                           onChange={(e) => {
@@ -433,11 +435,11 @@ export function POSSale() {
                         />
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
-                        {item.discount_amount > 0 ? `${item.discount_amount.toLocaleString()}` : '0'}
+                        {unitDiscount > 0 ? `-${unitDiscount.toLocaleString()}` : '0'}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-normal text-[#332822]">
                         <div className="flex items-center justify-end gap-3">
-                          <span>{(item.retail_price_snapshot * item.quantity - (item.discount_amount || 0)).toLocaleString()}</span>
+                          <span>{lineTotal.toLocaleString()}</span>
                           <button
                             onClick={() => removeItem(item.article_id)}
                             className="text-[#7A6F69] hover:text-rose-700 p-1"
@@ -448,7 +450,8 @@ export function POSSale() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    )
+                  })
                 )}
               </tbody>
             </table>

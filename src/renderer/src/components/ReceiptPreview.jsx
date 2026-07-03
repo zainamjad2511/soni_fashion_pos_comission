@@ -5,6 +5,7 @@ import { formatSaleDateLabel, formatSaleTimeLabel } from '../utils/localDateTime
 import {
   RECEIPT_SOFTWARE_CREDIT,
   formatContactLine,
+  formatReceiptItemSubline,
   formatReceiptLineAmount,
   formatReceiptMoney,
   resolveReceiptShopInfo,
@@ -92,28 +93,19 @@ export function ReceiptPreview({ receipt, shop = {} }) {
               </td>
             </tr>
           ) : (
-            items.map((item, idx) => {
-              const retail = Number(item.retail_price_snapshot || 0)
-              const discount = Number(item.discount_amount || 0)
-              const subLine =
-                discount > 0
-                  ? `@ ${retail.toLocaleString()} (-${discount.toLocaleString()})`
-                  : `@ ${retail.toLocaleString()}`
-
-              return (
+            items.map((item, idx) => (
                 <tr key={idx}>
                   <td className="col-sku">{item.sku || item.article_sku || '—'}</td>
                   <td className="col-item">
                     <div className="receipt-preview-item-name">{item.name || item.article_name || 'Item'}</div>
-                    <div className="receipt-preview-item-sub">{subLine}</div>
+                    <div className="receipt-preview-item-sub">{formatReceiptItemSubline(item)}</div>
                   </td>
                   <td className="col-qty" style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
                   <td className="col-total" style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '12.5px' }}>
                     {formatReceiptLineAmount(item.line_total)}
                   </td>
                 </tr>
-              )
-            })
+              ))
           )}
         </tbody>
       </table>

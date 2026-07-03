@@ -273,6 +273,18 @@
       return num.toLocaleString();
     }
 
+    function formatReceiptItemSubline(item) {
+      const retail = Number(item.retail_price_snapshot || 0);
+      const qty = Math.max(1, Number(item.quantity || 1));
+      const lineDiscount = Number(item.discount_amount || 0);
+      const unitDiscount = qty > 0 ? lineDiscount / qty : 0;
+
+      if (lineDiscount > 0 && unitDiscount > 0) {
+        return '(-' + unitDiscount.toLocaleString() + ')';
+      }
+      return '@ ' + retail.toLocaleString();
+    }
+
     function applyThermalLogo(logo) {
       if (!logo || !logo.complete) return Promise.resolve();
       return new Promise((resolve) => {
@@ -364,11 +376,7 @@
       items.forEach((item) => {
         const tr = document.createElement('tr');
         const sku = item.sku || item.article_sku || '—';
-        const retail = Number(item.retail_price_snapshot || 0);
-        const discount = Number(item.discount_amount || 0);
-        const subLine = discount > 0
-          ? '@ ' + retail.toLocaleString() + ' (-' + discount.toLocaleString() + ')'
-          : '@ ' + retail.toLocaleString();
+        const subLine = formatReceiptItemSubline(item);
 
         tr.innerHTML =
           '<td class="col-sku">' + sku + '</td>' +

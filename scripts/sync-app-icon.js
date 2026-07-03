@@ -3,7 +3,7 @@ import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const source = join(root, 'src/renderer/src/assets/image.png')
+const source = join(root, 'src/renderer/src/assets/icon.png')
 
 if (!existsSync(source)) {
   console.error('[sync-app-icon] Source icon not found:', source)
@@ -21,4 +21,4 @@ for (const dest of targets) {
   cpSync(source, dest)
 }
 
-console.log('[sync-app-icon] App icon synced from src/renderer/src/assets/image.png')
+console.log('[sync-app-icon] App icon synced from src/renderer/src/assets/icon.png')

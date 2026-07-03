@@ -2,10 +2,37 @@ import { create } from 'zustand'
 
 const LAST_SALESPERSON_KEY = 'pos_last_salesperson_id'
 
+/** Per-piece selling price; empty string means use retail with no discount. */
+export function getItemUnitFinalPrice(item) {
+  const retail = Number(item.retail_price_snapshot || 0)
+  if (item.final_amount_input === '' || item.final_amount_input === null || item.final_amount_input === undefined) {
+    return retail
+  }
+  const unitFinal = Number(item.final_amount_input)
+  return Number.isNaN(unitFinal) ? retail : unitFinal
+}
+
+export function computeItemLineTotals(item) {
+  const retail = Number(item.retail_price_snapshot || 0)
+  const qty = Math.max(1, Number(item.quantity) || 1)
+  const unitFinal = getItemUnitFinalPrice(item)
+  const lineSubtotal = retail * qty
+  const lineTotal = unitFinal * qty
+  const discountAmount = Math.max(0, lineSubtotal - lineTotal)
+  const unitDiscount = Math.max(0, retail - unitFinal)
+
+  return { retail, qty, unitFinal, lineSubtotal, lineTotal, discountAmount, unitDiscount }
+}
+
+function withRecalculatedDiscount(item) {
+  const { discountAmount } = computeItemLineTotals(item)
+  return { ...item, discount_amount: discountAmount }
+}
+
 export const useCartStore = create((set, get) => ({
   // Active Sale State
   selectedSalesperson: null,
-  items: [], // Array of { article_id, sku, name, wholesale_price_snapshot, retail_price_snapshot, quantity, discount_amount, max_stock }
+  items: [], // { article_id, sku, name, retail_price_snapshot, quantity, final_amount_input (per unit), discount_amount, ... }
   orderDiscount: 0,
   paymentMethod: 'cash',
   notes: '',
@@ -24,7 +51,6 @@ export const useCartStore = create((set, get) => ({
     const existingIndex = items.findIndex((i) => i.article_id === article.id)
 
     if (existingIndex > -1) {
-      // Item already exists, increment quantity if stock permits
       const updatedItems = [...items]
       const currentItem = updatedItems[existingIndex]
       const newQty = currentItem.quantity + 1
@@ -33,37 +59,25 @@ export const useCartStore = create((set, get) => ({
         throw new Error(`Cannot add more "${article.name}". Max available stock is ${currentItem.max_stock}.`)
       }
 
-      const currentQty = Math.max(1, currentItem.quantity)
-      const currentFinal = currentItem.final_amount_input === ''
-        ? currentItem.retail_price_snapshot * currentQty
-        : Number(currentItem.final_amount_input)
-      const perPieceFinal = currentFinal / currentQty
-      const subtotal = currentItem.retail_price_snapshot * newQty
-      const newFinal = perPieceFinal * newQty
-
-      updatedItems[existingIndex] = {
-        ...currentItem,
-        quantity: newQty,
-        final_amount_input: currentItem.final_amount_input === '' ? '' : newFinal,
-        discount_amount: currentItem.final_amount_input === '' ? 0 : Math.max(0, subtotal - newFinal),
-      }
+      const nextItem = withRecalculatedDiscount({ ...currentItem, quantity: newQty })
+      updatedItems[existingIndex] = nextItem
       set({ items: updatedItems })
     } else {
-      // New item
       if (article.quantity <= 0) {
         throw new Error(`Article "${article.name}" is out of stock!`)
       }
 
+      const retail = Number(article.retail_price || 0)
       const newItem = {
         article_id: article.id,
         sku: article.sku,
         name: article.name,
         wholesale_price_snapshot: Number(article.wholesale_price || 0),
-        retail_price_snapshot: Number(article.retail_price || 0),
+        retail_price_snapshot: retail,
         quantity: 1,
         discount_amount: 0,
-        final_amount_input: Number(article.retail_price || 0),
-        max_stock: Number(article.quantity || 0)
+        final_amount_input: retail,
+        max_stock: Number(article.quantity || 0),
       }
       set({ items: [...items, newItem] })
     }
@@ -71,7 +85,7 @@ export const useCartStore = create((set, get) => ({
 
   removeItem: (articleId) => {
     set((state) => ({
-      items: state.items.filter((i) => i.article_id !== articleId)
+      items: state.items.filter((i) => i.article_id !== articleId),
     }))
   },
 
@@ -84,60 +98,48 @@ export const useCartStore = create((set, get) => ({
 
     set((state) => ({
       items: state.items.map((item) => {
-        if (item.article_id === articleId) {
-          if (qty > item.max_stock) {
-            throw new Error(`Quantity exceeds available stock (${item.max_stock}).`)
-          }
-          if (item.final_amount_input === '') {
-            return { ...item, quantity: qty }
-          }
-          const currentQty = Math.max(1, Number(item.quantity) || 1)
-          const currentFinal = Number(item.final_amount_input)
-          const perPieceFinal = currentFinal / currentQty
-          const subtotal = item.retail_price_snapshot * qty
-          const newFinal = perPieceFinal * qty
-          return {
-            ...item,
-            quantity: qty,
-            final_amount_input: newFinal,
-            discount_amount: Math.max(0, subtotal - newFinal),
-          }
+        if (item.article_id !== articleId) return item
+        if (qty > item.max_stock) {
+          throw new Error(`Quantity exceeds available stock (${item.max_stock}).`)
         }
-        return item
-      })
+        return withRecalculatedDiscount({ ...item, quantity: qty })
+      }),
     }))
   },
 
   updateItemDiscount: (articleId, discountAmount) => {
-    const disc = Number(discountAmount) || 0
+    const lineDisc = Number(discountAmount) || 0
     set((state) => ({
       items: state.items.map((item) => {
-        if (item.article_id === articleId) {
-          const subtotal = item.retail_price_snapshot * item.quantity
-          return { ...item, discount_amount: disc, final_amount_input: subtotal - disc }
-        }
-        return item
-      })
+        if (item.article_id !== articleId) return item
+        const qty = Math.max(1, Number(item.quantity) || 1)
+        const retail = item.retail_price_snapshot
+        const unitFinal = Math.max(0, retail - lineDisc / qty)
+        return withRecalculatedDiscount({
+          ...item,
+          final_amount_input: unitFinal,
+        })
+      }),
     }))
   },
 
   updateItemFinalAmount: (articleId, finalAmountInput) => {
     set((state) => ({
       items: state.items.map((item) => {
-        if (item.article_id === articleId) {
-          const subtotal = item.retail_price_snapshot * item.quantity
-          if (finalAmountInput === '' || finalAmountInput === null || finalAmountInput === undefined) {
-            return { ...item, final_amount_input: '', discount_amount: 0 }
-          }
-          const target = Number(finalAmountInput)
-          if (isNaN(target)) {
-            return item
-          }
-          const disc = subtotal - target
-          return { ...item, final_amount_input: finalAmountInput, discount_amount: disc }
+        if (item.article_id !== articleId) return item
+
+        if (finalAmountInput === '' || finalAmountInput === null || finalAmountInput === undefined) {
+          return withRecalculatedDiscount({ ...item, final_amount_input: '' })
         }
-        return item
-      })
+
+        const unitFinal = Number(finalAmountInput)
+        if (Number.isNaN(unitFinal)) return item
+
+        return withRecalculatedDiscount({
+          ...item,
+          final_amount_input: finalAmountInput,
+        })
+      }),
     }))
   },
 
@@ -159,18 +161,17 @@ export const useCartStore = create((set, get) => ({
       orderDiscount: 0,
       paymentMethod: 'cash',
       notes: '',
-      exchangeReturnId: null
+      exchangeReturnId: null,
     }),
 
-  // Getters / Computed Helpers
   getSubtotal: () => {
     const { items } = get()
-    return items.reduce((sum, item) => sum + item.retail_price_snapshot * item.quantity, 0)
+    return items.reduce((sum, item) => sum + computeItemLineTotals(item).lineSubtotal, 0)
   },
 
   getTotalDiscount: () => {
     const { items, orderDiscount } = get()
-    const itemsDiscount = items.reduce((sum, item) => sum + (item.discount_amount || 0), 0)
+    const itemsDiscount = items.reduce((sum, item) => sum + computeItemLineTotals(item).discountAmount, 0)
     return itemsDiscount + (Number(orderDiscount) || 0)
   },
 
@@ -178,5 +179,5 @@ export const useCartStore = create((set, get) => ({
     const subtotal = get().getSubtotal()
     const totalDiscount = get().getTotalDiscount()
     return Math.max(0, subtotal - totalDiscount)
-  }
+  },
 }))

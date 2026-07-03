@@ -47,6 +47,23 @@ export function formatReceiptLineAmount(value) {
   return num.toLocaleString()
 }
 
+/** Receipt sub-line under item name — unit discount only when discounted; otherwise retail price. */
+export function formatReceiptItemSubline(item) {
+  const retail = Number(item.retail_price_snapshot || 0)
+  const qty = Math.max(1, Number(item.quantity || 1))
+  const lineDiscount = Number(item.discount_amount || 0)
+  const unitDiscount = qty > 0 ? lineDiscount / qty : 0
+
+  if (lineDiscount > 0 && unitDiscount > 0) {
+    const label = Number.isInteger(unitDiscount)
+      ? unitDiscount.toLocaleString()
+      : unitDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 })
+    return `(-${label})`
+  }
+
+  return `@ ${retail.toLocaleString()}`
+}
+
 export function formatContactLine(contact) {
   const raw = String(contact || DEFAULT_RECEIPT_SHOP.shop_contact).trim()
   if (raw.toLowerCase().includes('whatsapp')) return raw
