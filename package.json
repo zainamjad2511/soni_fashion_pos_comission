@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Soni Fashion POS — Windows desktop point-of-sale for offline shop use",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "Zain Amjad",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
