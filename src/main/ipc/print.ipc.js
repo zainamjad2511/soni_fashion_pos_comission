@@ -6,11 +6,14 @@ import { formatSaleDateLabel, formatSaleTimeLabel } from '../utils/localDateTime
 import { getReceiptAssetPath, getReceiptHtmlPath } from '../utils/receiptPaths.js'
 
 let receiptWindow = null
+let cachedLogoDataUrl = null
 
 function getLogoDataUrl() {
+  if (cachedLogoDataUrl) return cachedLogoDataUrl
   const logoPath = getReceiptAssetPath('logo.png')
   if (!fs.existsSync(logoPath)) return null
-  return `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+  cachedLogoDataUrl = `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+  return cachedLogoDataUrl
 }
 
 function getConfiguredPrinterName(db) {

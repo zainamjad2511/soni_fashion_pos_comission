@@ -285,10 +285,16 @@
       return '@ ' + retail.toLocaleString();
     }
 
+    let cachedMonochromeLogoUrl = null;
+
     function applyThermalLogo(logo) {
       if (!logo || !logo.complete) return Promise.resolve();
       return new Promise((resolve) => {
         try {
+          if (cachedMonochromeLogoUrl) {
+            logo.src = cachedMonochromeLogoUrl;
+            return resolve();
+          }
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           canvas.width = logo.naturalWidth || logo.width;
@@ -304,7 +310,8 @@
             data[i + 2] = value;
           }
           ctx.putImageData(imageData, 0, 0);
-          logo.src = canvas.toDataURL('image/png');
+          cachedMonochromeLogoUrl = canvas.toDataURL('image/png');
+          logo.src = cachedMonochromeLogoUrl;
         } catch (err) {
           console.warn('[Receipt] Logo thermal processing skipped:', err);
         }
