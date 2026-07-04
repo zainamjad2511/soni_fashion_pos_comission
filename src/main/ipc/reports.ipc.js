@@ -117,6 +117,14 @@ export function registerReportsHandlers() {
       }
     }
 
+    const expensesRes = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total_expenses
+      FROM expenses
+      WHERE expense_date >= ? AND expense_date <= ?
+    `).get(startDate, endDate)
+    const cash_expenses = Number(expensesRes?.total_expenses || 0)
+    cash_total = Math.max(0, cash_total - cash_expenses)
+
     return {
       sales: rows,
       summary: {
@@ -127,6 +135,7 @@ export function registerReportsHandlers() {
         total_gross_profit,
         cash_total,
         online_total,
+        cash_expenses,
       },
     }
   }
@@ -387,10 +396,17 @@ export function registerReportsHandlers() {
       FROM returns WHERE DATE(return_date) = ? AND return_type IN ('refund', 'exchange', 'manual')
     `).get(date)
 
+    const expensesRes = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS cash_expenses
+      FROM expenses
+      WHERE expense_date = ?
+    `).get(date)
+
     const cash_sales = Number(salesRes?.cash_sales || 0)
     const online_sales = Number(salesRes?.online_sales || 0)
     const cash_out = Number(returnsRes?.cash_out || 0)
-    const net_cash = cash_sales - cash_out
+    const cash_expenses = Number(expensesRes?.cash_expenses || 0)
+    const net_cash = Math.max(0, cash_sales - cash_out - cash_expenses)
     const net_online = online_sales
 
     return {
@@ -400,6 +416,7 @@ export function registerReportsHandlers() {
       total_sales: Number(salesRes?.total_sales || 0),
       cash_in: cash_sales + online_sales,
       cash_out,
+      cash_expenses,
       net_cash,
       net_online,
     }

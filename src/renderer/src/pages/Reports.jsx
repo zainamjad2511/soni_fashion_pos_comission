@@ -41,6 +41,7 @@ export function Reports() {
       total_gross_profit: 0,
       cash_total: 0,
       online_total: 0,
+      cash_expenses: 0,
     },
   })
   const [profitData, setProfitData] = useState({ revenue: 0, cogs: 0, gross_profit: 0, total_expenses: 0, net_profit: 0 })
@@ -79,6 +80,7 @@ export function Reports() {
               total_gross_profit: 0,
               cash_total: 0,
               online_total: 0,
+              cash_expenses: 0,
             },
           })
         }
@@ -310,7 +312,13 @@ export function Reports() {
                   <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight font-mono">
                     Rs. {Number(salesData.summary.cash_total || 0).toLocaleString()}
                   </h3>
-                  <span className="text-xs font-sans text-[#7A6F69] block">Expected in physical drawer (cash sales minus cash refunds)</span>
+                  <span className="text-xs font-sans text-[#7A6F69] block">
+                    Expected in physical drawer (cash sales minus refunds
+                    {Number(salesData.summary.cash_expenses || 0) > 0
+                      ? ` and Rs. ${Number(salesData.summary.cash_expenses).toLocaleString()} expenses`
+                      : ' and expenses'}
+                    )
+                  </span>
                 </div>
 
                 <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">

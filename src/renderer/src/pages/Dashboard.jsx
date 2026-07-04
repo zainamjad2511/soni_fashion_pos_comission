@@ -34,6 +34,7 @@ export function Dashboard() {
     cash_sales: 0,
     online_sales: 0,
     cash_out: 0,
+    cash_expenses: 0,
     net_cash: 0,
     net_online: 0,
   })
@@ -98,6 +99,7 @@ export function Dashboard() {
             cash_sales: Number(cfRes.data.cash_sales || 0),
             online_sales: Number(cfRes.data.online_sales || 0),
             cash_out: Number(cfRes.data.cash_out || 0),
+            cash_expenses: Number(cfRes.data.cash_expenses || 0),
             net_cash: Number(cfRes.data.net_cash || 0),
             net_online: Number(cfRes.data.net_online || 0),
           })
@@ -259,6 +261,16 @@ export function Dashboard() {
               - Rs. {cashFlow.cash_out.toLocaleString()}
             </span>
           </div>
+
+          <div className="py-5 flex items-center justify-between">
+            <div>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Store Expenses</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Cash paid out for operating expenses today</span>
+            </div>
+            <span className="font-mono font-bold text-base text-[#7A6F69]">
+              - Rs. {cashFlow.cash_expenses.toLocaleString()}
+            </span>
+          </div>
         </div>
 
         <div className="pt-6 border-t border-[#2E2822] grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -270,7 +282,7 @@ export function Dashboard() {
               Rs. {cashFlow.net_cash.toLocaleString()}
             </div>
             <p className="text-xs font-sans text-[#7A6F69] mt-2">
-              Cash sales minus refunds — count physical notes in register.
+              Cash sales minus refunds and expenses — count physical notes in register.
             </p>
           </div>
           <div>

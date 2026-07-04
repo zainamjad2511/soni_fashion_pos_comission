@@ -29,6 +29,56 @@ import {
 import { formatCode } from '../utils/formatCode.js'
 import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
+import { computeItemLineTotals } from '../store/cartStore.js'
+
+function getOriginalPaidUnitPrice(saleItem) {
+  const retail = Number(saleItem.retail_price_snapshot || 0)
+  if (saleItem.line_total != null && saleItem.quantity) {
+    const paid = Number(saleItem.line_total) / Math.max(1, Number(saleItem.quantity))
+    if (!Number.isNaN(paid)) return paid
+  }
+  return retail
+}
+
+function withRecalculatedReplacementItem(item) {
+  const { discountAmount, lineTotal } = computeItemLineTotals(item)
+  return { ...item, discount_amount: discountAmount, line_total: lineTotal }
+}
+
+function computeReturnLineTotals(saleItem, returnQty, returnRefundPrices) {
+  const defaultUnit = getOriginalPaidUnitPrice(saleItem)
+  const input = returnRefundPrices[saleItem.id]
+  const final_amount_input = input !== undefined ? input : defaultUnit
+  return computeItemLineTotals({
+    retail_price_snapshot: saleItem.retail_price_snapshot,
+    quantity: returnQty,
+    final_amount_input,
+  })
+}
+
+function mapReplacementItemsForPayload(cart) {
+  return cart.map((item) => {
+    const { lineTotal, discountAmount } = computeItemLineTotals(item)
+    return {
+      article_id: item.article_id,
+      quantity: item.quantity,
+      retail_price_snapshot: item.retail_price_snapshot,
+      wholesale_price_snapshot: item.wholesale_price_snapshot,
+      discount_amount: discountAmount,
+      line_total: lineTotal,
+    }
+  })
+}
+
+function normalizeOrderDiscount(value) {
+  if (value === '' || value === null || value === undefined) return 0
+  return Math.max(0, Number(value) || 0)
+}
+
+function computeReplacementGrandTotal(cart, orderDiscount) {
+  const itemsTotal = cart.reduce((sum, item) => sum + computeItemLineTotals(item).lineTotal, 0)
+  return Math.max(0, itemsTotal - normalizeOrderDiscount(orderDiscount))
+}
 
 const INVOICE_SEARCH_PREFIX = 'SF-INV-'
 
@@ -52,6 +102,12 @@ function normalizeInvoiceLookupQuery(raw) {
 }
 import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
+import {
+  StandardModal,
+  StandardModalAction,
+  StandardModalInput,
+  StandardModalLabel,
+} from '../components/StandardModal.jsx'
 
 export function Returns() {
   const [activeTab, setActiveTab] = useState('invoice')
@@ -77,6 +133,7 @@ export function Returns() {
   // Task 4.5: Item Selection & Exchange Net Settlement State
   const [returnType, setReturnType] = useState('exchange') // 'refund' | 'exchange'
   const [returnQuantities, setReturnQuantities] = useState({}) // { [sale_item_id]: qty }
+  const [returnRefundPrices, setReturnRefundPrices] = useState({}) // { [sale_item_id]: per-unit refund input }
   const [returnNotes, setReturnNotes] = useState('')
   const [salespersons, setSalespersons] = useState([])
   const [selectedStaff, setSelectedStaff] = useState(null)
@@ -85,6 +142,8 @@ export function Returns() {
   const [articleSearchQuery, setArticleSearchQuery] = useState('')
   const [articleSearchResults, setArticleSearchResults] = useState([])
   const [replacementCart, setReplacementCart] = useState([])
+  const [orderDiscount, setOrderDiscount] = useState(0)
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [processingReturn, setProcessingReturn] = useState(false)
   const [processResult, setProcessResult] = useState(null)
@@ -138,6 +197,7 @@ export function Returns() {
   useEffect(() => {
     if (activeTab === 'manual') {
       setReplacementCart([])
+      setOrderDiscount(0)
       setArticleSearchQuery('')
       setArticleSearchResults([])
     }
@@ -227,7 +287,9 @@ export function Returns() {
     setSelectedSale(null)
     setProcessResult(null)
     setReturnQuantities({})
+    setReturnRefundPrices({})
     setReplacementCart([])
+    setOrderDiscount(0)
     setReturnNotes('')
 
     try {
@@ -290,11 +352,25 @@ export function Returns() {
     setReturnQuantities({ ...returnQuantities, [itemId]: next })
   }
 
+  useEffect(() => {
+    if (!selectedSale?.items) return
+    const defaults = {}
+    for (const item of selectedSale.items) {
+      defaults[item.id] = getOriginalPaidUnitPrice(item)
+    }
+    setReturnRefundPrices(defaults)
+  }, [selectedSale])
+
+  const updateReturnItemUnitPrice = (saleItemId, value) => {
+    setReturnRefundPrices((prev) => ({ ...prev, [saleItemId]: value }))
+  }
+
   const calculateRefundCredit = () => {
     if (!selectedSale || !selectedSale.items) return 0
     return selectedSale.items.reduce((sum, item) => {
       const qty = returnQuantities[item.id] || 0
-      return sum + (qty * item.retail_price_snapshot)
+      if (qty <= 0) return sum
+      return sum + computeReturnLineTotals(item, qty, returnRefundPrices).lineTotal
     }, 0)
   }
   const refundCredit = calculateRefundCredit()
@@ -336,31 +412,6 @@ export function Returns() {
     }
   }
 
-  const getPerPieceFinalAmount = (item) => {
-    const qty = Math.max(1, Number(item.quantity) || 1)
-    const currentFinal = item.final_amount_input !== undefined && item.final_amount_input !== ''
-      ? Number(item.final_amount_input)
-      : Number(item.line_total ?? item.retail_price_snapshot * qty)
-    if (Number.isNaN(currentFinal)) {
-      return Number(item.retail_price_snapshot) || 0
-    }
-    return currentFinal / qty
-  }
-
-  const scaleLineAmountsForQuantity = (item, nextQty) => {
-    const subtotal = nextQty * item.retail_price_snapshot
-    const perPieceFinal = getPerPieceFinalAmount(item)
-    const newFinal = perPieceFinal * nextQty
-    const discount = Math.max(0, subtotal - newFinal)
-    return {
-      ...item,
-      quantity: nextQty,
-      discount_amount: discount,
-      final_amount_input: newFinal,
-      line_total: newFinal,
-    }
-  }
-
   const addReplacementItem = (article) => {
     const existing = replacementCart.find((item) => item.article_id === article.id)
     if (existing) {
@@ -370,7 +421,7 @@ export function Returns() {
       }
       setReplacementCart(replacementCart.map((item) =>
         item.article_id === article.id
-          ? scaleLineAmountsForQuantity(item, item.quantity + 1)
+          ? withRecalculatedReplacementItem({ ...item, quantity: item.quantity + 1 })
           : item
       ))
     } else {
@@ -378,20 +429,19 @@ export function Returns() {
         showToast('error', `Article "${article.name}" is currently out of stock!`)
         return
       }
+      const retail = Number(article.retail_price || article.selling_price || 0)
       setReplacementCart([
         ...replacementCart,
-        {
+        withRecalculatedReplacementItem({
           article_id: article.id,
           name: article.name,
           sku: article.sku,
           quantity: 1,
           max_quantity: article.quantity,
-          retail_price_snapshot: Number(article.retail_price || article.selling_price || 0),
+          retail_price_snapshot: retail,
           wholesale_price_snapshot: Number(article.wholesale_price || article.purchase_price || 0),
-          discount_amount: 0,
-          final_amount_input: Number(article.retail_price || article.selling_price || 0),
-          line_total: Number(article.retail_price || article.selling_price || 0)
-        }
+          final_amount_input: retail,
+        }),
       ])
     }
     setArticleSearchQuery('')
@@ -402,39 +452,32 @@ export function Returns() {
     setReplacementCart(replacementCart.map((item) => {
       if (item.article_id === articleId) {
         const nextQty = Math.max(1, Math.min(item.max_quantity, item.quantity + delta))
-        return scaleLineAmountsForQuantity(item, nextQty)
+        return withRecalculatedReplacementItem({ ...item, quantity: nextQty })
       }
       return item
     }))
   }
 
-  const updateReplacementFinalAmount = (articleId, finalAmountInput) => {
+  const updateReplacementUnitPrice = (articleId, unitPriceInput) => {
     setReplacementCart(replacementCart.map((item) => {
       if (item.article_id !== articleId) return item
 
-      const subtotal = item.retail_price_snapshot * item.quantity
-      if (finalAmountInput === '' || finalAmountInput === null || finalAmountInput === undefined) {
-        return { ...item, final_amount_input: '', discount_amount: 0, line_total: subtotal }
+      if (unitPriceInput === '' || unitPriceInput === null || unitPriceInput === undefined) {
+        return withRecalculatedReplacementItem({ ...item, final_amount_input: '' })
       }
 
-      const target = Number(finalAmountInput)
-      if (Number.isNaN(target)) return item
-      if (target > subtotal) {
-        showToast('error', `Final amount cannot exceed retail subtotal (${formatCurrency(subtotal)}).`)
+      const unitFinal = Number(unitPriceInput)
+      if (Number.isNaN(unitFinal)) return item
+      if (unitFinal > item.retail_price_snapshot) {
+        showToast('error', `Unit price cannot exceed retail (${formatCurrency(item.retail_price_snapshot)}).`)
         return item
       }
-      if (target <= 0) {
-        showToast('error', 'Final amount must be greater than zero.')
+      if (unitFinal <= 0) {
+        showToast('error', 'Unit price must be greater than zero.')
         return item
       }
 
-      const discount = subtotal - target
-      return {
-        ...item,
-        final_amount_input: finalAmountInput,
-        discount_amount: discount,
-        line_total: target,
-      }
+      return withRecalculatedReplacementItem({ ...item, final_amount_input: unitPriceInput })
     }))
   }
 
@@ -443,10 +486,11 @@ export function Returns() {
   }
 
   const calculateReplacementTotal = () => {
-    return replacementCart.reduce((sum, item) => sum + Number(item.line_total || 0), 0)
+    return replacementCart.reduce((sum, item) => sum + computeItemLineTotals(item).lineTotal, 0)
   }
-  const replacementTotal = calculateReplacementTotal()
-  const netSettlement = replacementTotal - refundCredit
+  const replacementItemsTotal = calculateReplacementTotal()
+  const replacementGrandTotal = computeReplacementGrandTotal(replacementCart, orderDiscount)
+  const netSettlement = replacementGrandTotal - refundCredit
 
   // Execute standard transaction
   const handleProcessTransaction = async () => {
@@ -460,14 +504,25 @@ export function Returns() {
       return
     }
 
+    if (returnType === 'exchange' && replacementCart.length > 0) {
+      const disc = normalizeOrderDiscount(orderDiscount)
+      if (disc > replacementItemsTotal) {
+        showToast('error', 'Order discount cannot exceed replacement articles total.')
+        return
+      }
+    }
+
     const itemsPayload = selectedSale.items
       .filter((i) => returnQuantities[i.id] > 0)
-      .map((i) => ({
-        sale_item_id: i.id,
-        article_id: i.article_id,
-        quantity_returned: returnQuantities[i.id],
-        refund_per_unit: i.retail_price_snapshot || i.price || 0
-      }))
+      .map((i) => {
+        const { unitFinal } = computeReturnLineTotals(i, returnQuantities[i.id], returnRefundPrices)
+        return {
+          sale_item_id: i.id,
+          article_id: i.article_id,
+          quantity_returned: returnQuantities[i.id],
+          refund_per_unit: unitFinal,
+        }
+      })
 
     setProcessingReturn(true)
     try {
@@ -477,7 +532,8 @@ export function Returns() {
         processed_by: selectedStaff || 1,
         items: itemsPayload,
         notes: returnNotes.trim() || `Customer ${returnType} processed against invoice ${selectedSale.invoice_number}`,
-        replacement_items: returnType === 'exchange' ? replacementCart : [],
+        replacement_items: returnType === 'exchange' ? mapReplacementItemsForPayload(replacementCart) : [],
+        order_discount: returnType === 'exchange' ? normalizeOrderDiscount(orderDiscount) : 0,
         payment_method: paymentMethod,
         salesperson_id: selectedStaff || 1
       }
@@ -508,7 +564,7 @@ export function Returns() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedSale, processingReturn, activeTab, returnQuantities, replacementCart, returnType])
+  }, [selectedSale, processingReturn, activeTab, returnQuantities, returnRefundPrices, replacementCart, returnType])
 
   const getManualReturnNotes = () => {
     if (manualReason === 'Other (Custom Note)') {
@@ -677,6 +733,7 @@ export function Returns() {
   }
 
   const addManualItem = (article) => {
+    const retail = Number(article.retail_price || article.selling_price || 0)
     const existing = manualCart.find((item) => item.article_id === article.id)
     if (existing) {
       setManualCart(manualCart.map((item) =>
@@ -692,8 +749,9 @@ export function Returns() {
           name: article.name,
           sku: article.sku,
           quantity: 1,
-          refund_per_unit: Number(article.retail_price || article.selling_price || 0),
-          line_total: Number(article.retail_price || article.selling_price || 0)
+          retail_price_snapshot: retail,
+          refund_per_unit: retail,
+          line_total: retail
         }
       ])
     }
@@ -715,12 +773,20 @@ export function Returns() {
   }
 
   const updateManualPrice = (articleId, priceStr) => {
-    const p = parseFloat(priceStr) || 0
+    const p = parseFloat(priceStr)
+    if (Number.isNaN(p)) return
     setManualCart(manualCart.map((item) => {
-      if (item.article_id === articleId) {
-        return { ...item, refund_per_unit: p, line_total: item.quantity * p }
+      if (item.article_id !== articleId) return item
+      const retail = Number(item.retail_price_snapshot || 0)
+      if (p > retail) {
+        showToast('error', `Unit refund cannot exceed retail (${formatCurrency(retail)}).`)
+        return item
       }
-      return item
+      if (p <= 0) {
+        showToast('error', 'Unit refund must be greater than zero.')
+        return item
+      }
+      return { ...item, refund_per_unit: p, line_total: item.quantity * p }
     }))
   }
 
@@ -732,8 +798,9 @@ export function Returns() {
     return manualCart.reduce((sum, item) => sum + item.line_total, 0)
   }
   const manualTotal = calculateManualTotal()
-  const manualReplacementTotal = replacementCart.reduce((sum, item) => sum + Number(item.line_total || 0), 0)
-  const manualNetSettlement = manualReplacementTotal - manualTotal
+  const manualReplacementItemsTotal = replacementCart.reduce((sum, item) => sum + computeItemLineTotals(item).lineTotal, 0)
+  const manualReplacementGrandTotal = computeReplacementGrandTotal(replacementCart, orderDiscount)
+  const manualNetSettlement = manualReplacementGrandTotal - manualTotal
 
   const handleProcessManualReturn = async () => {
     if (manualCart.length === 0) {
@@ -749,6 +816,14 @@ export function Returns() {
         ? 'Please enter a custom explanation for this manual return.'
         : 'Please select a return reason.')
       return
+    }
+
+    if (manualReturnMode === 'exchange' && replacementCart.length > 0) {
+      const disc = normalizeOrderDiscount(orderDiscount)
+      if (disc > manualReplacementItemsTotal) {
+        showToast('error', 'Order discount cannot exceed replacement articles total.')
+        return
+      }
     }
 
     const composedNotes = getManualReturnNotes()
@@ -767,7 +842,8 @@ export function Returns() {
         processed_by: selectedStaff || 1,
         items: itemsPayload,
         notes: composedNotes,
-        replacement_items: manualReturnMode === 'exchange' ? replacementCart : [],
+        replacement_items: manualReturnMode === 'exchange' ? mapReplacementItemsForPayload(replacementCart) : [],
+        order_discount: manualReturnMode === 'exchange' ? normalizeOrderDiscount(orderDiscount) : 0,
         payment_method: paymentMethod,
         salesperson_id: selectedStaff || 1,
       }
@@ -781,6 +857,7 @@ export function Returns() {
       setManualResult(resultData)
       setManualCart([])
       setReplacementCart([])
+      setOrderDiscount(0)
       setArticleSearchQuery('')
       setArticleSearchResults([])
       setManualReturnMode('credit')
@@ -1024,7 +1101,9 @@ export function Returns() {
                         <th className="py-3 pr-4">Article &amp; SKU</th>
                         <th className="py-3 px-4 text-center">Sold Qty</th>
                         <th className="py-3 px-4 text-center">Avail. To Return</th>
-                        <th className="py-3 px-4 text-right">Unit Price</th>
+                        <th className="py-3 px-4 text-right">Retail</th>
+                        <th className="py-3 px-4 text-right">Unit Refund</th>
+                        <th className="py-3 px-4 text-right">Discount</th>
                         <th className="py-3 px-4 text-center">Return Qty</th>
                         <th className="py-3 pl-4 text-right">Refund Value</th>
                       </tr>
@@ -1033,6 +1112,11 @@ export function Returns() {
                       {selectedSale.items && selectedSale.items.map((item) => {
                         const currentQty = returnQuantities[item.id] || 0
                         const isDisabled = item.available_to_return <= 0
+                        const defaultUnit = getOriginalPaidUnitPrice(item)
+                        const unitPriceInput = returnRefundPrices[item.id] !== undefined
+                          ? returnRefundPrices[item.id]
+                          : defaultUnit
+                        const { unitDiscount, lineTotal } = computeReturnLineTotals(item, currentQty, returnRefundPrices)
                         return (
                           <tr key={item.id} className={currentQty > 0 ? 'bg-[#EFEBE3]' : ''}>
                             <td className="py-3.5 pr-4">
@@ -1046,6 +1130,22 @@ export function Returns() {
                               </span>
                             </td>
                             <td className="py-3.5 px-4 text-right font-mono text-[#2E2822]">{formatCurrency(item.retail_price_snapshot)}</td>
+                            <td className="py-3.5 px-4 text-right">
+                              <input
+                                type="number"
+                                min="0"
+                                max={item.retail_price_snapshot}
+                                value={unitPriceInput}
+                                disabled={isDisabled}
+                                onFocus={(e) => e.target.select()}
+                                onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
+                                onChange={(e) => updateReturnItemUnitPrice(item.id, e.target.value)}
+                                className="w-24 py-1 px-2 text-right bg-[#F7F5F0] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:bg-white border-b border-[#C9C0B5] disabled:opacity-40"
+                              />
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
+                              {unitDiscount > 0 ? `-${formatCurrency(unitDiscount)}` : '0'}
+                            </td>
                             <td className="py-3.5 px-4 text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <button
@@ -1068,7 +1168,7 @@ export function Returns() {
                               </div>
                             </td>
                             <td className="py-3.5 pl-4 text-right font-mono font-bold text-[#2E2822]">
-                              {currentQty > 0 ? `-${formatCurrency(currentQty * item.retail_price_snapshot)}` : formatCurrency(0)}
+                              {currentQty > 0 ? `-${formatCurrency(lineTotal)}` : formatCurrency(0)}
                             </td>
                           </tr>
                         )
@@ -1122,9 +1222,9 @@ export function Returns() {
                       <thead>
                         <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
                           <th className="py-3 pr-4">Replacement Article</th>
-                          <th className="py-3 px-4 text-right">Unit Price</th>
+                          <th className="py-3 px-4 text-right">Retail</th>
                           <th className="py-3 px-4 text-center">Quantity</th>
-                          <th className="py-3 px-4 text-right">Final Amount</th>
+                          <th className="py-3 px-4 text-right">Unit Price</th>
                           <th className="py-3 px-4 text-right">Discount</th>
                           <th className="py-3 px-4 text-right">Line Total</th>
                           <th className="py-3 pl-4 text-center">Action</th>
@@ -1136,7 +1236,13 @@ export function Returns() {
                             <td colSpan="7" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">No replacement items added yet. Search and select articles above.</td>
                           </tr>
                         ) : (
-                          replacementCart.map((item) => (
+                          replacementCart.map((item) => {
+                            const { lineTotal, unitDiscount } = computeItemLineTotals(item)
+                            const unitPriceInput =
+                              item.final_amount_input !== '' && item.final_amount_input !== undefined
+                                ? item.final_amount_input
+                                : item.retail_price_snapshot
+                            return (
                             <tr key={item.article_id}>
                               <td className="py-3.5 pr-4">
                                 <div className="font-bold text-[#2E2822]">{item.name}</div>
@@ -1166,17 +1272,18 @@ export function Returns() {
                                 <input
                                   type="number"
                                   min="0"
-                                  value={item.final_amount_input !== undefined ? item.final_amount_input : item.line_total}
+                                  max={item.retail_price_snapshot}
+                                  value={unitPriceInput}
                                   onFocus={(e) => e.target.select()}
                                   onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
-                                  onChange={(e) => updateReplacementFinalAmount(item.article_id, e.target.value)}
+                                  onChange={(e) => updateReplacementUnitPrice(item.article_id, e.target.value)}
                                   className="w-24 py-1 px-2 text-right bg-[#F7F5F0] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:bg-white border-b border-[#C9C0B5]"
                                 />
                               </td>
                               <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
-                                {(item.discount_amount || 0) > 0 ? formatCurrency(item.discount_amount) : '0'}
+                                {unitDiscount > 0 ? `-${formatCurrency(unitDiscount)}` : '0'}
                               </td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(item.line_total)}</td>
+                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">{formatCurrency(lineTotal)}</td>
                               <td className="py-3.5 pl-4 text-center">
                                 <button
                                   type="button"
@@ -1187,7 +1294,8 @@ export function Returns() {
                                 </button>
                               </td>
                             </tr>
-                          ))
+                            )
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1245,10 +1353,31 @@ export function Returns() {
                     <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(refundCredit)}</span>
                   </div>
                   {returnType === 'exchange' && (
-                    <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
-                      <span>Replacement Articles Total:</span>
-                      <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(replacementTotal)}</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                        <span>Replacement Articles Total:</span>
+                        <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(replacementItemsTotal)}</span>
+                      </div>
+                      {normalizeOrderDiscount(orderDiscount) > 0 && (
+                        <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                          <span>Order Discount:</span>
+                          <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(orderDiscount)}</span>
+                        </div>
+                      )}
+                      {normalizeOrderDiscount(orderDiscount) > 0 && (
+                        <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                          <span>Replacement Charge (After Discount):</span>
+                          <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(replacementGrandTotal)}</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsDiscountModalOpen(true)}
+                        className="w-full py-2 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] text-[11px] font-bold uppercase tracking-wider transition-all"
+                      >
+                        Set Overall Order Discount
+                      </button>
+                    </>
                   )}
                   <div className="border-t border-[#C9C0B5] pt-4 flex items-center justify-between">
                     <span className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em]">
@@ -1562,7 +1691,9 @@ export function Returns() {
                     <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
                       <th className="py-3 pr-4">Article &amp; SKU</th>
                       <th className="py-3 px-4 text-center">Return Quantity</th>
-                      <th className="py-3 px-4 text-right">Agreed Refund Price</th>
+                      <th className="py-3 px-4 text-right">Retail</th>
+                      <th className="py-3 px-4 text-right">Unit Refund</th>
+                      <th className="py-3 px-4 text-right">Discount</th>
                       <th className="py-3 px-4 text-right">Line Credit Total</th>
                       <th className="py-3 pl-4 text-center">Action</th>
                     </tr>
@@ -1570,12 +1701,15 @@ export function Returns() {
                   <tbody className="divide-y divide-[#C9C0B5]">
                     {manualCart.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">
+                        <td colSpan="7" className="py-6 text-center text-xs text-[#7A6F69] italic font-sans">
                           No items in manual return cart. Search articles above to select inventory being returned.
                         </td>
                       </tr>
                     ) : (
-                      manualCart.map((item) => (
+                      manualCart.map((item) => {
+                        const retail = Number(item.retail_price_snapshot || item.refund_per_unit || 0)
+                        const unitDiscount = Math.max(0, retail - Number(item.refund_per_unit || 0))
+                        return (
                         <tr key={item.article_id}>
                           <td className="py-3.5 pr-4">
                             <div className="font-bold text-[#2E2822]">{item.name}</div>
@@ -1600,16 +1734,21 @@ export function Returns() {
                               </button>
                             </div>
                           </td>
+                          <td className="py-3.5 px-4 text-right font-mono text-[#2E2822]">{formatCurrency(retail)}</td>
                           <td className="py-3.5 px-4 text-right font-mono">
                             <input
                               type="number"
                               min="0"
+                              max={retail}
                               value={item.refund_per_unit}
                               onFocus={(e) => e.target.select()}
                               onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                               onChange={(e) => updateManualPrice(item.article_id, e.target.value)}
                               className="w-28 text-right bg-transparent border-b border-[#2E2822] px-2 py-1 text-[#2E2822] focus:outline-none font-mono font-bold text-xs"
                             />
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
+                            {unitDiscount > 0 ? `-${formatCurrency(unitDiscount)}` : '0'}
                           </td>
                           <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">-{formatCurrency(item.line_total)}</td>
                           <td className="py-3.5 pl-4 text-center">
@@ -1622,7 +1761,8 @@ export function Returns() {
                             </button>
                           </td>
                         </tr>
-                      ))
+                        )
+                      })
                     )}
                   </tbody>
                 </table>
@@ -1676,9 +1816,9 @@ export function Returns() {
                       <thead>
                         <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
                           <th className="py-3 pr-4">Replacement Article</th>
-                          <th className="py-3 px-4 text-right">Unit Price</th>
+                          <th className="py-3 px-4 text-right">Retail</th>
                           <th className="py-3 px-4 text-center">Quantity</th>
-                          <th className="py-3 px-4 text-right">Final Amount</th>
+                          <th className="py-3 px-4 text-right">Unit Price</th>
                           <th className="py-3 px-4 text-right">Discount</th>
                           <th className="py-3 px-4 text-right">Line Total</th>
                           <th className="py-3 pl-4 text-center">Action</th>
@@ -1692,7 +1832,13 @@ export function Returns() {
                             </td>
                           </tr>
                         ) : (
-                          replacementCart.map((item) => (
+                          replacementCart.map((item) => {
+                            const { lineTotal, unitDiscount } = computeItemLineTotals(item)
+                            const unitPriceInput =
+                              item.final_amount_input !== '' && item.final_amount_input !== undefined
+                                ? item.final_amount_input
+                                : item.retail_price_snapshot
+                            return (
                             <tr key={item.article_id}>
                               <td className="py-3.5 pr-4">
                                 <div className="font-bold text-[#2E2822]">{item.name}</div>
@@ -1714,24 +1860,26 @@ export function Returns() {
                                 <input
                                   type="number"
                                   min="0"
-                                  value={item.final_amount_input !== undefined ? item.final_amount_input : item.line_total}
+                                  max={item.retail_price_snapshot}
+                                  value={unitPriceInput}
                                   onFocus={(e) => e.target.select()}
                                   onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
-                                  onChange={(e) => updateReplacementFinalAmount(item.article_id, e.target.value)}
+                                  onChange={(e) => updateReplacementUnitPrice(item.article_id, e.target.value)}
                                   className="w-24 py-1 px-2 text-right bg-[#F7F5F0] text-[#2E2822] font-mono text-xs font-bold focus:outline-none focus:bg-white border-b border-[#C9C0B5]"
                                 />
                               </td>
                               <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
-                                {(item.discount_amount || 0) > 0 ? formatCurrency(item.discount_amount) : '0'}
+                                {unitDiscount > 0 ? `-${formatCurrency(unitDiscount)}` : '0'}
                               </td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">+{formatCurrency(item.line_total)}</td>
+                              <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">+{formatCurrency(lineTotal)}</td>
                               <td className="py-3.5 pl-4 text-center">
                                 <button type="button" onClick={() => removeReplacementItem(item.article_id)} className="p-1.5 text-[#2E2822] hover:bg-[#EFEBE3] rounded-[2px] transition-colors">
                                   <TrashIcon className="w-4 h-4" />
                                 </button>
                               </td>
                             </tr>
-                          ))
+                            )
+                          })
                         )}
                       </tbody>
                     </table>
@@ -1801,10 +1949,31 @@ export function Returns() {
                     <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(manualTotal)}</span>
                   </div>
                   {manualReturnMode === 'exchange' && (
-                    <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
-                      <span>Replacement Articles Total:</span>
-                      <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(manualReplacementTotal)}</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                        <span>Replacement Articles Total:</span>
+                        <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(manualReplacementItemsTotal)}</span>
+                      </div>
+                      {normalizeOrderDiscount(orderDiscount) > 0 && (
+                        <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                          <span>Order Discount:</span>
+                          <span className="font-mono font-bold text-[#2E2822]">-{formatCurrency(orderDiscount)}</span>
+                        </div>
+                      )}
+                      {normalizeOrderDiscount(orderDiscount) > 0 && (
+                        <div className="flex justify-between text-xs font-bold text-[#7A6F69] uppercase tracking-wider">
+                          <span>Replacement Charge (After Discount):</span>
+                          <span className="font-mono font-bold text-[#2E2822]">+{formatCurrency(manualReplacementGrandTotal)}</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsDiscountModalOpen(true)}
+                        className="w-full py-2 border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] rounded-[2px] text-[11px] font-bold uppercase tracking-wider transition-all"
+                      >
+                        Set Overall Order Discount
+                      </button>
+                    </>
                   )}
                   {manualReturnMode === 'exchange' && (
                     <div className="border-t border-[#C9C0B5] pt-4 flex items-center justify-between">
@@ -2122,6 +2291,33 @@ export function Returns() {
         </div>,
         document.body
       )}
+
+      <StandardModal
+        isOpen={isDiscountModalOpen}
+        onClose={() => setIsDiscountModalOpen(false)}
+        title="Set Overall Order Discount"
+        titleId="return-discount-modal-title"
+        maxWidth="sm"
+        footer={
+          <StandardModalAction onClick={() => setIsDiscountModalOpen(false)}>
+            Apply Discount
+          </StandardModalAction>
+        }
+      >
+        <StandardModalLabel htmlFor="return-order-discount-input">Discount Amount (Rs.)</StandardModalLabel>
+        <StandardModalInput
+          id="return-order-discount-input"
+          type="number"
+          min="0"
+          value={orderDiscount}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => setOrderDiscount(e.target.value)}
+          className="font-bold text-xl"
+        />
+        <p className="text-[11px] text-[#7A6F69] mt-3">
+          Applied to replacement articles total after per-item discounts, same as POS order discount.
+        </p>
+      </StandardModal>
     </div>
   )
 }
