@@ -2,34 +2,41 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { getPendingCommissionBalance, recordCommissionPayout, getCommissionBalance } from '../services/commission.service.js'
+import { getCurrentBusinessDate, resolveBusinessRange } from '../utils/businessDay.js'
 
 export function registerReportsHandlers() {
-  // Helper to unpack date filters whether passed as object or individual arguments
+  // Helper to unpack date filters whether passed as object or individual arguments.
+  // Datetime columns use 8:00 PKT business-day windows (windowStart inclusive, windowEnd exclusive).
+  // Date-only columns (expenses.expense_date) use startDate/endDate business-date labels.
   const unpackDates = (arg1, arg2) => {
-    if (arg1 && typeof arg1 === 'object') {
-      return {
-        startDate: arg1.startDate || arg1.start_date || arg1.start || '2000-01-01',
-        endDate: arg1.endDate || arg1.end_date || arg1.end || '2100-12-31',
-        salespersonId: arg1.salespersonId || arg1.salesperson_id || null,
-        limit: arg1.limit || 10,
-        month: arg1.month || new Date().toISOString().slice(0, 7),
-        date: arg1.date || new Date().toISOString().slice(0, 10)
-      }
-    }
+    const base = arg1 && typeof arg1 === 'object' ? arg1 : {}
+    const rangeInput =
+      arg1 && typeof arg1 === 'object'
+        ? arg1
+        : { startDate: typeof arg1 === 'string' ? arg1 : null, endDate: typeof arg2 === 'string' ? arg2 : null }
+
+    const range = resolveBusinessRange(rangeInput, { wideDefault: true })
+    const singleDate =
+      (base.date && String(base.date).trim()) ||
+      (typeof arg1 === 'string' && arg1.length === 10 ? arg1 : null) ||
+      getCurrentBusinessDate()
+
     return {
-      startDate: typeof arg1 === 'string' ? arg1 : '2000-01-01',
-      endDate: typeof arg2 === 'string' ? arg2 : '2100-12-31',
-      salespersonId: null,
-      limit: 10,
-      month: typeof arg1 === 'string' && arg1.length === 7 ? arg1 : new Date().toISOString().slice(0, 7),
-      date: typeof arg1 === 'string' && arg1.length === 10 ? arg1 : new Date().toISOString().slice(0, 10)
+      startDate: range.startDate,
+      endDate: range.endDate,
+      windowStart: range.start,
+      windowEnd: range.end,
+      salespersonId: base.salespersonId || base.salesperson_id || null,
+      limit: base.limit || 10,
+      month: base.month || new Date().toISOString().slice(0, 7),
+      date: singleDate,
     }
   }
 
   // 1. Sales Summary Report
   const handleSalesSummary = (_, arg1, arg2, arg3) => {
     const db = getDb()
-    const { startDate, endDate } = unpackDates(arg1, arg2)
+    const { startDate, endDate, windowStart, windowEnd } = unpackDates(arg1, arg2)
     const salespersonId = (arg1 && typeof arg1 === 'object') ? arg1.salespersonId : arg3
 
     let query = `
@@ -41,9 +48,9 @@ export function registerReportsHandlers() {
       FROM sales s
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
       LEFT JOIN sale_items si ON s.id = si.sale_id
-      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
+      WHERE s.status = 'completed' AND s.sale_date >= ? AND s.sale_date < ?
     `
-    const params = [startDate, endDate]
+    const params = [windowStart, windowEnd]
 
     if (salespersonId && salespersonId !== 'All') {
       query += ' AND s.salesperson_id = ?'
@@ -84,9 +91,9 @@ export function registerReportsHandlers() {
         'return' AS record_type
       FROM returns r
       LEFT JOIN salespersons sp ON r.processed_by = sp.id
-      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
+      WHERE r.return_date >= ? AND r.return_date < ?
       ORDER BY r.return_date DESC
-    `).all(startDate, endDate)
+    `).all(windowStart, windowEnd)
 
     const sales = saleRows.map((row) => ({ ...row, record_type: 'sale' }))
     const returns = returnRows.map((row) => ({ ...row, record_type: 'return' }))
@@ -145,26 +152,26 @@ export function registerReportsHandlers() {
   // 2. Profit Summary Report
   const handleProfitSummary = (_, arg1, arg2) => {
     const db = getDb()
-    const { startDate, endDate } = unpackDates(arg1, arg2)
+    const { startDate, endDate, windowStart, windowEnd } = unpackDates(arg1, arg2)
 
     const salesRevenueRes = db.prepare(`
       SELECT COALESCE(SUM(grand_total), 0) AS revenue
       FROM sales
-      WHERE status = 'completed' AND DATE(sale_date) >= ? AND DATE(sale_date) <= ?
-    `).get(startDate, endDate)
+      WHERE status = 'completed' AND sale_date >= ? AND sale_date < ?
+    `).get(windowStart, windowEnd)
 
     const salesCogsRes = db.prepare(`
       SELECT COALESCE(SUM(si.wholesale_price_snapshot * si.quantity), 0) AS cogs
       FROM sale_items si
       JOIN sales s ON s.id = si.sale_id
-      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
-    `).get(startDate, endDate)
+      WHERE s.status = 'completed' AND s.sale_date >= ? AND s.sale_date < ?
+    `).get(windowStart, windowEnd)
 
     const returnsRes = db.prepare(`
       SELECT COALESCE(SUM(r.refund_credit), 0) AS return_revenue
       FROM returns r
-      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
-    `).get(startDate, endDate)
+      WHERE r.return_date >= ? AND r.return_date < ?
+    `).get(windowStart, windowEnd)
 
     const returnCogsRes = db.prepare(`
       SELECT COALESCE(SUM(
@@ -177,8 +184,8 @@ export function registerReportsHandlers() {
       JOIN returns r ON ri.return_id = r.id
       LEFT JOIN sale_items si ON ri.sale_item_id = si.id
       JOIN articles a ON ri.article_id = a.id
-      WHERE DATE(r.return_date) >= ? AND DATE(r.return_date) <= ?
-    `).get(startDate, endDate)
+      WHERE r.return_date >= ? AND r.return_date < ?
+    `).get(windowStart, windowEnd)
 
     const expRes = db.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total_expenses
@@ -338,7 +345,7 @@ export function registerReportsHandlers() {
   // 6. Top Articles Report
   handleIpc('reports:topArticles', (_, arg1, arg2, arg3) => {
     const db = getDb()
-    const { startDate, endDate } = unpackDates(arg1, arg2)
+    const { windowStart, windowEnd } = unpackDates(arg1, arg2)
     const limit = (arg1 && typeof arg1 === 'object' && arg1.limit) ? arg1.limit : (Number(arg3) || 10)
 
     const rows = db.prepare(`
@@ -348,11 +355,11 @@ export function registerReportsHandlers() {
       FROM sale_items si
       JOIN sales s ON si.sale_id = s.id
       JOIN articles a ON si.article_id = a.id
-      WHERE s.status = 'completed' AND DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?
+      WHERE s.status = 'completed' AND s.sale_date >= ? AND s.sale_date < ?
       GROUP BY a.id
       ORDER BY total_quantity_sold DESC
       LIMIT ?
-    `).all(startDate, endDate, limit)
+    `).all(windowStart, windowEnd, limit)
 
     return { articles: rows }
   })
@@ -377,10 +384,14 @@ export function registerReportsHandlers() {
   handleIpc('reports:expenseSummary', handleExpensesSummary)
   handleIpc('reports:expensesSummary', handleExpensesSummary) // Backward compatibility alias
 
-  // 8. Daily Cash Flow Report
+  // 8. Daily Cash Flow Report (single business day, 8:00 PKT window)
   handleIpc('reports:dailyCashFlow', (_, arg1) => {
     const db = getDb()
-    const { date } = unpackDates(arg1)
+    const range = resolveBusinessRange(
+      arg1 && typeof arg1 === 'object' ? arg1 : { date: arg1 },
+      { required: true }
+    )
+    const { startDate: date, start: windowStart, end: windowEnd } = range
 
     const salesRes = db.prepare(`
       SELECT
@@ -388,13 +399,15 @@ export function registerReportsHandlers() {
         COALESCE(SUM(CASE WHEN LOWER(payment_method) != 'online' THEN grand_total ELSE 0 END), 0) AS cash_sales,
         COALESCE(SUM(grand_total), 0) AS total_sales
       FROM sales
-      WHERE status = 'completed' AND DATE(sale_date) = ?
-    `).get(date)
+      WHERE status = 'completed' AND sale_date >= ? AND sale_date < ?
+    `).get(windowStart, windowEnd)
 
     const returnsRes = db.prepare(`
       SELECT COALESCE(SUM(refund_amount), 0) AS cash_out
-      FROM returns WHERE DATE(return_date) = ? AND return_type IN ('refund', 'exchange', 'manual')
-    `).get(date)
+      FROM returns
+      WHERE return_type IN ('refund', 'exchange', 'manual')
+        AND return_date >= ? AND return_date < ?
+    `).get(windowStart, windowEnd)
 
     const expensesRes = db.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS cash_expenses
@@ -411,6 +424,8 @@ export function registerReportsHandlers() {
 
     return {
       date,
+      window_start: windowStart,
+      window_end: windowEnd,
       cash_sales,
       online_sales,
       total_sales: Number(salesRes?.total_sales || 0),
@@ -429,13 +444,10 @@ export function registerReportsHandlers() {
     const params = []
 
     if (filters) {
-      if (filters.startDate) {
-        query += ' AND DATE(performed_at) >= ?'
-        params.push(filters.startDate)
-      }
-      if (filters.endDate) {
-        query += ' AND DATE(performed_at) <= ?'
-        params.push(filters.endDate)
+      const range = resolveBusinessRange(filters, { openEnded: true })
+      if (range) {
+        query += ' AND performed_at >= ? AND performed_at < ?'
+        params.push(range.start, range.end)
       }
       if (filters.actionType && filters.actionType !== 'All') {
         switch (filters.actionType) {

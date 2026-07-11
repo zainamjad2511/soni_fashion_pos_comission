@@ -2,6 +2,7 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { createExpenseRecord } from '../services/expense.service.js'
+import { resolveBusinessRange } from '../utils/businessDay.js'
 
 export function registerExpensesHandlers() {
   handleIpc('expenses:list', (_, filters) => {
@@ -10,13 +11,11 @@ export function registerExpensesHandlers() {
     const params = []
 
     if (filters) {
-      if (filters.startDate) {
-        query += ' AND expense_date >= ?'
-        params.push(filters.startDate)
-      }
-      if (filters.endDate) {
-        query += ' AND expense_date <= ?'
-        params.push(filters.endDate)
+      // expense_date is date-only: filter by business-date labels (not datetime windows)
+      const range = resolveBusinessRange(filters, { openEnded: true })
+      if (range) {
+        query += ' AND expense_date >= ? AND expense_date <= ?'
+        params.push(range.startDate, range.endDate)
       }
       if (filters.category && filters.category !== 'All') {
         query += ' AND category = ?'

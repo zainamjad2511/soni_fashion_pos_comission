@@ -14,6 +14,7 @@
 const PKT_OFFSET_MS = 5 * 60 * 60 * 1000
 const BUSINESS_DAY_START_HOUR = 8
 const MS_PER_DAY = 24 * 60 * 60 * 1000
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export const DATE_PRESETS = Object.freeze({
   TODAY: 'today',
@@ -178,4 +179,72 @@ export function getRangeBounds(startDate, endDate) {
 export function formatBusinessDayWindowLabel(businessDate) {
   const { start, end } = getBusinessDayBounds(businessDate)
   return `${start} → ${end} PKT`
+}
+
+/**
+ * Resolve IPC filter payloads into inclusive business-date labels + exclusive
+ * datetime window (8:00 PKT → next 8:00 PKT).
+ *
+ * Accepts camelCase / snake_case keys: startDate, endDate, date, businessDate.
+ *
+ * @param {object|string|null|undefined} filters
+ * @param {{ required?: boolean, wideDefault?: boolean, openEnded?: boolean }} [options]
+ * @returns {{ startDate: string, endDate: string, start: string, end: string } | null}
+ */
+export function resolveBusinessRange(filters, options = {}) {
+  const { required = false, wideDefault = false, openEnded = false } = options
+  let startDate = null
+  let endDate = null
+  let single = null
+
+  if (typeof filters === 'string') {
+    const trimmed = filters.trim()
+    if (DATE_RE.test(trimmed)) single = trimmed
+  } else if (filters && typeof filters === 'object') {
+    startDate = filters.startDate || filters.start_date || null
+    endDate = filters.endDate || filters.end_date || null
+    single =
+      filters.businessDate ||
+      filters.business_date ||
+      filters.date ||
+      null
+
+    if (!startDate && filters.start && DATE_RE.test(String(filters.start).trim())) {
+      startDate = String(filters.start).trim()
+    }
+    if (!endDate && filters.end && DATE_RE.test(String(filters.end).trim())) {
+      endDate = String(filters.end).trim()
+    }
+  }
+
+  if (single) {
+    const date = String(single).trim()
+    if (!DATE_RE.test(date)) {
+      throw new Error(`Invalid business date: ${single}`)
+    }
+    if (!startDate) startDate = date
+    if (!endDate) endDate = date
+  }
+
+  if (startDate) startDate = String(startDate).trim()
+  if (endDate) endDate = String(endDate).trim()
+
+  if (!startDate && !endDate) {
+    if (wideDefault) {
+      startDate = '2000-01-01'
+      endDate = '2100-12-31'
+    } else if (required) {
+      const today = getCurrentBusinessDate()
+      startDate = today
+      endDate = today
+    } else {
+      return null
+    }
+  } else if (!startDate) {
+    startDate = openEnded ? '2000-01-01' : endDate
+  } else if (!endDate) {
+    endDate = openEnded ? '2100-12-31' : startDate
+  }
+
+  return getRangeBounds(startDate, endDate)
 }

@@ -4,6 +4,7 @@ import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
 import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
+import { resolveBusinessRange } from '../utils/businessDay.js'
 
 function findSaleByInvoiceOrReturnNumber(db, invoiceNo) {
   const queryStr = String(invoiceNo).trim()
@@ -347,13 +348,10 @@ export function registerReturnsHandlers() {
     const params = []
 
     if (filters) {
-      if (filters.start_date) {
-        query += ' AND date(r.return_date) >= date(?)'
-        params.push(filters.start_date.trim())
-      }
-      if (filters.end_date) {
-        query += ' AND date(r.return_date) <= date(?)'
-        params.push(filters.end_date.trim())
+      const range = resolveBusinessRange(filters, { openEnded: true })
+      if (range) {
+        query += ' AND r.return_date >= ? AND r.return_date < ?'
+        params.push(range.start, range.end)
       }
       if (filters.return_type) {
         query += ' AND r.return_type = ?'

@@ -4,6 +4,7 @@ import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission } from '../services/commission.service.js'
 import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
+import { resolveBusinessRange } from '../utils/businessDay.js'
 
 export function registerSalesHandlers() {
   handleIpc('sales:create', (_, payload) => {
@@ -162,17 +163,14 @@ export function registerSalesHandlers() {
         const term = `%${filters.search.trim()}%`
         params.push(term, term, term)
       }
-      if (filters.start_date) {
-        query += ' AND date(s.sale_date) >= date(?)'
-        params.push(filters.start_date.trim())
+      const range = resolveBusinessRange(filters, { openEnded: true })
+      if (range) {
+        query += ' AND s.sale_date >= ? AND s.sale_date < ?'
+        params.push(range.start, range.end)
       }
-      if (filters.end_date) {
-        query += ' AND date(s.sale_date) <= date(?)'
-        params.push(filters.end_date.trim())
-      }
-      if (filters.salesperson_id) {
+      if (filters.salesperson_id || filters.salespersonId) {
         query += ' AND s.salesperson_id = ?'
-        params.push(Number(filters.salesperson_id))
+        params.push(Number(filters.salesperson_id || filters.salespersonId))
       }
       if (filters.status) {
         query += ' AND s.status = ?'
