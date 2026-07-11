@@ -171,11 +171,21 @@ export const useCartStore = create((set, get) => ({
   },
 
   setOrderDiscount: (amount) => {
+    // Allow empty string while typing — do not force 0 into the input.
     if (amount === '' || amount === null || amount === undefined) {
-      set({ orderDiscount: 0 })
+      set({ orderDiscount: '' })
       return
     }
-    set({ orderDiscount: Math.max(0, Number(amount) || 0) })
+    const n = Number(amount)
+    if (Number.isNaN(n)) return
+    set({ orderDiscount: Math.max(0, n) })
+  },
+
+  /** Clamp empty/invalid order discount to 0 on blur / apply. */
+  commitOrderDiscount: () => {
+    const { orderDiscount } = get()
+    const n = Number(orderDiscount)
+    set({ orderDiscount: Number.isNaN(n) || n < 0 ? 0 : n })
   },
 
   setPaymentMethod: (method) => set({ paymentMethod: method }),

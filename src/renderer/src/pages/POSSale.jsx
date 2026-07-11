@@ -49,6 +49,7 @@ export function POSSale() {
     commitQuantity,
     updateItemFinalAmount,
     setOrderDiscount,
+    commitOrderDiscount,
     setNotes,
     clearCart,
     getSubtotal,
@@ -618,12 +619,20 @@ export function POSSale() {
 
       <StandardModal
         isOpen={isDiscountModalOpen}
-        onClose={() => setIsDiscountModalOpen(false)}
+        onClose={() => {
+          commitOrderDiscount()
+          setIsDiscountModalOpen(false)
+        }}
         title="Set Overall Order Discount"
         titleId="discount-modal-title"
         maxWidth="sm"
         footer={
-          <StandardModalAction onClick={() => setIsDiscountModalOpen(false)}>
+          <StandardModalAction
+            onClick={() => {
+              commitOrderDiscount()
+              setIsDiscountModalOpen(false)
+            }}
+          >
             Apply Discount
           </StandardModalAction>
         }
@@ -636,6 +645,7 @@ export function POSSale() {
           value={orderDiscount}
           onFocus={(e) => e.target.select()}
           onChange={(e) => setOrderDiscount(e.target.value)}
+          onBlur={commitOrderDiscount}
           className="font-bold text-xl"
         />
       </StandardModal>
