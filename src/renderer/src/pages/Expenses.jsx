@@ -19,6 +19,7 @@ import {
 import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
 import { DateRangePresets, getDefaultDateRange } from '../components/DateRangePresets.jsx'
+import { getCurrentBusinessDate } from '../utils/businessDay.js'
 import {
   getOverlayDismissProps,
   getOverlayPanelProps,
@@ -75,7 +76,7 @@ export function Expenses() {
   const [formData, setFormData] = useState({
     category: EXPENSE_CATEGORIES[0],
     amount: '',
-    expense_date: todayStr,
+    expense_date: getCurrentBusinessDate(),
     recorded_by: 'Manager',
     description: '',
     notes: ''
@@ -122,12 +123,13 @@ export function Expenses() {
   }
 
   const handleOpenDrawer = (expense = null) => {
+    const businessToday = getCurrentBusinessDate()
     if (expense) {
       setEditingExpense(expense)
       setFormData({
         category: expense.category || EXPENSE_CATEGORIES[0],
         amount: expense.amount || '',
-        expense_date: expense.expense_date || todayStr,
+        expense_date: expense.expense_date || businessToday,
         recorded_by: expense.recorded_by || 'Manager',
         description: expense.description || '',
         notes: expense.notes || ''
@@ -137,7 +139,7 @@ export function Expenses() {
       setFormData({
         category: EXPENSE_CATEGORIES[0],
         amount: '',
-        expense_date: todayStr,
+        expense_date: businessToday,
         recorded_by: 'Manager',
         description: '',
         notes: ''
