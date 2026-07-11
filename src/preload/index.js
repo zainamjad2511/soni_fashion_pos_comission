@@ -90,9 +90,13 @@ const customElectronAPI = {
   },
 
   drawer: {
+    addCashEntry: (data) => ipcRenderer.invoke('drawer:addCashEntry', data),
+    listCashEntries: (filters) => ipcRenderer.invoke('drawer:listCashEntries', filters),
+    deleteCashEntry: (id) => ipcRenderer.invoke('drawer:deleteCashEntry', id),
+    getReconciliation: (filters) => ipcRenderer.invoke('drawer:getReconciliation', filters),
+    // Legacy aliases
     getOpeningBalance: (filters) => ipcRenderer.invoke('drawer:getOpeningBalance', filters),
-    setOpeningBalance: (data) => ipcRenderer.invoke('drawer:setOpeningBalance', data),
-    getReconciliation: (filters) => ipcRenderer.invoke('drawer:getReconciliation', filters)
+    setOpeningBalance: (data) => ipcRenderer.invoke('drawer:setOpeningBalance', data)
   },
 
   settings: {

@@ -90,9 +90,23 @@ export const useCartStore = create((set, get) => ({
   },
 
   updateQuantity: (articleId, quantity) => {
+    // Allow empty string while typing (e.g. backspace) — never auto-remove the line.
+    if (quantity === '' || quantity === null || quantity === undefined) {
+      set((state) => ({
+        items: state.items.map((item) =>
+          item.article_id === articleId ? { ...item, quantity: '' } : item
+        ),
+      }))
+      return
+    }
+
     const qty = parseInt(quantity, 10)
     if (isNaN(qty) || qty <= 0) {
-      get().removeItem(articleId)
+      set((state) => ({
+        items: state.items.map((item) =>
+          item.article_id === articleId ? { ...item, quantity: '' } : item
+        ),
+      }))
       return
     }
 
@@ -103,6 +117,19 @@ export const useCartStore = create((set, get) => ({
           throw new Error(`Quantity exceeds available stock (${item.max_stock}).`)
         }
         return withRecalculatedDiscount({ ...item, quantity: qty })
+      }),
+    }))
+  },
+
+  /** Clamp empty/invalid qty back to 1 on blur — still never removes the line. */
+  commitQuantity: (articleId) => {
+    set((state) => ({
+      items: state.items.map((item) => {
+        if (item.article_id !== articleId) return item
+        let qty = parseInt(item.quantity, 10)
+        if (isNaN(qty) || qty <= 0) qty = 1
+        if (qty > item.max_stock) qty = item.max_stock
+        return withRecalculatedDiscount({ ...item, quantity: Math.max(1, qty) })
       }),
     }))
   },

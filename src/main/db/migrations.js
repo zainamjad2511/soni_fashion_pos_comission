@@ -483,4 +483,59 @@ export function runMigrations(db) {
     migrateV9()
     console.log('[Migrations] Successfully applied V9 Migration.')
   }
+
+  if (currentVersion < 10) {
+    console.log('[Migrations] Applying V10 Migration (drawer cash entries stream)...')
+    const migrateV10 = db.transaction(() => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS drawer_cash_entries (
+          id             INTEGER PRIMARY KEY AUTOINCREMENT,
+          amount         REAL    NOT NULL CHECK (amount > 0),
+          note           TEXT,
+          recorded_by    TEXT,
+          business_date  TEXT    NOT NULL,
+          created_at     TEXT    NOT NULL
+        );
+      `)
+
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_drawer_cash_entries_created
+        ON drawer_cash_entries (created_at);
+      `)
+
+      // Carry forward any V9 opening balances as one-time cash-in entries.
+      const legacy = db.prepare(`
+        SELECT business_date, amount, recorded_by, notes, updated_at
+        FROM drawer_opening_balances
+        WHERE amount > 0
+      `).all()
+
+      const insertEntry = db.prepare(`
+        INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `)
+
+      for (const row of legacy) {
+        const createdAt = row.updated_at
+          ? String(row.updated_at).replace('T', ' ').slice(0, 19)
+          : `${row.business_date} 08:00:00`
+        insertEntry.run(
+          Number(row.amount),
+          row.notes || 'Migrated opening balance',
+          row.recorded_by || 'Admin',
+          row.business_date,
+          createdAt
+        )
+      }
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '10', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '10', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV10()
+    console.log('[Migrations] Successfully applied V10 Migration.')
+  }
 }

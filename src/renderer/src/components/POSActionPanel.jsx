@@ -33,8 +33,6 @@ export function POSActionPanel({
   lastCompletedSale,
   onOpenCashierModal,
   onOpenDiscountModal,
-  paymentMethod,
-  onTogglePaymentMethod,
   onOpenReprint,
   notes,
   onNotesChange,
@@ -165,11 +163,13 @@ export function POSActionPanel({
         </button>
 
         <button
-          onClick={onTogglePaymentMethod}
-          className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
+          type="button"
+          disabled
+          className="p-4 bg-[#F7F5F0] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 text-center h-24 border-0 rounded-none opacity-90 cursor-default"
+          title="Cash only"
         >
           <CreditSaleIcon className="w-6 h-6 text-[#332822]" />
-          <span>Mode: {paymentMethod === 'cash' ? 'Cash' : 'Online'}</span>
+          <span>Mode: Cash</span>
         </button>
 
         <button

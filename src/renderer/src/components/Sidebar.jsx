@@ -29,7 +29,7 @@ const navItems = [
   { name: 'Inventory & Stock',    path: '/inventory',    Icon: PackageIcon },
   { name: 'Wholesale Suppliers',  path: '/suppliers',    Icon: TruckIcon },
   { name: 'Returns & Exchanges',  path: '/returns',      Icon: ReturnIcon },
-  { name: 'Expenses',             path: '/expenses',     Icon: ReceiptIcon },
+  { name: 'Cash & Expenses',      path: '/expenses',     Icon: ReceiptIcon },
   { name: 'Reports & Analytics',  path: '/reports',      Icon: BarChartIcon },
   { name: 'Salespersons & Comm.', path: '/salespersons', Icon: UsersIcon },
   { name: 'Store Settings',       path: '/settings',     Icon: SettingsIcon },

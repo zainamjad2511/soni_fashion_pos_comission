@@ -41,15 +41,14 @@ export function POSSale() {
     selectedSalesperson,
     items,
     orderDiscount,
-    paymentMethod,
     notes,
     setSalesperson,
     addItem,
     removeItem,
     updateQuantity,
+    commitQuantity,
     updateItemFinalAmount,
     setOrderDiscount,
-    setPaymentMethod,
     setNotes,
     clearCart,
     getSubtotal,
@@ -205,10 +204,12 @@ export function POSSale() {
         const payload = {
           salesperson_id: salesperson.id,
           items: items.map((i) => {
-            const { lineTotal, discountAmount } = computeItemLineTotals(i)
+            const qty = Math.max(1, parseInt(i.quantity, 10) || 1)
+            const lineItem = { ...i, quantity: qty }
+            const { lineTotal, discountAmount } = computeItemLineTotals(lineItem)
             return {
               article_id: i.article_id,
-              quantity: i.quantity,
+              quantity: qty,
               retail_price_snapshot: i.retail_price_snapshot,
               wholesale_price_snapshot: i.wholesale_price_snapshot,
               discount_amount: discountAmount,
@@ -216,7 +217,7 @@ export function POSSale() {
             }
           }),
           order_discount: Number(orderDiscount) || 0,
-          payment_method: paymentMethod,
+          payment_method: 'cash',
           notes: notes
         }
 
@@ -410,6 +411,7 @@ export function POSSale() {
                               showToast('error', err.message)
                             }
                           }}
+                          onBlur={() => commitQuantity(item.article_id)}
                           className="w-full h-full min-h-[46px] px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                         />
                       </td>
@@ -507,8 +509,6 @@ export function POSSale() {
           lastCompletedSale={lastCompletedSale}
           onOpenCashierModal={() => setIsCashierModalOpen(true)}
           onOpenDiscountModal={() => setIsDiscountModalOpen(true)}
-          paymentMethod={paymentMethod}
-          onTogglePaymentMethod={() => setPaymentMethod(paymentMethod === 'cash' ? 'online' : 'cash')}
           onOpenReprint={() => setIsReprintOpen(true)}
           notes={notes}
           onNotesChange={(e) => setNotes(e.target.value)}

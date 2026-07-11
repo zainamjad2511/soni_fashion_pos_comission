@@ -1,9 +1,9 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
 import {
   getCurrentBusinessDate,
-  getBusinessDayBounds,
   getRangeBounds,
 } from '../utils/businessDay.js'
 
@@ -11,7 +11,6 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
  * Normalize IPC payload into inclusive business-date labels.
- * Accepts: businessDate | date | startDate/endDate | start_date/end_date
  */
 function unpackDrawerRange(arg) {
   const payload = arg && typeof arg === 'object' ? arg : {}
@@ -59,23 +58,22 @@ function unpackDrawerRange(arg) {
   return { startDate, endDate, start: bounds.start, end: bounds.end }
 }
 
-function readOpeningBalance(db, businessDate) {
-  const row = db
-    .prepare('SELECT business_date, amount, recorded_by, notes, updated_at FROM drawer_opening_balances WHERE business_date = ?')
-    .get(businessDate)
-
-  return {
-    business_date: businessDate,
-    amount: Number(row?.amount || 0),
-    recorded_by: row?.recorded_by || null,
-    notes: row?.notes || null,
-    updated_at: row?.updated_at || null,
-    exists: Boolean(row),
-  }
+function listCashEntries(db, { start, end, limit = 50 }) {
+  return db.prepare(`
+    SELECT id, amount, note, recorded_by, business_date, created_at
+    FROM drawer_cash_entries
+    WHERE created_at >= ? AND created_at < ?
+    ORDER BY created_at DESC, id DESC
+    LIMIT ?
+  `).all(start, end, Number(limit) || 50)
 }
 
 function computeReconciliation(db, { startDate, endDate, start, end }) {
-  const opening = readOpeningBalance(db, startDate)
+  const cashInRes = db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS cash_in
+    FROM drawer_cash_entries
+    WHERE created_at >= ? AND created_at < ?
+  `).get(start, end)
 
   const salesRes = db.prepare(`
     SELECT COALESCE(SUM(grand_total), 0) AS sales_in
@@ -109,101 +107,168 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
       AND expense_date <= ?
   `).get(startDate, endDate)
 
-  const opening_balance = Number(opening.amount || 0)
+  const cash_in = Number(cashInRes?.cash_in || 0)
   const sales_in = Number(salesRes?.sales_in || 0)
   const stock_out = Number(stockRes?.stock_out || 0)
   const returns_out = Number(returnsRes?.returns_out || 0)
   const expenses_out = Number(expensesRes?.expenses_out || 0)
-  const expected_balance = opening_balance + sales_in - stock_out - returns_out - expenses_out
+  const expected_balance = cash_in + sales_in - stock_out - returns_out - expenses_out
+
+  const entries = listCashEntries(db, { start, end, limit: 25 })
 
   return {
     start_date: startDate,
     end_date: endDate,
     window_start: start,
     window_end: end,
-    opening_balance,
-    opening_recorded_by: opening.recorded_by,
-    opening_updated_at: opening.updated_at,
-    opening_exists: opening.exists,
+    cash_in,
+    // Backward-compatible aliases used by earlier Dashboard code
+    opening_balance: cash_in,
     sales_in,
     stock_out,
     returns_out,
     expenses_out,
     expected_balance,
+    entries,
   }
 }
 
 export function registerDrawerHandlers() {
-  handleIpc('drawer:getOpeningBalance', (_, arg1) => {
+  handleIpc('drawer:addCashEntry', (_, arg1) => {
     const db = getDb()
     const payload = arg1 && typeof arg1 === 'object' ? arg1 : {}
-    const businessDate = String(
-      payload.businessDate ||
-      payload.business_date ||
-      payload.date ||
-      getCurrentBusinessDate()
-    ).trim()
-
-    if (!DATE_RE.test(businessDate)) {
-      throw new Error(`Invalid business date: ${businessDate}`)
-    }
-
-    return readOpeningBalance(db, businessDate)
-  })
-
-  handleIpc('drawer:setOpeningBalance', (_, arg1) => {
-    const db = getDb()
-    const payload = arg1 && typeof arg1 === 'object' ? arg1 : {}
-    const businessDate = String(
-      payload.businessDate ||
-      payload.business_date ||
-      payload.date ||
-      getCurrentBusinessDate()
-    ).trim()
-
-    if (!DATE_RE.test(businessDate)) {
-      throw new Error(`Invalid business date: ${businessDate}`)
-    }
-
     const amount = Number(payload.amount)
-    if (Number.isNaN(amount) || amount < 0) {
-      throw new Error('Opening balance must be a non-negative number.')
+
+    if (Number.isNaN(amount) || amount <= 0) {
+      throw new Error('Cash entry amount must be greater than zero.')
+    }
+
+    const businessDate = String(
+      payload.businessDate ||
+      payload.business_date ||
+      payload.date ||
+      getCurrentBusinessDate()
+    ).trim()
+
+    if (!DATE_RE.test(businessDate)) {
+      throw new Error(`Invalid business date: ${businessDate}`)
     }
 
     const recordedBy = payload.recordedBy || payload.recorded_by || 'Admin'
-    const notes = payload.notes != null ? String(payload.notes).trim() || null : null
+    const note = payload.note != null
+      ? String(payload.note).trim() || null
+      : (payload.notes != null ? String(payload.notes).trim() || null : null)
+    const createdAt = payload.created_at || localDateTimeString()
 
-    const previous = readOpeningBalance(db, businessDate)
+    const info = db.prepare(`
+      INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(amount, note, recordedBy, businessDate, createdAt)
 
-    db.prepare(`
-      INSERT INTO drawer_opening_balances (business_date, amount, recorded_by, notes, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(business_date) DO UPDATE SET
-        amount = excluded.amount,
-        recorded_by = excluded.recorded_by,
-        notes = excluded.notes,
-        updated_at = CURRENT_TIMESTAMP
-    `).run(businessDate, amount, recordedBy, notes)
-
-    const next = readOpeningBalance(db, businessDate)
-    const dayBounds = getBusinessDayBounds(businessDate)
+    const row = db.prepare('SELECT * FROM drawer_cash_entries WHERE id = ?').get(info.lastInsertRowid)
 
     auditLog(
       db,
-      previous.exists ? 'DRAWER_OPENING_UPDATE' : 'DRAWER_OPENING_SET',
-      'drawer_opening_balances',
+      'DRAWER_CASH_IN',
+      'drawer_cash_entries',
+      info.lastInsertRowid,
+      `Added Rs. ${amount.toLocaleString()} cash to drawer (${businessDate})`,
       null,
-      `Set drawer opening balance for ${businessDate} (${dayBounds.start} → ${dayBounds.end}) to Rs. ${amount.toLocaleString()}`,
-      previous.exists ? previous.amount : null,
-      amount
+      row
     )
 
-    return next
+    return row
+  })
+
+  handleIpc('drawer:listCashEntries', (_, arg1) => {
+    const db = getDb()
+    const range = unpackDrawerRange(arg1)
+    const limit = (arg1 && typeof arg1 === 'object' && arg1.limit) ? Number(arg1.limit) : 50
+    return listCashEntries(db, { start: range.start, end: range.end, limit })
+  })
+
+  handleIpc('drawer:deleteCashEntry', (_, id) => {
+    const db = getDb()
+    const entryId = Number(id)
+    if (!entryId) {
+      throw new Error('Cash deposit ID is required.')
+    }
+
+    const existing = db.prepare('SELECT * FROM drawer_cash_entries WHERE id = ?').get(entryId)
+    if (!existing) {
+      throw new Error(`Cash deposit #${entryId} not found.`)
+    }
+
+    db.prepare('DELETE FROM drawer_cash_entries WHERE id = ?').run(entryId)
+
+    auditLog(
+      db,
+      'DRAWER_CASH_DELETE',
+      'drawer_cash_entries',
+      entryId,
+      `Deleted cash deposit of Rs. ${Number(existing.amount).toLocaleString()} (${existing.business_date})`,
+      existing,
+      null
+    )
+
+    return true
   })
 
   handleIpc('drawer:getReconciliation', (_, arg1) => {
     const db = getDb()
     const range = unpackDrawerRange(arg1)
     return computeReconciliation(db, range)
+  })
+
+  // Legacy aliases — map old "set opening" calls to a new cash-in entry
+  handleIpc('drawer:getOpeningBalance', (_, arg1) => {
+    const db = getDb()
+    const range = unpackDrawerRange(arg1)
+    const cashInRes = db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS amount
+      FROM drawer_cash_entries
+      WHERE created_at >= ? AND created_at < ?
+    `).get(range.start, range.end)
+    return {
+      business_date: range.startDate,
+      amount: Number(cashInRes?.amount || 0),
+      exists: Number(cashInRes?.amount || 0) > 0,
+    }
+  })
+
+  handleIpc('drawer:setOpeningBalance', (_, arg1) => {
+    const db = getDb()
+    const payload = arg1 && typeof arg1 === 'object' ? arg1 : {}
+    const amount = Number(payload.amount)
+    if (Number.isNaN(amount) || amount <= 0) {
+      throw new Error('Cash entry amount must be greater than zero.')
+    }
+    // Delegate to addCashEntry semantics
+    const businessDate = String(
+      payload.businessDate ||
+      payload.business_date ||
+      payload.date ||
+      getCurrentBusinessDate()
+    ).trim()
+    const recordedBy = payload.recordedBy || payload.recorded_by || 'Admin'
+    const note = payload.notes != null ? String(payload.notes).trim() || null : 'Cash added to drawer'
+    const createdAt = localDateTimeString()
+
+    const info = db.prepare(`
+      INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(amount, note, recordedBy, businessDate, createdAt)
+
+    const row = db.prepare('SELECT * FROM drawer_cash_entries WHERE id = ?').get(info.lastInsertRowid)
+    auditLog(
+      db,
+      'DRAWER_CASH_IN',
+      'drawer_cash_entries',
+      info.lastInsertRowid,
+      `Added Rs. ${amount.toLocaleString()} cash to drawer (${businessDate})`,
+      null,
+      row
+    )
+    return { business_date: businessDate, amount, exists: true, entry: row }
   })
 }
