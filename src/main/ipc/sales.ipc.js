@@ -221,13 +221,64 @@ export function registerSalesHandlers() {
     const transaction = db.transaction(() => {
       const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId)
       if (!sale) throw new Error(`Sale ID #${saleId} not found.`)
-      if (sale.status === 'voided') throw new Error(`Sale #${sale.invoice_number} is already voided.`)
+      if (sale.status === 'voided') {
+        throw new Error(`Sale #${sale.invoice_number} is already voided.`)
+      }
+      if (sale.status !== 'completed') {
+        throw new Error(`Sale #${sale.invoice_number} cannot be deleted (status: ${sale.status}).`)
+      }
+      if (sale.exchange_return_id) {
+        throw new Error(
+          `Invoice #${sale.invoice_number} is an exchange replacement sale and cannot be deleted directly. Void/adjust the return voucher instead.`
+        )
+      }
+
+      const linkedReturns = db.prepare(`
+        SELECT COUNT(*) AS cnt FROM returns WHERE original_sale_id = ?
+      `).get(saleId)
+      if (linkedReturns?.cnt > 0) {
+        throw new Error(
+          `Cannot delete sale #${sale.invoice_number}: one or more returns already exist against it. Process corrections via Returns instead.`
+        )
+      }
+
+      const usedAsExchange = db.prepare(`
+        SELECT COUNT(*) AS cnt FROM returns WHERE exchange_new_sale_id = ?
+      `).get(saleId)
+      if (usedAsExchange?.cnt > 0) {
+        throw new Error(
+          `Cannot delete sale #${sale.invoice_number}: it is linked as an exchange replacement. Adjust the return voucher instead.`
+        )
+      }
+
+      const paidCommission = db.prepare(`
+        SELECT COALESCE(SUM(paid_amount), 0) AS paid
+        FROM commissions
+        WHERE sale_id = ? AND COALESCE(paid_amount, 0) > 0.0001
+      `).get(saleId)
+      if (Number(paidCommission?.paid || 0) > 0.0001) {
+        throw new Error(
+          `Cannot delete sale #${sale.invoice_number}: commission for this sale has already been paid. Reverse/adjust the payout in Commissions first.`
+        )
+      }
 
       const voidNotes = reason ? ` [VOIDED: ${reason.trim()}]` : ' [VOIDED]'
       db.prepare("UPDATE sales SET status = 'voided', notes = coalesce(notes, '') || ? WHERE id = ?").run(voidNotes, saleId)
 
-      // Restore stock & log movement
-      const items = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(saleId)
+      // Restore only net quantity still out (guards above block returns, so this is full qty;
+      // formula kept so partial returns cannot double-restore if guards change).
+      const items = db.prepare(`
+        SELECT
+          si.*,
+          COALESCE((
+            SELECT SUM(ri.quantity_returned)
+            FROM return_items ri
+            WHERE ri.sale_item_id = si.id
+          ), 0) AS already_returned
+        FROM sale_items si
+        WHERE si.sale_id = ?
+      `).all(saleId)
+
       const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
         INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
@@ -235,21 +286,36 @@ export function registerSalesHandlers() {
       `)
 
       for (const item of items) {
-        restoreStockStmt.run(item.quantity, item.article_id)
-        insertMovementStmt.run(item.article_id, item.quantity, saleId, `Voided Sale #${sale.invoice_number}`)
+        const restoreQty = Math.max(0, Number(item.quantity) - Number(item.already_returned || 0))
+        if (restoreQty <= 0) continue
+        restoreStockStmt.run(restoreQty, item.article_id)
+        insertMovementStmt.run(
+          item.article_id,
+          restoreQty,
+          saleId,
+          `Deleted/voided Sale #${sale.invoice_number}`
+        )
       }
 
-      // Reverse commission
-      db.prepare("UPDATE commissions SET status = 'reversed' WHERE sale_id = ?").run(saleId)
+      // Reverse unpaid commissions for this sale (positive accruals and any linked rows)
+      db.prepare(`
+        UPDATE commissions
+        SET status = 'reversed'
+        WHERE sale_id = ? AND status != 'reversed'
+      `).run(saleId)
 
       auditLog(
         db,
         'SALE_VOIDED',
         'sales',
         saleId,
-        `Voided Sale #${sale.invoice_number}. Reason: ${reason || 'N/A'}`,
-        JSON.stringify({ status: 'completed' }),
-        JSON.stringify({ status: 'voided', reason })
+        `Deleted/voided Sale #${sale.invoice_number} (Rs. ${sale.grand_total}). Reason: ${reason || 'N/A'}`,
+        JSON.stringify({
+          status: 'completed',
+          grand_total: sale.grand_total,
+          invoice_number: sale.invoice_number,
+        }),
+        JSON.stringify({ status: 'voided', reason: reason || null })
       )
 
       return db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId)

@@ -13,6 +13,7 @@ import {
   ClockIcon,
   TagIcon,
   EyeIcon,
+  TrashIcon,
 } from './icons/TechnicalIcons.jsx'
 import { StandardModal, StandardModalAction } from './StandardModal.jsx'
 import { ReceiptPreview } from './ReceiptPreview.jsx'
@@ -27,6 +28,9 @@ export function ReprintModal({ isOpen, onClose }) {
   const [previewReceipt, setPreviewReceipt] = useState(null)
   const [previewShop, setPreviewShop] = useState({})
   const [toast, setToast] = useState(null)
+  const [voidTarget, setVoidTarget] = useState(null)
+  const [voidReason, setVoidReason] = useState('')
+  const [voiding, setVoiding] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -179,13 +183,45 @@ export function ReprintModal({ isOpen, onClose }) {
     }
   }
 
+  const openVoidConfirm = (txn) => {
+    if (txn.kind !== 'sale' || txn.status === 'voided') return
+    setVoidReason('')
+    setVoidTarget(txn)
+  }
+
+  const handleVoidSale = async () => {
+    if (!voidTarget?.raw?.id) return
+    setVoiding(true)
+    try {
+      if (!window.electronAPI?.sales?.void) {
+        throw new Error('Delete sale API unavailable.')
+      }
+      const res = await window.electronAPI.sales.void(voidTarget.raw.id, voidReason.trim() || null)
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Failed to delete sale.')
+      }
+      showToast(
+        'success',
+        `Sale #${voidTarget.refNumber} deleted. Stock restored and drawer balance updated.`
+      )
+      setVoidTarget(null)
+      setVoidReason('')
+      fetchTransactions(searchTerm)
+    } catch (err) {
+      console.error('[ReprintModal] Void error:', err)
+      showToast('error', err.message || 'Failed to delete sale.')
+    } finally {
+      setVoiding(false)
+    }
+  }
+
   return (
     <>
     <StandardModal
       isOpen={isOpen}
       onClose={onClose}
       title="Invoice & Return Lookup"
-      subtitle="Search sales (SF-INV) and return/exchange vouchers (SF-RET) for thermal reprint."
+      subtitle="Search sales (SF-INV) and return/exchange vouchers (SF-RET). Reprint or delete mistaken sales."
       maxWidth="xl"
       maxHeight="85vh"
       showCloseButton
@@ -323,6 +359,16 @@ export function ReprintModal({ isOpen, onClose }) {
                             </>
                           )}
                         </button>
+                        {txn.kind === 'sale' && !isVoided && (
+                          <button
+                            onClick={() => openVoidConfirm(txn)}
+                            className="px-3 py-2 rounded-[2px] bg-transparent border border-[#C9C0B5] hover:border-[#9A4A4A] hover:text-[#9A4A4A] text-[#7A6F69] font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-1.5"
+                            title="Delete sale and reverse stock + drawer"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -350,6 +396,87 @@ export function ReprintModal({ isOpen, onClose }) {
           <ReceiptPreview receipt={previewReceipt} shop={previewShop} />
         </StandardModal>
       )}
+
+      <StandardModal
+        isOpen={!!voidTarget}
+        onClose={() => {
+          if (voiding) return
+          setVoidTarget(null)
+          setVoidReason('')
+        }}
+        title="Delete Sale?"
+        subtitle={voidTarget ? `Invoice ${voidTarget.refNumber}` : ''}
+        maxWidth="sm"
+        zIndex={120}
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <button
+              type="button"
+              disabled={voiding}
+              onClick={() => {
+                setVoidTarget(null)
+                setVoidReason('')
+              }}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822] disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction
+              onClick={handleVoidSale}
+              disabled={voiding}
+              className="bg-[#9A4A4A] hover:bg-[#7A3A3A] border-[#9A4A4A]"
+            >
+              {voiding ? 'Deleting...' : 'Delete Sale'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        <div className="space-y-4 text-sm font-sans text-[#2E2822]">
+          <p className="text-[#7A6F69]">
+            This permanently voids the sale. Stock is returned to inventory, the amount is removed
+            from cash-in-drawer totals, and commission for this invoice is reversed. Invoice number
+            is kept for audit.
+          </p>
+          {voidTarget && (
+            <div className="border border-[#C9C0B5] divide-y divide-[#C9C0B5] text-xs">
+              <div className="flex justify-between px-3 py-2">
+                <span className="uppercase tracking-wider text-[#7A6F69] font-bold">Invoice</span>
+                <span className="font-mono font-bold">{voidTarget.refNumber}</span>
+              </div>
+              <div className="flex justify-between px-3 py-2">
+                <span className="uppercase tracking-wider text-[#7A6F69] font-bold">Amount</span>
+                <span className="font-mono font-bold">
+                  Rs. {Number(voidTarget.amount).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between px-3 py-2">
+                <span className="uppercase tracking-wider text-[#7A6F69] font-bold">Staff</span>
+                <span className="font-semibold">{voidTarget.staffName}</span>
+              </div>
+            </div>
+          )}
+          <div className="space-y-2">
+            <label
+              htmlFor="void-sale-reason"
+              className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block"
+            >
+              Reason (optional)
+            </label>
+            <input
+              id="void-sale-reason"
+              type="text"
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+              disabled={voiding}
+              placeholder="Wrong article / wrong price / test sale..."
+              className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
+            />
+          </div>
+          <p className="text-[11px] text-[#7A6F69]">
+            Sales with returns, exchange replacements, or paid commissions cannot be deleted.
+          </p>
+        </div>
+      </StandardModal>
     </>
   )
 }
