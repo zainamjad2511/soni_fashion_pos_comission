@@ -378,10 +378,11 @@ export function POSSale() {
                 ) : (
                   items.map((item) => {
                     const { lineTotal, unitDiscount } = computeItemLineTotals(item)
+                    // Keep empty string while typing — do not fall back to retail in the input.
                     const unitPriceInput =
-                      item.final_amount_input !== '' && item.final_amount_input !== undefined
-                        ? item.final_amount_input
-                        : item.retail_price_snapshot
+                      item.final_amount_input === null || item.final_amount_input === undefined
+                        ? ''
+                        : item.final_amount_input
 
                     return (
                     <tr
