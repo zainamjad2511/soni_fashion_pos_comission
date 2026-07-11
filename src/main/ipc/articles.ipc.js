@@ -278,6 +278,25 @@ export function registerArticlesHandlers() {
     const reorder_level = data?.reorder_level !== undefined ? Number(data.reorder_level) : oldRow.reorder_level
     const notes = data?.notes !== undefined ? (data.notes?.trim() || null) : oldRow.notes
 
+    let supplier_article_code = oldRow.supplier_article_code
+    if (data?.supplier_article_code !== undefined) {
+      supplier_article_code = String(data.supplier_article_code || '').trim().toUpperCase()
+      if (!supplier_article_code) {
+        throw new Error('Article number is required.')
+      }
+      if (supplier_article_code !== oldRow.supplier_article_code) {
+        const duplicate = db.prepare(`
+          SELECT id, sku FROM articles
+          WHERE supplier_id = ? AND supplier_article_code = ? AND id != ?
+        `).get(oldRow.supplier_id, supplier_article_code, articleId)
+        if (duplicate) {
+          throw new Error(
+            `Article code "${supplier_article_code}" already exists for this supplier under SKU ${duplicate.sku}.`
+          )
+        }
+      }
+    }
+
     if (wholesale_price <= 0) {
       throw new Error('Wholesale price must be greater than 0.')
     }
@@ -289,11 +308,22 @@ export function registerArticlesHandlers() {
 
     const updateStmt = db.prepare(`
       UPDATE articles
-      SET name = ?, category = ?, colour = ?, size = ?, wholesale_price = ?, retail_price = ?, reorder_level = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+      SET supplier_article_code = ?, name = ?, category = ?, colour = ?, size = ?, wholesale_price = ?, retail_price = ?, reorder_level = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `)
 
-    updateStmt.run(name, category, colour, size, wholesale_price, retail_price, reorder_level, notes, articleId)
+    updateStmt.run(
+      supplier_article_code,
+      name,
+      category,
+      colour,
+      size,
+      wholesale_price,
+      retail_price,
+      reorder_level,
+      notes,
+      articleId
+    )
 
     const newRow = db.prepare(`
       SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
@@ -302,12 +332,15 @@ export function registerArticlesHandlers() {
       WHERE articles.id = ?
     `).get(articleId)
 
+    const codeChanged = supplier_article_code !== oldRow.supplier_article_code
     auditLog(
       db,
       'ARTICLE_UPDATE',
       'articles',
       articleId,
-      `Updated article "${oldRow.sku}" (${name})`,
+      codeChanged
+        ? `Updated article "${oldRow.sku}" (${name}); article number ${oldRow.supplier_article_code} → ${supplier_article_code}`
+        : `Updated article "${oldRow.sku}" (${name})`,
       JSON.stringify(oldRow),
       JSON.stringify(newRow)
     )

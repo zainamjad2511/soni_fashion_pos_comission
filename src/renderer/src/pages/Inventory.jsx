@@ -29,6 +29,21 @@ import {
   useDismissOnEscape,
 } from '../components/StandardModal.jsx'
 
+const LAST_SUPPLIER_KEY = 'inventory_last_supplier_id'
+
+function resolveDefaultSupplierId(suppliersList) {
+  if (!Array.isArray(suppliersList) || suppliersList.length === 0) return ''
+  try {
+    const saved = localStorage.getItem(LAST_SUPPLIER_KEY)
+    if (saved && suppliersList.some((s) => String(s.id) === String(saved))) {
+      return String(saved)
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return String(suppliersList[0].id)
+}
+
 export function Inventory() {
   const [articles, setArticles] = useState([])
   const [suppliers, setSuppliers] = useState([])
@@ -130,7 +145,7 @@ export function Inventory() {
     } else {
       setEditingArticle(null)
       setFormData({
-        supplier_id: suppliers.length > 0 ? String(suppliers[0].id) : '',
+        supplier_id: resolveDefaultSupplierId(suppliers),
         supplier_article_code: '',
         name: '',
         category: 'Suits',
@@ -183,6 +198,13 @@ export function Inventory() {
         }
 
         if (res.success) {
+          if (!editingArticle && formData.supplier_id) {
+            try {
+              localStorage.setItem(LAST_SUPPLIER_KEY, String(formData.supplier_id))
+            } catch {
+              // ignore storage errors
+            }
+          }
           showToast('success', `Article successfully saved! SKU: ${res.data.sku}`)
           if (res.data?.warning) {
             setTimeout(() => showToast('error', res.data.warning), 1500)
@@ -538,10 +560,9 @@ export function Inventory() {
                     name="supplier_article_code"
                     value={formData.supplier_article_code}
                     onChange={handleFormChange}
-                    disabled={!!editingArticle}
                     placeholder="101"
                     required
-                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs uppercase placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-xs uppercase placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
                   />
                 </div>
               </div>
