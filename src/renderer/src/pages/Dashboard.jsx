@@ -22,7 +22,7 @@ import {
   WalletIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { useNavigate } from 'react-router-dom'
-import { localDateFilter } from '../utils/localDateTime.js'
+import { DateRangePresets, getDefaultDateRange, DATE_PRESETS } from '../components/DateRangePresets.jsx'
 
 export function Dashboard() {
   const [articles, setArticles] = useState([])
@@ -38,13 +38,23 @@ export function Dashboard() {
     net_cash: 0,
     net_online: 0,
   })
+  const initialRange = getDefaultDateRange()
+  const [datePreset, setDatePreset] = useState(initialRange.preset)
+  const [startDate, setStartDate] = useState(initialRange.startDate)
+  const [endDate, setEndDate] = useState(initialRange.endDate)
   const [loading, setLoading] = useState(true)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
   const navigate = useNavigate()
 
+  const handleDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
+    setDatePreset(preset)
+    setStartDate(nextStart)
+    setEndDate(nextEnd)
+  }
+
   useEffect(() => {
     loadDashboardMetrics()
-  }, [])
+  }, [startDate, endDate])
 
   const loadDashboardMetrics = async () => {
     setLoading(true)
@@ -53,8 +63,6 @@ export function Dashboard() {
         console.error('[Dashboard] Application API unavailable.')
         return
       }
-
-      const todayStr = localDateFilter()
 
       if (window.electronAPI.articles) {
         const artRes = await window.electronAPI.articles.list({ is_active: 1 })
@@ -71,14 +79,21 @@ export function Dashboard() {
       }
 
       if (window.electronAPI.reports) {
-        const salesRes = await window.electronAPI.reports.salesSummary({ start_date: todayStr, end_date: todayStr })
+        const salesRes = await window.electronAPI.reports.salesSummary({
+          startDate,
+          endDate,
+        })
         if (salesRes?.success && salesRes.data?.summary) {
           const { total_sales, total_returns, total_revenue } = salesRes.data.summary
           setTodaySalesCount(Number(total_sales || 0) + Number(total_returns || 0))
           setTodayRevenue(Number(total_revenue || 0))
         }
       } else if (window.electronAPI.sales) {
-        const salesRes = await window.electronAPI.sales.list({ start_date: todayStr, end_date: todayStr, status: 'completed' })
+        const salesRes = await window.electronAPI.sales.list({
+          start_date: startDate,
+          end_date: endDate,
+          status: 'completed',
+        })
         const salesList = (salesRes && salesRes.success && Array.isArray(salesRes.data)) ? salesRes.data : (Array.isArray(salesRes) ? salesRes : [])
         setTodaySalesCount(salesList.length)
         const rev = salesList.reduce((sum, s) => sum + Number(s.grand_total || 0), 0)
@@ -86,14 +101,30 @@ export function Dashboard() {
       }
 
       if (window.electronAPI.reports) {
-        const profitRes = await window.electronAPI.reports.profitSummary({ start_date: todayStr, end_date: todayStr })
+        const profitRes = await window.electronAPI.reports.profitSummary({
+          startDate,
+          endDate,
+        })
         if (profitRes && profitRes.success && profitRes.data) {
           setTodayGrossProfit(Number(profitRes.data.gross_profit || 0))
         }
       }
 
-      if (window.electronAPI.reports) {
-        const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: todayStr })
+      // Prefer drawer reconciliation for multi-day / business-day windows; fall back to dailyCashFlow.
+      if (window.electronAPI.drawer?.getReconciliation) {
+        const cfRes = await window.electronAPI.drawer.getReconciliation({ startDate, endDate })
+        if (cfRes?.success && cfRes.data) {
+          setCashFlow({
+            cash_sales: Number(cfRes.data.sales_in || 0),
+            online_sales: 0,
+            cash_out: Number(cfRes.data.returns_out || 0),
+            cash_expenses: Number(cfRes.data.expenses_out || 0),
+            net_cash: Number(cfRes.data.expected_balance || 0),
+            net_online: 0,
+          })
+        }
+      } else if (window.electronAPI.reports) {
+        const cfRes = await window.electronAPI.reports.dailyCashFlow({ date: endDate })
         if (cfRes && cfRes.success && cfRes.data) {
           setCashFlow({
             cash_sales: Number(cfRes.data.cash_sales || 0),
@@ -112,6 +143,15 @@ export function Dashboard() {
       setLastRefreshed(new Date())
     }
   }
+
+  const periodLabel =
+    datePreset === DATE_PRESETS.TODAY
+      ? 'Today'
+      : datePreset === DATE_PRESETS.LAST_7_DAYS
+        ? 'Last 7 Days'
+        : datePreset === DATE_PRESETS.LAST_30_DAYS
+          ? 'Last 30 Days'
+          : 'Custom Range'
 
   // Calculate Metrics
   const totalActiveSKUs = articles.length
@@ -133,19 +173,27 @@ export function Dashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="text-right hidden sm:block">
-            <div className="text-[10px] text-[#7A6F69] uppercase tracking-[0.18em] font-semibold">Last Synchronized</div>
-            <div className="text-xs font-mono text-[#2E2822] font-bold mt-0.5">{lastRefreshed.toLocaleTimeString()}</div>
+        <div className="flex flex-col items-end gap-4">
+          <DateRangePresets
+            preset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleDateRangeChange}
+          />
+          <div className="flex items-center gap-6">
+            <div className="text-right hidden sm:block">
+              <div className="text-[10px] text-[#7A6F69] uppercase tracking-[0.18em] font-semibold">Last Synchronized</div>
+              <div className="text-xs font-mono text-[#2E2822] font-bold mt-0.5">{lastRefreshed.toLocaleTimeString()}</div>
+            </div>
+            <button
+              onClick={loadDashboardMetrics}
+              disabled={loading}
+              className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] flex items-center gap-2.5 text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
+            >
+              <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
           </div>
-          <button
-            onClick={loadDashboardMetrics}
-            disabled={loading}
-            className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] flex items-center gap-2.5 text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
-          >
-            <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
         </div>
       </div>
 
@@ -162,7 +210,7 @@ export function Dashboard() {
             </div>
           </div>
           <div className="text-xs font-sans text-[#7A6F69] mt-3">
-            Today's aggregate revenue
+            {periodLabel} aggregate revenue
           </div>
         </div>
 
@@ -223,11 +271,12 @@ export function Dashboard() {
               Daily Payment Reconciliation
             </h3>
             <p className="font-sans text-xs text-[#7A6F69] mt-1">
-              Cash drawer vs online collections for today&apos;s completed sales
+              Cash drawer reconciliation for the selected business-day period
             </p>
           </div>
           <span className="font-sans text-xs tracking-[0.14em] uppercase text-[#7A6F69] font-semibold">
-            Today · {new Date().toLocaleDateString()}
+            {periodLabel}
+            {startDate === endDate ? ` · ${startDate}` : ` · ${startDate} → ${endDate}`}
           </span>
         </div>
 

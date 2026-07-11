@@ -5,7 +5,6 @@ import {
   TrendingDownIcon,
   BanknoteIcon,
   PackageIcon,
-  CalendarIcon,
   PrintIcon,
   RefreshIcon,
   DocumentIcon,
@@ -17,19 +16,25 @@ import {
   ArrowRightIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
-import { localDateFilter, formatSaleDateTimeShort } from '../utils/localDateTime.js'
+import { DateRangePresets, getDefaultDateRange } from '../components/DateRangePresets.jsx'
+import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 export function Reports() {
   const [activeTab, setActiveTab] = useState('sales')
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
-  // Default dates: 1st of current month to today (local)
-  const todayStr = localDateFilter()
-  const startOfMonth = `${todayStr.slice(0, 7)}-01`
-  const [startDate, setStartDate] = useState(startOfMonth)
-  const [endDate, setEndDate] = useState(todayStr)
+  const initialRange = getDefaultDateRange()
+  const [datePreset, setDatePreset] = useState(initialRange.preset)
+  const [startDate, setStartDate] = useState(initialRange.startDate)
+  const [endDate, setEndDate] = useState(initialRange.endDate)
   const [topLimit, setTopLimit] = useState(10)
+
+  const handleDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
+    setDatePreset(preset)
+    setStartDate(nextStart)
+    setEndDate(nextEnd)
+  }
 
   // Report Data States
   const [salesData, setSalesData] = useState({
@@ -217,23 +222,12 @@ export function Reports() {
         {/* Date Filters & Options */}
         <div className="flex flex-wrap items-center gap-6 justify-end">
           {activeTab !== 'inventory' ? (
-            <div className="flex items-center gap-2 py-1 text-xs font-sans font-semibold text-[#2E2822]">
-              <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69]" />
-              <span className="text-[#7A6F69] uppercase tracking-wider font-bold">From</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
-              />
-              <span className="text-[#7A6F69] uppercase tracking-wider font-bold">to</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
-              />
-            </div>
+            <DateRangePresets
+              preset={datePreset}
+              startDate={startDate}
+              endDate={endDate}
+              onChange={handleDateRangeChange}
+            />
           ) : (
             <div className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#2E2822] flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#2E2822]" />

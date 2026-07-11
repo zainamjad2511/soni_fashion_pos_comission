@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import {
   ShieldAlertIcon,
   SearchIcon,
-  CalendarIcon,
   FilterIcon,
   RefreshIcon,
   DocumentIcon,
@@ -18,6 +17,7 @@ import {
 } from '../components/icons/TechnicalIcons.jsx'
 import { StandardModal, StandardModalAction } from '../components/StandardModal.jsx'
 import { Toast } from '../components/Toast.jsx'
+import { DateRangePresets, getDefaultDateRange, DATE_PRESETS } from '../components/DateRangePresets.jsx'
 
 export function AuditLog() {
   const [logs, setLogs] = useState([])
@@ -27,8 +27,16 @@ export function AuditLog() {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('')
   const [actionTypeFilter, setActionTypeFilter] = useState('All')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const initialRange = getDefaultDateRange()
+  const [datePreset, setDatePreset] = useState(initialRange.preset)
+  const [startDate, setStartDate] = useState(initialRange.startDate)
+  const [endDate, setEndDate] = useState(initialRange.endDate)
+
+  const handleDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
+    setDatePreset(preset)
+    setStartDate(nextStart)
+    setEndDate(nextEnd)
+  }
 
   // Modal inspection state
   const [selectedLog, setSelectedLog] = useState(null)
@@ -79,8 +87,10 @@ export function AuditLog() {
   const handleResetFilters = () => {
     setSearchQuery('')
     setActionTypeFilter('All')
-    setStartDate('')
-    setEndDate('')
+    const range = getDefaultDateRange()
+    setDatePreset(range.preset)
+    setStartDate(range.startDate)
+    setEndDate(range.endDate)
   }
 
   const formatJsonStr = (str) => {
@@ -200,24 +210,14 @@ export function AuditLog() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 py-1 border-b border-[#C9C0B5] text-xs font-sans font-semibold text-[#2E2822]">
-            <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69]" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
-            />
-            <span className="text-[#7A6F69]">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs"
-            />
-          </div>
+          <DateRangePresets
+            preset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleDateRangeChange}
+          />
 
-          {(searchQuery || actionTypeFilter !== 'All' || startDate || endDate) && (
+          {(searchQuery || actionTypeFilter !== 'All' || datePreset !== DATE_PRESETS.TODAY) && (
             <button
               onClick={handleResetFilters}
               className="text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822] transition-colors"

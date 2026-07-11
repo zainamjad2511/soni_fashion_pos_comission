@@ -10,7 +10,6 @@ import {
   PlusCircleIcon,
   ShoppingBagIcon,
   CustomerIcon,
-  CalendarIcon,
   TagIcon,
   PackageIcon,
   XCircleIcon,
@@ -30,6 +29,7 @@ import { formatCode } from '../utils/formatCode.js'
 import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 import { computeItemLineTotals } from '../store/cartStore.js'
+import { DateRangePresets, getDefaultDateRange } from '../components/DateRangePresets.jsx'
 
 function getOriginalPaidUnitPrice(saleItem) {
   const retail = Number(saleItem.retail_price_snapshot || 0)
@@ -166,10 +166,18 @@ export function Returns() {
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [historyFilterType, setHistoryFilterType] = useState('')
   const [historySearch, setHistorySearch] = useState('')
-  const [historyStartDate, setHistoryStartDate] = useState('')
-  const [historyEndDate, setHistoryEndDate] = useState('')
+  const historyInitial = getDefaultDateRange()
+  const [historyDatePreset, setHistoryDatePreset] = useState(historyInitial.preset)
+  const [historyStartDate, setHistoryStartDate] = useState(historyInitial.startDate)
+  const [historyEndDate, setHistoryEndDate] = useState(historyInitial.endDate)
   const [selectedHistoryDetail, setSelectedHistoryDetail] = useState(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
+
+  const handleHistoryDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
+    setHistoryDatePreset(preset)
+    setHistoryStartDate(nextStart)
+    setHistoryEndDate(nextEnd)
+  }
 
   useEffect(() => {
     async function loadSalespersons() {
@@ -2066,21 +2074,12 @@ export function Returns() {
                 </select>
               </div>
 
-              <div>
-                <input
-                  type="date"
-                  value={historyStartDate}
-                  onChange={(e) => setHistoryStartDate(e.target.value)}
-                  className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none font-mono"
-                />
-              </div>
-
-              <div>
-                <input
-                  type="date"
-                  value={historyEndDate}
-                  onChange={(e) => setHistoryEndDate(e.target.value)}
-                  className="w-full bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none font-mono"
+              <div className="sm:col-span-2">
+                <DateRangePresets
+                  preset={historyDatePreset}
+                  startDate={historyStartDate}
+                  endDate={historyEndDate}
+                  onChange={handleHistoryDateRangeChange}
                 />
               </div>
             </div>
