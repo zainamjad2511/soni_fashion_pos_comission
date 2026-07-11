@@ -459,4 +459,28 @@ export function runMigrations(db) {
     migrateV8()
     console.log('[Migrations] Successfully applied V8 Migration.')
   }
+
+  if (currentVersion < 9) {
+    console.log('[Migrations] Applying V9 Migration (drawer opening balances)...')
+    const migrateV9 = db.transaction(() => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS drawer_opening_balances (
+          business_date  TEXT    NOT NULL PRIMARY KEY,
+          amount         REAL    NOT NULL DEFAULT 0 CHECK (amount >= 0),
+          recorded_by    TEXT,
+          notes          TEXT,
+          updated_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `)
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '9', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '9', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV9()
+    console.log('[Migrations] Successfully applied V9 Migration.')
+  }
 }

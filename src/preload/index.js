@@ -89,6 +89,12 @@ const customElectronAPI = {
     delete: (id) => ipcRenderer.invoke('expenses:delete', id)
   },
 
+  drawer: {
+    getOpeningBalance: (filters) => ipcRenderer.invoke('drawer:getOpeningBalance', filters),
+    setOpeningBalance: (data) => ipcRenderer.invoke('drawer:setOpeningBalance', data),
+    getReconciliation: (filters) => ipcRenderer.invoke('drawer:getReconciliation', filters)
+  },
+
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     get: (key) => ipcRenderer.invoke('settings:get', key),
