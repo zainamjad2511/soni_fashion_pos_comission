@@ -1,5 +1,6 @@
 import React from 'react'
 import { CalendarIcon } from './icons/TechnicalIcons.jsx'
+import { DateField } from './DateField.jsx'
 import { DATE_PRESETS, getPresetRange } from '../utils/businessDay.js'
 
 const PRESET_OPTIONS = [
@@ -76,18 +77,16 @@ export function DateRangePresets({
         <div className="flex items-center gap-2 py-1 text-xs font-sans font-semibold text-[#2E2822]">
           <CalendarIcon className="w-3.5 h-3.5 text-[#7A6F69] shrink-0" />
           <span className="text-[#7A6F69] uppercase tracking-wider font-bold text-[10px]">From</span>
-          <input
-            type="date"
+          <DateField
+            aria-label="From date"
             value={startDate || ''}
-            onChange={(e) => handleStartChange(e.target.value)}
-            className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
+            onChange={handleStartChange}
           />
           <span className="text-[#7A6F69] uppercase tracking-wider font-bold text-[10px]">to</span>
-          <input
-            type="date"
+          <DateField
+            aria-label="To date"
             value={endDate || ''}
-            onChange={(e) => handleEndChange(e.target.value)}
-            className="bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5]"
+            onChange={handleEndChange}
           />
         </div>
       ) : showResolvedRange && startDate && endDate ? (
