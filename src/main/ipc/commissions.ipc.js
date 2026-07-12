@@ -2,6 +2,8 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { resolveCommissionRate, recordCommissionPayout, getPendingCommissionBalance, getCommissionBalance } from '../services/commission.service.js'
+import { getCurrentBusinessMonth } from '../utils/businessDay.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
 
 export function registerCommissionsHandlers() {
   handleIpc('commissions:setRate', (_, data) => {
@@ -24,12 +26,12 @@ export function registerCommissionsHandlers() {
 
     const upsertStmt = db.prepare(`
       INSERT INTO commission_rates (salesperson_id, month, rate_percent, created_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(salesperson_id, month)
       DO UPDATE SET rate_percent = excluded.rate_percent
     `)
 
-    upsertStmt.run(salespersonId, month, ratePercent)
+    upsertStmt.run(salespersonId, month, ratePercent, localDateTimeString())
     const row = db.prepare('SELECT * FROM commission_rates WHERE salesperson_id = ? AND month = ?').get(salespersonId, month)
 
     auditLog(
@@ -47,7 +49,7 @@ export function registerCommissionsHandlers() {
 
   handleIpc('commissions:getSummary', (_, monthParam) => {
     const db = getDb()
-    const targetMonth = monthParam?.trim() || new Date().toISOString().slice(0, 7)
+    const targetMonth = monthParam?.trim() || getCurrentBusinessMonth()
 
     // Get all staff members (active or having rates/commissions in target month)
     const staffList = db.prepare(`

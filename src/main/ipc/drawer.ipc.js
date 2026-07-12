@@ -84,10 +84,11 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
   `).get(start, end)
 
   const stockRes = db.prepare(`
-    SELECT COALESCE(SUM(sm.quantity * a.wholesale_price), 0) AS stock_out
+    SELECT COALESCE(SUM(sm.quantity * COALESCE(a.wholesale_price, 0)), 0) AS stock_out
     FROM stock_movements sm
     JOIN articles a ON a.id = sm.article_id
     WHERE sm.movement_type = 'IN'
+      AND COALESCE(sm.reference_type, '') NOT IN ('VOID_SALE')
       AND sm.created_at >= ?
       AND sm.created_at < ?
   `).get(start, end)

@@ -1,6 +1,7 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
 import {
   parseArticleSearchQuery,
   buildArticleSearchClause,
@@ -245,9 +246,9 @@ export function registerArticlesHandlers() {
       // If initial_quantity > 0, insert stock movement
       if (initial_quantity > 0) {
         db.prepare(`
-          INSERT INTO stock_movements (article_id, movement_type, quantity, note, performed_by)
-          VALUES (?, 'IN', ?, 'Initial inventory seed upon article registration', 'System')
-        `).run(articleId, initial_quantity)
+          INSERT INTO stock_movements (article_id, movement_type, quantity, note, performed_by, created_at)
+          VALUES (?, 'IN', ?, 'Initial inventory seed upon article registration', 'System', ?)
+        `).run(articleId, initial_quantity, localDateTimeString())
       }
 
       const newRow = db.prepare(`
@@ -420,9 +421,10 @@ export function registerArticlesHandlers() {
     const selectStmt = db.prepare('SELECT * FROM articles WHERE id = ?')
     const updateStmt = db.prepare('UPDATE articles SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
     const insertMovementStmt = db.prepare(`
-      INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, performed_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, performed_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
+    const movementAt = localDateTimeString()
 
     const adjustTransaction = db.transaction(() => {
       const results = []
@@ -458,7 +460,16 @@ export function registerArticlesHandlers() {
         }
 
         updateStmt.run(newQty, articleId)
-        insertMovementStmt.run(articleId, movementType, absQty, referenceType, referenceId, item.note || batchNote, performedBy)
+        insertMovementStmt.run(
+          articleId,
+          movementType,
+          absQty,
+          referenceType,
+          referenceId,
+          item.note || batchNote,
+          performedBy,
+          movementAt
+        )
 
         auditLog(
           db,

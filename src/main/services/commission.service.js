@@ -1,4 +1,5 @@
 import { COMMISSION_EXPENSE_CATEGORY, createExpenseRecord } from './expense.service.js'
+import { getCurrentBusinessDate, getCurrentBusinessMonth } from '../utils/businessDay.js'
 
 export const DEFAULT_COMMISSION_RATE = 1
 
@@ -23,7 +24,7 @@ export function resolveCommissionRate(db, salespersonId, month) {
   return getConfiguredDefaultCommissionRate(db)
 }
 
-export function ensureDefaultCommissionRateForStaff(db, salespersonId, month = new Date().toISOString().slice(0, 7)) {
+export function ensureDefaultCommissionRateForStaff(db, salespersonId, month = getCurrentBusinessMonth()) {
   const existing = db
     .prepare('SELECT id FROM commission_rates WHERE salesperson_id = ? AND month = ?')
     .get(salespersonId, month)
@@ -56,7 +57,7 @@ export function getPendingCommissionBalance(db, salespersonId, month) {
 }
 
 export function accrueSaleCommission(db, { saleId, salespersonId, saleAmount, month = null }) {
-  const currentMonth = month || new Date().toISOString().slice(0, 7)
+  const currentMonth = month || getCurrentBusinessMonth()
   const ratePercent = resolveCommissionRate(db, salespersonId, currentMonth)
   const commissionAmount = (Number(saleAmount) * ratePercent) / 100
 
@@ -333,7 +334,7 @@ export function recordCommissionPayout(db, { salespersonId, month, amount, notes
       category: COMMISSION_EXPENSE_CATEGORY,
       description: `Commission payout — ${staff.name} (${month})`,
       amount: payoutAmount,
-      expense_date: new Date().toISOString().slice(0, 10),
+      expense_date: getCurrentBusinessDate(),
       recorded_by: 'POS System',
       notes: expenseNotes,
     })

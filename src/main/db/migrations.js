@@ -566,4 +566,50 @@ export function runMigrations(db) {
     migrateV11()
     console.log('[Migrations] Successfully applied V11 Migration.')
   }
+
+  if (currentVersion < 12) {
+    console.log('[Migrations] Applying V12 Migration (stock_movements local timestamps)...')
+    const migrateV12 = db.transaction(() => {
+      // Historical rows used SQLite CURRENT_TIMESTAMP (UTC). Drawer windows use
+      // local PKT wall-clock, so convert existing movement stamps to UTC+5 once.
+      db.prepare(`
+        UPDATE stock_movements
+        SET created_at = datetime(created_at, '+5 hours')
+        WHERE created_at IS NOT NULL
+          AND length(trim(created_at)) >= 19
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '12', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '12', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV12()
+    console.log('[Migrations] Successfully applied V12 Migration.')
+  }
+
+  if (currentVersion < 13) {
+    console.log('[Migrations] Applying V13 Migration (audit_log local timestamps)...')
+    const migrateV13 = db.transaction(() => {
+      // Historical audit rows used SQLite CURRENT_TIMESTAMP (UTC). Business-day
+      // filters use local PKT wall-clock windows — convert existing stamps once.
+      db.prepare(`
+        UPDATE audit_log
+        SET performed_at = datetime(performed_at, '+5 hours')
+        WHERE performed_at IS NOT NULL
+          AND length(trim(performed_at)) >= 19
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '13', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '13', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV13()
+    console.log('[Migrations] Successfully applied V13 Migration.')
+  }
 }

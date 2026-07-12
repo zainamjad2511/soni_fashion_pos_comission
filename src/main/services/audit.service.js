@@ -1,3 +1,5 @@
+import { localDateTimeString } from '../utils/localDateTime.js'
+
 export function auditLog(
   db,
   actionType,
@@ -17,7 +19,7 @@ export function auditLog(
         old_value,
         new_value,
         performed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
 
     const oldValStr = oldValue && typeof oldValue === 'object' ? JSON.stringify(oldValue) : (oldValue !== null ? String(oldValue) : null)
@@ -29,7 +31,8 @@ export function auditLog(
       entityId || null,
       description,
       oldValStr,
-      newValStr
+      newValStr,
+      localDateTimeString()
     )
   } catch (err) {
     console.error('[AuditLog] Failed to record audit log:', err)

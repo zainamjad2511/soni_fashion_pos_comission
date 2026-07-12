@@ -3,8 +3,8 @@ import { getDb } from '../db/database.js'
 import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission } from '../services/commission.service.js'
-import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
-import { resolveBusinessRange } from '../utils/businessDay.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
+import { resolveBusinessRange, getCurrentBusinessDateKey } from '../utils/businessDay.js'
 
 export function registerSalesHandlers() {
   handleIpc('sales:create', (_, payload) => {
@@ -85,7 +85,7 @@ export function registerSalesHandlers() {
       const grandTotal = Math.max(0, subtotal - totalDiscount)
 
       // 3. Generate sequential invoice number using invoice_prefix setting
-      const todayStr = localDateKey()
+      const todayStr = getCurrentBusinessDateKey()
       const saleDateTime = localDateTimeString()
       const basePrefix = getRequiredSetting(db, 'invoice_prefix').replace(/-+$/, '')
       const prefix = `${basePrefix}-${todayStr}-`
@@ -113,14 +113,14 @@ export function registerSalesHandlers() {
       `)
       const updateStockStmt = db.prepare('UPDATE articles SET quantity = quantity - ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-        VALUES (?, 'OUT', ?, 'SALE', ?, ?)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+        VALUES (?, 'OUT', ?, 'SALE', ?, ?, ?)
       `)
 
       for (const vItem of validatedItems) {
         insertItemStmt.run(saleId, vItem.article_id, vItem.quantity, vItem.retail_price_snapshot, vItem.wholesale_price_snapshot, vItem.discount_amount, vItem.line_total)
         updateStockStmt.run(vItem.quantity, vItem.article_id)
-        insertMovementStmt.run(vItem.article_id, vItem.quantity, saleId, `POS Sale ${invoiceNumber}`)
+        insertMovementStmt.run(vItem.article_id, vItem.quantity, saleId, `POS Sale ${invoiceNumber}`, saleDateTime)
       }
 
       // 6. Calculate and insert Commission (net balance auto-offsets prior return debits)
@@ -287,9 +287,10 @@ export function registerSalesHandlers() {
 
       const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-        VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+        VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?, ?)
       `)
+      const voidAt = localDateTimeString()
 
       for (const item of items) {
         const restoreQty = Math.max(0, Number(item.quantity) - Number(item.already_returned || 0))
@@ -299,7 +300,8 @@ export function registerSalesHandlers() {
           item.article_id,
           restoreQty,
           saleId,
-          `Deleted/voided Sale #${sale.invoice_number}`
+          `Deleted/voided Sale #${sale.invoice_number}`,
+          voidAt
         )
       }
 

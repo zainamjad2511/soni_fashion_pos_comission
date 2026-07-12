@@ -2,7 +2,7 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { getPendingCommissionBalance, recordCommissionPayout, getCommissionBalance } from '../services/commission.service.js'
-import { getCurrentBusinessDate, resolveBusinessRange } from '../utils/businessDay.js'
+import { getCurrentBusinessDate, getCurrentBusinessMonth, resolveBusinessRange } from '../utils/businessDay.js'
 
 export function registerReportsHandlers() {
   // Helper to unpack date filters whether passed as object or individual arguments.
@@ -28,7 +28,7 @@ export function registerReportsHandlers() {
       windowEnd: range.end,
       salespersonId: base.salespersonId || base.salesperson_id || null,
       limit: base.limit || 10,
-      month: base.month || new Date().toISOString().slice(0, 7),
+      month: base.month || getCurrentBusinessMonth(),
       date: singleDate,
     }
   }

@@ -16,6 +16,7 @@ import {
   CheckMarkIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
+import { getCurrentBusinessMonth } from '../utils/businessDay.js'
 import {
   StandardModal,
   StandardModalAction,
@@ -100,7 +101,7 @@ function formatLedgerDate(value) {
 }
 
 export function Commissions() {
-  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7))
+  const [selectedMonth, setSelectedMonth] = useState(() => getCurrentBusinessMonth())
   const [summaryList, setSummaryList] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)

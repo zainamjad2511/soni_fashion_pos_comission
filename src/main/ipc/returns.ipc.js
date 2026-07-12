@@ -3,8 +3,8 @@ import { getDb } from '../db/database.js'
 import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission, recordItemizedCommissionReversal, reverseCommissionsForVoidedReturn } from '../services/commission.service.js'
-import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
-import { resolveBusinessRange } from '../utils/businessDay.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
+import { resolveBusinessRange, getCurrentBusinessDateKey } from '../utils/businessDay.js'
 import {
   parseArticleSearchQuery,
   buildArticleSearchClause,
@@ -171,7 +171,7 @@ export function registerReturnsHandlers() {
       }
 
       // Generate sequential return number using return_prefix setting
-      const todayStr = localDateKey()
+      const todayStr = getCurrentBusinessDateKey()
       const returnDateTime = localDateTimeString()
       const baseRetPrefix = getRequiredSetting(db, 'return_prefix').replace(/-+$/, '')
       const prefix = `${baseRetPrefix}-${todayStr}-`
@@ -201,8 +201,8 @@ export function registerReturnsHandlers() {
       `)
       const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-        VALUES (?, 'RETURN_IN', ?, 'RETURN', ?, ?)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+        VALUES (?, 'RETURN_IN', ?, 'RETURN', ?, ?, ?)
       `)
 
       for (const item of items) {
@@ -212,7 +212,8 @@ export function registerReturnsHandlers() {
           item.article_id,
           item.quantity_returned,
           returnId,
-          return_type === 'manual' ? `Manual Return #${returnNumber}` : `Return #${returnNumber}`
+          return_type === 'manual' ? `Manual Return #${returnNumber}` : `Return #${returnNumber}`,
+          returnDateTime
         )
       }
 
@@ -316,14 +317,14 @@ export function registerReturnsHandlers() {
         `)
         const deductStockStmt = db.prepare('UPDATE articles SET quantity = quantity - ? WHERE id = ?')
         const insertOutMovementStmt = db.prepare(`
-          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-          VALUES (?, 'OUT', ?, 'SALE', ?, ?)
+          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+          VALUES (?, 'OUT', ?, 'SALE', ?, ?, ?)
         `)
 
         for (const vItem of validatedReplacements) {
           insertSaleItemStmt.run(newSaleId, vItem.article_id, vItem.quantity, vItem.retail_price_snapshot, vItem.wholesale_price_snapshot, vItem.discount_amount, vItem.line_total)
           deductStockStmt.run(vItem.quantity, vItem.article_id)
-          insertOutMovementStmt.run(vItem.article_id, vItem.quantity, newSaleId, `Exchange Sale #${newInvoiceNumber}`)
+          insertOutMovementStmt.run(vItem.article_id, vItem.quantity, newSaleId, `Exchange Sale #${newInvoiceNumber}`, returnDateTime)
         }
 
         // Commission for manual exchange: accrue on the new replacement sale only (current staff).
@@ -501,9 +502,10 @@ export function registerReturnsHandlers() {
 
       const deductStockStmt = db.prepare('UPDATE articles SET quantity = quantity - ? WHERE id = ?')
       const insertMovementStmt = db.prepare(`
-        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-        VALUES (?, 'OUT', ?, 'VOID_RETURN', ?, ?)
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+        VALUES (?, 'OUT', ?, 'VOID_RETURN', ?, ?, ?)
       `)
+      const voidAt = localDateTimeString()
 
       for (const item of items) {
         const qty = Number(item.quantity_returned)
@@ -512,7 +514,8 @@ export function registerReturnsHandlers() {
           item.article_id,
           qty,
           returnId,
-          `Voided Return #${ret.return_number}`
+          `Voided Return #${ret.return_number}`,
+          voidAt
         )
       }
 
@@ -521,8 +524,8 @@ export function registerReturnsHandlers() {
         const saleItems = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(exchangeSale.id)
         const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
         const insertInMovementStmt = db.prepare(`
-          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
-          VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?)
+          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, created_at)
+          VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?, ?)
         `)
 
         for (const sItem of saleItems) {
@@ -532,7 +535,8 @@ export function registerReturnsHandlers() {
             sItem.article_id,
             q,
             exchangeSale.id,
-            `Voided exchange sale #${exchangeSale.invoice_number} via return #${ret.return_number}`
+            `Voided exchange sale #${exchangeSale.invoice_number} via return #${ret.return_number}`,
+            voidAt
           )
         }
 

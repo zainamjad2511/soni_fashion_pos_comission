@@ -78,6 +78,24 @@ export function getCurrentBusinessDate(now = new Date()) {
 }
 
 /**
+ * Business-month label (YYYY-MM) for commission periods — follows 08:00 PKT day.
+ * @param {Date} [now]
+ * @returns {string} YYYY-MM
+ */
+export function getCurrentBusinessMonth(now = new Date()) {
+  return getCurrentBusinessDate(now).slice(0, 7)
+}
+
+/**
+ * Compact business-date key for invoice/return number segments (YYYYMMDD).
+ * @param {Date} [now]
+ * @returns {string} YYYYMMDD
+ */
+export function getCurrentBusinessDateKey(now = new Date()) {
+  return getCurrentBusinessDate(now).replace(/-/g, '')
+}
+
+/**
  * Inclusive-start / exclusive-end SQLite datetime bounds for one business day.
  * @param {string} businessDate YYYY-MM-DD
  * @returns {{ start: string, end: string, businessDate: string }}

@@ -3,6 +3,7 @@ import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { createExpenseRecord } from '../services/expense.service.js'
 import { resolveBusinessRange } from '../utils/businessDay.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
 
 export function registerExpensesHandlers() {
   handleIpc('expenses:list', (_, filters) => {
@@ -75,11 +76,11 @@ export function registerExpensesHandlers() {
 
     const updateStmt = db.prepare(`
       UPDATE expenses
-      SET category = ?, description = ?, amount = ?, expense_date = ?, recorded_by = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+      SET category = ?, description = ?, amount = ?, expense_date = ?, recorded_by = ?, notes = ?, updated_at = ?
       WHERE id = ?
     `)
 
-    updateStmt.run(category, description, amount, expenseDate, recordedBy, notes, expenseId)
+    updateStmt.run(category, description, amount, expenseDate, recordedBy, notes, localDateTimeString(), expenseId)
     const newRow = db.prepare('SELECT * FROM expenses WHERE id = ?').get(expenseId)
 
     auditLog(
