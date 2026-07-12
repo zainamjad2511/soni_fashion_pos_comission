@@ -6,21 +6,14 @@ import {
   EditIcon,
   PowerOnIcon,
   PowerOffIcon,
-  AlertTriangleIcon,
-  CheckIcon,
-  AlertIcon,
   RefreshIcon,
   CloseIcon,
   FilterIcon,
-  LayersIcon,
-  BanknoteIcon,
   TagIcon,
   HistoryIcon,
-  TruckIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { createPortal } from 'react-dom'
-import { StockInModal } from '../components/StockInModal.jsx'
 import { StockMovementsModal } from '../components/StockMovementsModal.jsx'
 import { Toast } from '../components/Toast.jsx'
 import {
@@ -53,7 +46,6 @@ export function Inventory() {
   const [selectedCategory, setSelectedCategory] = useState('')
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [isStockInOpen, setIsStockInOpen] = useState(false)
   const [historyArticle, setHistoryArticle] = useState(null)
   const [editingArticle, setEditingArticle] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -69,6 +61,8 @@ export function Inventory() {
     wholesale_price: '',
     retail_price: '',
     quantity: '0',
+    add_quantity: '',
+    remove_quantity: '',
     reorder_level: '0',
     notes: ''
   })
@@ -139,6 +133,8 @@ export function Inventory() {
         wholesale_price: String(article.wholesale_price || ''),
         retail_price: String(article.retail_price || ''),
         quantity: String(article.quantity || 0),
+        add_quantity: '',
+        remove_quantity: '',
         reorder_level: '0',
         notes: article.notes || ''
       })
@@ -154,6 +150,8 @@ export function Inventory() {
         wholesale_price: '',
         retail_price: '',
         quantity: '0',
+        add_quantity: '',
+        remove_quantity: '',
         reorder_level: '0',
         notes: ''
       })
@@ -181,18 +179,86 @@ export function Inventory() {
     setSubmitting(true)
     try {
       if (window.electronAPI && window.electronAPI.articles) {
+        const addQty = editingArticle
+          ? Math.floor(Number(formData.add_quantity) || 0)
+          : 0
+        const removeQty = editingArticle
+          ? Math.floor(Number(formData.remove_quantity) || 0)
+          : 0
+        const currentQty = Number(formData.quantity || 0)
+
+        if (editingArticle && formData.add_quantity !== '' && (Number.isNaN(addQty) || addQty < 0)) {
+          showToast('error', 'Add stock must be a whole number of 0 or more.')
+          return
+        }
+        if (editingArticle && formData.remove_quantity !== '' && (Number.isNaN(removeQty) || removeQty < 0)) {
+          showToast('error', 'Remove stock must be a whole number of 0 or more.')
+          return
+        }
+        if (editingArticle && removeQty > currentQty + addQty) {
+          showToast('error', `Cannot remove ${removeQty} — only ${currentQty + addQty} unit(s) available.`)
+          return
+        }
+
         const payload = {
-          ...formData,
           supplier_id: Number(formData.supplier_id),
+          supplier_article_code: formData.supplier_article_code,
+          name: formData.name,
+          category: formData.category,
+          colour: formData.colour,
+          size: formData.size,
           wholesale_price: Number(formData.wholesale_price),
           retail_price: Number(formData.retail_price),
           quantity: Number(formData.quantity),
-          reorder_level: 0
+          reorder_level: 0,
+          notes: formData.notes,
         }
 
         let res
         if (editingArticle) {
           res = await window.electronAPI.articles.update(editingArticle.id, payload)
+          if (!res.success) {
+            showToast('error', res.error || 'Failed to save article.')
+            return
+          }
+
+          if (addQty > 0) {
+            const stockRes = await window.electronAPI.articles.adjustStock({
+              items: [{
+                article_id: editingArticle.id,
+                quantity: addQty,
+                note: 'Stock added via article edit',
+              }],
+              movement_type: 'IN',
+              reference_type: 'STOCK_ADD',
+              note: `Added ${addQty} unit(s) to ${editingArticle.sku}`,
+              performed_by: 'Admin',
+            })
+            if (!stockRes?.success) {
+              showToast('error', stockRes?.error || 'Article saved, but stock could not be added.')
+              fetchArticles()
+              return
+            }
+          }
+
+          if (removeQty > 0) {
+            const stockRes = await window.electronAPI.articles.adjustStock({
+              items: [{
+                article_id: editingArticle.id,
+                quantity: removeQty,
+                note: 'Damaged / written off via article edit',
+              }],
+              movement_type: 'OUT',
+              reference_type: 'WRITE_OFF',
+              note: `Removed ${removeQty} unit(s) from ${editingArticle.sku} (damage / write-off)`,
+              performed_by: 'Admin',
+            })
+            if (!stockRes?.success) {
+              showToast('error', stockRes?.error || 'Article saved, but stock could not be removed.')
+              fetchArticles()
+              return
+            }
+          }
         } else {
           res = await window.electronAPI.articles.create(payload)
         }
@@ -205,7 +271,11 @@ export function Inventory() {
               // ignore storage errors
             }
           }
-          showToast('success', `Article successfully saved! SKU: ${res.data.sku}`)
+          const parts = []
+          if (editingArticle && addQty > 0) parts.push(`+${addQty}`)
+          if (editingArticle && removeQty > 0) parts.push(`−${removeQty}`)
+          const stockNote = parts.length ? ` · ${parts.join(' · ')} stock` : ''
+          showToast('success', `Article saved! SKU: ${res.data.sku}${stockNote}`)
           if (res.data?.warning) {
             setTimeout(() => showToast('error', res.data.warning), 1500)
           }
@@ -263,19 +333,11 @@ export function Inventory() {
             Article Inventory
           </h1>
           <p className="text-[#7A6F69] font-sans text-sm mt-2">
-            Browse auto-generated SKUs and set wholesale/retail pricing tiers.
+            Browse SKUs, set pricing, and add or write off stock when you edit an article.
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsStockInOpen(true)}
-            className="px-5 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
-          >
-            <TruckIcon className="w-4 h-4 text-[#2E2822]" />
-            <span>Receive Shipment</span>
-          </button>
-
           <button
             onClick={() => handleOpenDrawer()}
             className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
@@ -472,7 +534,7 @@ export function Inventory() {
                       <button
                         onClick={() => handleOpenDrawer(art)}
                         className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-                        title="Edit Article & Pricing"
+                        title="Edit Article & Stock"
                       >
                         <EditIcon className="w-4 h-4 inline" />
                       </button>
@@ -667,21 +729,89 @@ export function Inventory() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
-                  {editingArticle ? 'Current Stock Count' : 'Initial Stock Quantity'}
-                </label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleFormChange}
-                  disabled={!!editingArticle}
-                  min="0"
-                  required
-                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
-                />
-              </div>
+              {editingArticle ? (
+                <div className="p-6 bg-[#EFEBE3] space-y-5 rounded-[2px]">
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#2E2822] border-b border-[#C9C0B5] pb-2">
+                    Stock
+                  </div>
+                  <div className="grid grid-cols-3 gap-5">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                        Current
+                      </label>
+                      <div className="py-2 font-mono text-base font-bold text-[#2E2822] border-b border-[#C9C0B5]">
+                        {formData.quantity}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-[#2E2822] uppercase tracking-[0.14em] block">
+                        Add Units
+                      </label>
+                      <input
+                        type="number"
+                        name="add_quantity"
+                        value={formData.add_quantity}
+                        onChange={handleFormChange}
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        className="w-full py-2 bg-transparent border-b border-[#2E2822] text-[#2E2822] font-mono text-base font-bold placeholder-[#7A6F69] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                        Remove Units
+                      </label>
+                      <input
+                        type="number"
+                        name="remove_quantity"
+                        value={formData.remove_quantity}
+                        onChange={handleFormChange}
+                        placeholder="0"
+                        min="0"
+                        step="1"
+                        className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-base font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs font-sans text-[#7A6F69]">
+                    Remove = damage, throw-out, or write-off (does not change cash drawer).
+                    {(() => {
+                      const next =
+                        Number(formData.quantity || 0) +
+                        Math.floor(Number(formData.add_quantity) || 0) -
+                        Math.floor(Number(formData.remove_quantity) || 0)
+                      if (
+                        Number(formData.add_quantity) > 0 ||
+                        Number(formData.remove_quantity) > 0
+                      ) {
+                        return (
+                          <>
+                            {' '}After save:{' '}
+                            <span className="font-mono font-bold text-[#2E2822]">{next} units</span>
+                          </>
+                        )
+                      }
+                      return null
+                    })()}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
+                    Initial Stock Quantity
+                  </label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleFormChange}
+                    min="0"
+                    required
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] font-mono text-sm focus:outline-none focus:border-[#2E2822]"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
@@ -723,24 +853,11 @@ export function Inventory() {
         document.body
       )}
 
-      {/* Stock IN Shipment Modal */}
-      <StockInModal
-        isOpen={isStockInOpen}
-        onClose={() => setIsStockInOpen(false)}
-        onSuccess={() => {
-          showToast('success', 'Stock IN shipment manifest processed successfully!')
-          fetchArticles()
-        }}
-      />
-
       {/* Stock Movement Ledger Modal */}
       <StockMovementsModal
         isOpen={!!historyArticle}
         onClose={() => setHistoryArticle(null)}
         article={historyArticle}
-        onStockAdjusted={() => {
-          fetchArticles()
-        }}
       />
     </div>
   )
