@@ -347,8 +347,8 @@
           const srcH = logo.naturalHeight || logo.height;
           if (!srcW || !srcH) return resolve();
 
-          // ~52mm on an 80mm roll at 2× CSS density → sharp in the PDF rasterizer.
-          const TARGET_PX = 420;
+          // ~40mm logo at 2× density — smaller than before so first-process is faster.
+          const TARGET_PX = 280;
           const scale = TARGET_PX / Math.max(srcW, srcH);
           const tw = Math.max(1, Math.round(srcW * scale));
           const th = Math.max(1, Math.round(srcH * scale));

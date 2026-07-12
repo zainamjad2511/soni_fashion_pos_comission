@@ -9,7 +9,10 @@ import { formatSaleDateLabel, formatSaleTimeLabel } from '../utils/localDateTime
 import { getReceiptAssetPath, getReceiptHtmlPath } from '../utils/receiptPaths.js'
 
 let receiptWindow = null
+let receiptTemplateReady = false
 let cachedLogoDataUrl = null
+let settingsCache = null
+let settingsCacheAt = 0
 
 /** CSS layout DPI used by Chromium. */
 const CSS_DPI = 96
@@ -17,8 +20,10 @@ const CSS_DPI = 96
 const RECEIPT_WIDTH_MM = 80
 /** Receipt content width in CSS pixels at 96dpi. */
 const RECEIPT_WIDTH_CSS_PX = Math.round((RECEIPT_WIDTH_MM / 25.4) * CSS_DPI)
-/** Don't let Sumatra/printer hang the POS UI forever. */
+/** Don't let Sumatra/printer hang forever in the background. */
 const PRINT_TIMEOUT_MS = 45000
+/** Reuse store settings briefly to avoid a DB round-trip on every print. */
+const SETTINGS_CACHE_MS = 5000
 
 function getLogoDataUrl() {
   if (cachedLogoDataUrl) return cachedLogoDataUrl
@@ -28,10 +33,24 @@ function getLogoDataUrl() {
   return cachedLogoDataUrl
 }
 
-function getConfiguredPrinterName(db) {
-  const receiptPrinter = db.prepare("SELECT value FROM settings WHERE key = 'receipt_printer_name'").get()
-  const legacyPrinter = db.prepare("SELECT value FROM settings WHERE key = 'thermal_printer_name'").get()
-  return String(receiptPrinter?.value || legacyPrinter?.value || '').trim()
+function getConfiguredPrinterName(settingsMap) {
+  return String(
+    settingsMap.receipt_printer_name || settingsMap.thermal_printer_name || ''
+  ).trim()
+}
+
+function getSettingsMap(db) {
+  const now = Date.now()
+  if (settingsCache && now - settingsCacheAt < SETTINGS_CACHE_MS) {
+    return settingsCache
+  }
+  const settingsMap = {}
+  db.prepare('SELECT key, value FROM settings').all().forEach((r) => {
+    settingsMap[r.key] = r.value
+  })
+  settingsCache = settingsMap
+  settingsCacheAt = now
+  return settingsMap
 }
 
 function ensureReceiptWindow() {
@@ -39,6 +58,7 @@ function ensureReceiptWindow() {
     return receiptWindow
   }
 
+  receiptTemplateReady = false
   receiptWindow = new BrowserWindow({
     show: false,
     width: RECEIPT_WIDTH_CSS_PX,
@@ -53,6 +73,7 @@ function ensureReceiptWindow() {
 
   receiptWindow.on('closed', () => {
     receiptWindow = null
+    receiptTemplateReady = false
   })
 
   return receiptWindow
@@ -67,10 +88,12 @@ function loadReceiptTemplate(win, receiptPath) {
 
     const onFail = (_event, errorCode, errorDescription) => {
       cleanup()
+      receiptTemplateReady = false
       reject(new Error(`Failed to load receipt template (${errorCode}): ${errorDescription}`))
     }
     const onLoad = () => {
       cleanup()
+      receiptTemplateReady = true
       resolve()
     }
     const cleanup = () => {
@@ -82,6 +105,13 @@ function loadReceiptTemplate(win, receiptPath) {
     win.webContents.once('did-fail-load', onFail)
     win.loadFile(receiptPath)
   })
+}
+
+async function ensureTemplateLoaded(win) {
+  if (receiptTemplateReady && !win.webContents.isLoading()) {
+    return
+  }
+  await loadReceiptTemplate(win, getReceiptHtmlPath())
 }
 
 function withTimeout(promise, ms, label) {
@@ -102,6 +132,36 @@ function withTimeout(promise, ms, label) {
   })
 }
 
+function queuePdfPrint(tempPdfPath, pdfOptions) {
+  // Don't block the POS UI waiting for Sumatra/spooler — start the job and clean up after.
+  withTimeout(printPdf(tempPdfPath, pdfOptions), PRINT_TIMEOUT_MS, 'Printer job')
+    .then(() => {
+      console.log('[Print Engine] PDF sent to printer via SumatraPDF.')
+    })
+    .catch((err) => {
+      console.error('[Print Engine] Background print failed:', err)
+    })
+    .finally(() => {
+      try {
+        fs.unlinkSync(tempPdfPath)
+      } catch {
+        // best-effort
+      }
+    })
+}
+
+function prewarmReceiptEngine() {
+  try {
+    getLogoDataUrl()
+    const win = ensureReceiptWindow()
+    ensureTemplateLoaded(win)
+      .then(() => console.log('[Print Engine] Receipt window prewarmed.'))
+      .catch((err) => console.warn('[Print Engine] Prewarm skipped:', err?.message || err))
+  } catch (err) {
+    console.warn('[Print Engine] Prewarm failed:', err?.message || err)
+  }
+}
+
 export function registerPrintHandlers() {
   handleIpc('print:getPrinters', async () => {
     const wins = BrowserWindow.getAllWindows()
@@ -119,19 +179,11 @@ export function registerPrintHandlers() {
   })
 
   handleIpc('print:receipt', async (_, receiptData) => {
-    let tempPdfPath = null
-
     try {
       const db = getDb()
-      const printerName = getConfiguredPrinterName(db)
+      const settingsMap = getSettingsMap(db)
+      const printerName = getConfiguredPrinterName(settingsMap)
       const win = ensureReceiptWindow()
-      const receiptPath = getReceiptHtmlPath()
-
-      const settingsRows = db.prepare('SELECT key, value FROM settings').all()
-      const settingsMap = {}
-      settingsRows.forEach((r) => {
-        settingsMap[r.key] = r.value
-      })
 
       let shopContact = settingsMap.shop_contact || '03246470929 | 03456861996'
       if (!String(shopContact).trim().includes('|')) {
@@ -153,25 +205,28 @@ export function registerPrintHandlers() {
         sale_time_label: formatSaleTimeLabel(saleDateSource),
       }
 
-      console.log('[Print Engine] Loading receipt template...')
-      await loadReceiptTemplate(win, receiptPath)
+      // Reuse the hidden receipt window — reloading HTML every sale costs ~1s+.
+      await ensureTemplateLoaded(win)
 
       const metrics = await win.webContents.executeJavaScript(
         `(async () => {
           await renderReceipt(${JSON.stringify(enrichedData)});
-          if (document.fonts?.ready) await document.fonts.ready;
-          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+          // Fonts are already cached after the first print; don't stall if ready.
+          if (document.fonts?.status !== 'loaded' && document.fonts?.ready) {
+            await Promise.race([
+              document.fonts.ready,
+              new Promise((r) => setTimeout(r, 120)),
+            ]);
+          }
+          await new Promise((r) => requestAnimationFrame(r));
 
           const el = document.getElementById('receipt-content');
           const heightPx = Math.ceil(Math.max(
             el?.scrollHeight || 0,
-            el?.offsetHeight || 0,
-            document.body?.scrollHeight || 0,
-            document.documentElement?.scrollHeight || 0
+            el?.getBoundingClientRect()?.height || 0
           ));
+          const heightMm = Math.max(30, (heightPx / ${CSS_DPI}) * 25.4 + 2);
 
-          // Small cutter feed only — large extras show up as blank top/bottom paper.
-          const heightMm = Math.max(40, (heightPx / ${CSS_DPI}) * 25.4 + 3);
           let style = document.getElementById('dynamic-page-style');
           if (!style) {
             style = document.createElement('style');
@@ -180,33 +235,19 @@ export function registerPrintHandlers() {
           }
           style.textContent = '@page { margin: 0; size: ${RECEIPT_WIDTH_MM}mm ' + heightMm.toFixed(2) + 'mm; }';
 
-          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-
           return {
             heightPx,
             heightMm,
-            textSample: (el?.innerText || '').replace(/\\s+/g, ' ').slice(0, 100),
             itemRows: document.querySelectorAll('#items-body tr').length,
           };
         })()`
       )
 
-      console.log('[Print Engine] Receipt metrics:', {
-        printerName: printerName || '(system default)',
-        heightPx: metrics.heightPx,
-        heightMm: metrics.heightMm,
-        itemRows: metrics.itemRows,
-        textSample: metrics.textSample,
-      })
+      win.setContentSize(RECEIPT_WIDTH_CSS_PX, Math.max(100, metrics.heightPx + 8))
 
-      // PDF path (stable). Avoid capturePage on a hidden window — it can hang.
-      // Avoid Sumatra monochrome=true — it dithers AA text into dots.
-      // Page width must match the 80mm driver paper. A narrower PDF (e.g. 72mm)
-      // left-aligns with empty space on the right; scale:fit also blurs glyphs.
       const widthInches = RECEIPT_WIDTH_MM / 25.4
       const heightInches = Number(metrics.heightMm) / 25.4
 
-      console.log('[Print Engine] Generating receipt PDF...')
       const pdfBuffer = await withTimeout(
         win.webContents.printToPDF({
           printBackground: true,
@@ -223,17 +264,15 @@ export function registerPrintHandlers() {
           },
           preferCSSPageSize: true,
         }),
-        20000,
+        15000,
         'Receipt PDF generation'
       )
 
-      tempPdfPath = path.join(os.tmpdir(), `soni-receipt-${Date.now()}.pdf`)
+      const tempPdfPath = path.join(os.tmpdir(), `soni-receipt-${Date.now()}.pdf`)
       fs.writeFileSync(tempPdfPath, pdfBuffer)
-      console.log('[Print Engine] Wrote receipt PDF:', tempPdfPath, `(${pdfBuffer.length} bytes)`)
 
       const pdfOptions = {
         silent: true,
-        // shrink = only scale down if needed to fit printable width (gentle, not full "fit")
         scale: 'shrink',
         copies: 1,
       }
@@ -241,22 +280,18 @@ export function registerPrintHandlers() {
         pdfOptions.printer = printerName
       }
 
-      console.log('[Print Engine] Sending PDF to printer...')
-      await withTimeout(printPdf(tempPdfPath, pdfOptions), PRINT_TIMEOUT_MS, 'Printer job')
-      console.log('[Print Engine] PDF sent to printer via SumatraPDF.')
+      // Return to UI immediately; spooling continues in the background.
+      queuePdfPrint(tempPdfPath, pdfOptions)
+      console.log('[Print Engine] Receipt queued:', {
+        printerName: printerName || '(system default)',
+        heightMm: metrics.heightMm,
+        bytes: pdfBuffer.length,
+      })
 
       return { message: 'Receipt sent to thermal printer.' }
     } catch (err) {
       console.error('[Print Engine] Error triggering print:', err)
       throw err
-    } finally {
-      if (tempPdfPath) {
-        try {
-          fs.unlinkSync(tempPdfPath)
-        } catch {
-          // temp cleanup is best-effort
-        }
-      }
     }
   })
 
@@ -266,4 +301,5 @@ export function registerPrintHandlers() {
   })
 
   console.log('[IPC] Registered Print handlers.')
+  setImmediate(prewarmReceiptEngine)
 }
