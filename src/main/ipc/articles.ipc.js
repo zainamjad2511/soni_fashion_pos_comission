@@ -1,6 +1,15 @@
 import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
+import {
+  parseArticleSearchQuery,
+  buildArticleSearchClause,
+} from '../utils/parseArticleSearchQuery.js'
+
+function getSkuPrefix(db) {
+  const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+  return (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+}
 
 export function registerArticlesHandlers() {
   handleIpc('articles:list', (_, filters) => {
@@ -36,6 +45,10 @@ export function registerArticlesHandlers() {
     const params = []
 
     let exactSku = null
+    let exactVendorArticle = false
+    let exactVendor = null
+    let exactArticle = null
+
     if (filters) {
       if (filters.supplier_id) {
         query += ' AND articles.supplier_id = ?'
@@ -53,27 +66,22 @@ export function registerArticlesHandlers() {
         params.push(Number(filters.is_active))
       }
       if (filters.search) {
-        const queryStr = filters.search.trim()
-        const term = `%${queryStr}%`
-        if (/^\d+$/.test(queryStr) && queryStr.length <= 5) {
-          const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
-          const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
-          exactSku = `${cleanPrefix}-${String(queryStr).padStart(5, '0')}`
-        }
-        if (exactSku) {
-          query += ' AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ? OR suppliers.code LIKE ?)'
-          params.push(exactSku, term, term, term, term)
-        } else {
-          query += ' AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ? OR suppliers.code LIKE ?)'
-          params.push(term, term, term, term)
+        const parsed = parseArticleSearchQuery(filters.search, getSkuPrefix(db))
+        const built = buildArticleSearchClause(parsed)
+        query += ` AND ${built.clause}`
+        params.push(...built.params)
+        exactSku = built.exactSku
+        exactVendorArticle = built.exactVendorArticle
+        if (parsed.kind === 'vendor_article') {
+          exactVendor = parsed.vendor
+          exactArticle = parsed.article
         }
       }
       if (filters.sku_query) {
         const skuQuery = filters.sku_query.trim()
         let resolvedSku = skuQuery
         if (/^\d+$/.test(skuQuery)) {
-          const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
-          const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+          const cleanPrefix = getSkuPrefix(db)
           resolvedSku = `${cleanPrefix}-${String(skuQuery).padStart(5, '0')}`
         }
         query += ' AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ?)'
@@ -83,7 +91,14 @@ export function registerArticlesHandlers() {
     }
 
     if (exactSku) {
-      query += ` ORDER BY CASE WHEN articles.sku = '${exactSku}' THEN 0 ELSE 1 END, articles.id DESC`
+      query += ' ORDER BY CASE WHEN articles.sku = ? THEN 0 ELSE 1 END, articles.id DESC'
+      params.push(exactSku)
+    } else if (exactVendorArticle && exactVendor && exactArticle) {
+      query += ` ORDER BY CASE
+        WHEN UPPER(suppliers.code) = ? AND UPPER(articles.supplier_article_code) = ? THEN 0
+        ELSE 1
+      END, articles.id DESC`
+      params.push(exactVendor, exactArticle)
     } else {
       query += ' ORDER BY articles.id DESC'
     }
@@ -133,34 +148,32 @@ export function registerArticlesHandlers() {
       `)
       return stmt.all()
     }
-    const queryStr = query.trim()
-    const term = `%${queryStr}%`
-    let exactSku = null
-    if (/^\d+$/.test(queryStr) && queryStr.length <= 5) {
-      const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
-      const cleanPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
-      exactSku = `${cleanPrefix}-${String(queryStr).padStart(5, '0')}`
+
+    const parsed = parseArticleSearchQuery(query, getSkuPrefix(db))
+    const built = buildArticleSearchClause(parsed)
+    const params = [...built.params]
+    let orderBy = 'ORDER BY articles.quantity DESC'
+
+    if (built.exactSku) {
+      orderBy = 'ORDER BY CASE WHEN articles.sku = ? THEN 0 ELSE 1 END, articles.quantity DESC'
+      params.push(built.exactSku)
+    } else if (built.exactVendorArticle && parsed.vendor && parsed.article) {
+      orderBy = `ORDER BY CASE
+        WHEN UPPER(suppliers.code) = ? AND UPPER(articles.supplier_article_code) = ? THEN 0
+        ELSE 1
+      END, articles.quantity DESC`
+      params.push(parsed.vendor, parsed.article)
     }
-    if (exactSku) {
-      const stmt = db.prepare(`
-        SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
-        FROM articles
-        JOIN suppliers ON articles.supplier_id = suppliers.id
-        WHERE articles.is_active = 1 AND (articles.sku = ? OR articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ?)
-        ORDER BY CASE WHEN articles.sku = ? THEN 0 ELSE 1 END, articles.quantity DESC
-        LIMIT 20
-      `)
-      return stmt.all(exactSku, term, term, term, exactSku)
-    } else {
-      const stmt = db.prepare(`
-        SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
-        FROM articles
-        JOIN suppliers ON articles.supplier_id = suppliers.id
-        WHERE articles.is_active = 1 AND (articles.sku LIKE ? OR articles.name LIKE ? OR articles.supplier_article_code LIKE ?)
-        LIMIT 20
-      `)
-      return stmt.all(term, term, term)
-    }
+
+    const stmt = db.prepare(`
+      SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
+      FROM articles
+      JOIN suppliers ON articles.supplier_id = suppliers.id
+      WHERE articles.is_active = 1 AND ${built.clause}
+      ${orderBy}
+      LIMIT 20
+    `)
+    return stmt.all(...params)
   })
 
   handleIpc('articles:create', (_, data) => {

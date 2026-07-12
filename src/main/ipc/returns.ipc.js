@@ -5,6 +5,10 @@ import { auditLog } from '../services/audit.service.js'
 import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
 import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
 import { resolveBusinessRange } from '../utils/businessDay.js'
+import {
+  parseArticleSearchQuery,
+  buildArticleSearchClause,
+} from '../utils/parseArticleSearchQuery.js'
 
 function findSaleByInvoiceOrReturnNumber(db, invoiceNo) {
   const queryStr = String(invoiceNo).trim()
@@ -74,18 +78,27 @@ export function registerReturnsHandlers() {
     const db = getDb()
     if (!term || !term.trim()) return []
 
-    const searchTerm = `%${term.trim()}%`
+    const prefixRow = db.prepare("SELECT value FROM settings WHERE key = 'sku_prefix'").get()
+    const skuPrefix = (prefixRow ? prefixRow.value : 'SF').replace(/-+$/, '')
+    const parsed = parseArticleSearchQuery(term, skuPrefix)
+    // Remap article table alias: buildArticleSearchClause uses "articles" / "suppliers"
+    const built = buildArticleSearchClause(parsed)
+    const clause = built.clause
+      .replaceAll('articles.', 'a.')
+      .replaceAll('suppliers.', 'sup.')
+
     const sales = db.prepare(`
       SELECT DISTINCT s.*, sp.name as salesperson_name
       FROM sales s
       JOIN sale_items si ON s.id = si.sale_id
       JOIN articles a ON si.article_id = a.id
+      JOIN suppliers sup ON a.supplier_id = sup.id
       LEFT JOIN salespersons sp ON s.salesperson_id = sp.id
       WHERE s.status = 'completed'
-        AND (a.sku LIKE ? OR a.supplier_article_code LIKE ? OR a.name LIKE ?)
+        AND ${clause}
       ORDER BY s.sale_date DESC
       LIMIT 50
-    `).all(searchTerm, searchTerm, searchTerm)
+    `).all(...built.params)
 
     return sales
   })
