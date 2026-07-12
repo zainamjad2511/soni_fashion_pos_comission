@@ -18,7 +18,12 @@ function copyReceiptAssets() {
 
 export default defineConfig({
   main: {
-    plugins: [copyReceiptAssets()]
+    plugins: [copyReceiptAssets()],
+    build: {
+      rollupOptions: {
+        external: ['pdf-to-printer'],
+      },
+    },
   },
   preload: {},
   renderer: {

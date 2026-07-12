@@ -4,21 +4,22 @@
   <meta charset="UTF-8">
   <title>POS Thermal Receipt</title>
   <style>
-    @page { margin: 0; size: 80mm auto; }
+    /* Height is overridden at print-time. Page matches 80mm roll width the driver expects. */
+    @page { margin: 0; size: 80mm 297mm; }
   </style>
   <style>
     @font-face {
       font-family: 'Noto Nastaliq Urdu';
       font-style: normal;
       font-weight: 400;
-      font-display: block;
+      font-display: swap;
       src: url('fonts/noto-nastaliq-urdu-arabic-400-normal.woff2') format('woff2');
     }
     @font-face {
       font-family: 'Noto Nastaliq Urdu';
       font-style: normal;
       font-weight: 700;
-      font-display: block;
+      font-display: swap;
       src: url('fonts/noto-nastaliq-urdu-arabic-700-normal.woff2') format('woff2');
     }
 
@@ -26,43 +27,64 @@
       font-family: 'Courier Prime';
       font-style: normal;
       font-weight: 400;
-      font-display: block;
+      font-display: swap;
       src: url('fonts/courier-prime-latin-400-normal.woff2') format('woff2');
     }
     @font-face {
       font-family: 'Courier Prime';
       font-style: normal;
       font-weight: 700;
-      font-display: block;
+      font-display: swap;
       src: url('fonts/courier-prime-latin-700-normal.woff2') format('woff2');
     }
 
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      width: 80mm;
       background: #fff;
+    }
+    body {
       font-family: 'Courier Prime', 'Courier New', monospace;
       color: #000;
+      /* Thermal heads are 1-bit: gray anti-aliasing becomes dots/blur. */
+      -webkit-font-smoothing: none;
+      -moz-osx-font-smoothing: unset;
+      font-smooth: never;
+      text-rendering: geometricPrecision;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .receipt-container {
       background: #ffffff;
-      width: 80mm;
+      /* Slightly inset on the 80mm page so text clears driver non-printable edges. */
+      width: 76mm;
+      max-width: 76mm;
+      margin: 0 auto;
       box-sizing: border-box;
-      padding: 6mm;
-      font-size: 12px;
+      padding: 3mm 2mm 12mm;
+      font-size: 13px;
       line-height: 1.35;
+      color: #000;
+      font-weight: 700;
+      overflow: hidden;
     }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
-    .bold { font-weight: bold; }
+    .bold { font-weight: 700; }
 
     .header { text-align: center; }
     .logo-img {
-      max-width: 50mm;
-      max-height: 22mm;
+      display: block;
+      width: 48mm;
+      max-width: 48mm;
+      height: auto;
+      max-height: 32mm;
       object-fit: contain;
-      margin-bottom: 4px;
-      filter: grayscale(100%) contrast(150%);
+      margin: 0 auto 5px;
+      /* Logo is pre-thresholded to pure B/W — avoid CSS filters that reintroduce gray. */
+      image-rendering: crisp-edges;
+      -ms-interpolation-mode: nearest-neighbor;
     }
     .store-title {
       display: flex;
@@ -74,7 +96,7 @@
     }
     .english-title {
       font-size: 18px;
-      font-weight: 900;
+      font-weight: 700;
       letter-spacing: 0.5px;
     }
     .urdu-nastaleeq {
@@ -86,9 +108,9 @@
       position: relative;
       top: -3px;
     }
-    .store-tagline { font-size: 10.5px; color: #333; }
-    .store-address { font-size: 10.5px; }
-    .contact-line { font-size: 10px; font-weight: bold; }
+    .store-tagline { font-size: 11px; color: #000; }
+    .store-address { font-size: 11px; color: #000; }
+    .contact-line { font-size: 11px; font-weight: 700; color: #000; }
 
     .divider { border-top: 1px dashed #000; margin: 6px 0; }
     .divider-solid { border-top: 1px solid #000; margin: 6px 0; }
@@ -99,7 +121,8 @@
       align-items: flex-start;
       gap: 12px;
       margin-bottom: 2px;
-      font-size: 11px;
+      font-size: 12px;
+      color: #000;
     }
     .meta-row .meta-primary {
       flex: 1 1 auto;
@@ -108,69 +131,71 @@
       line-height: 1.35;
     }
     .meta-label {
-      font-weight: bold;
+      font-weight: 700;
       margin-right: 4px;
     }
     .meta-doc-no {
-      font-size: 9.5px;
-      font-weight: bold;
+      font-size: 11px;
+      font-weight: 700;
       letter-spacing: 0.02em;
       line-height: 1.35;
     }
     .meta-row .meta-secondary {
       flex: 0 0 auto;
-      white-space: nowrap;
+      max-width: 42%;
+      white-space: normal;
       text-align: right;
-      font-weight: bold;
+      font-weight: 700;
+      overflow-wrap: anywhere;
     }
     .meta-row .meta-date {
       padding-left: 10px;
       margin-left: 6px;
-      border-left: 1px dotted #888;
+      border-left: 1px solid #000;
     }
     .salesman-row {
-      border-top: 1px dotted #888;
-      border-bottom: 1px dotted #888;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
       padding: 3px 0;
       margin-top: 4px;
-      font-weight: bold;
+      font-weight: 700;
       display: flex;
       justify-content: space-between;
     }
 
-    table { width: 100%; border-collapse: collapse; margin: 4px 0; }
-    th { text-align: left; border-bottom: 1px solid #000; padding: 3px 0; font-weight: bold; }
-    td { padding: 4px 0; vertical-align: top; }
+    table { width: 100%; border-collapse: collapse; margin: 4px 0; color: #000; table-layout: fixed; }
+    th { text-align: left; border-bottom: 1px solid #000; padding: 3px 0; font-weight: 700; }
+    td { padding: 4px 0; vertical-align: top; word-wrap: break-word; overflow-wrap: anywhere; }
     th.col-sku, td.col-sku {
-      width: 16%;
-      padding-right: 8px;
-      font-size: 10px;
-      font-weight: bold;
-      color: #333;
+      width: 18%;
+      padding-right: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
       line-height: 1.3;
     }
     th.col-item, td.col-item {
-      width: 44%;
+      width: 42%;
       padding-left: 2px;
     }
-    th.col-qty, td.col-qty { width: 8%; }
-    th.col-total, td.col-total { width: 32%; }
-    .item-name { font-weight: bold; font-size: 11.5px; }
-    .item-sub { font-size: 9.5px; color: #444; }
+    th.col-qty, td.col-qty { width: 10%; }
+    th.col-total, td.col-total { width: 30%; }
+    .item-name { font-weight: 700; font-size: 12px; color: #000; }
+    .item-sub { font-size: 11px; color: #000; font-weight: 700; }
 
-    .totals-row { display: flex; justify-content: space-between; margin: 2px 0; }
+    .totals-row { display: flex; justify-content: space-between; margin: 2px 0; color: #000; font-weight: 700; }
     .grand-total-row {
-      font-size: 13.5px;
-      font-weight: bold;
+      font-size: 14px;
+      font-weight: 700;
       border-top: 1px solid #000;
       border-bottom: 1px solid #000;
       padding: 4px 0;
       margin: 4px 0;
     }
 
-    .footer { text-align: center; margin-top: 8px; }
-    .thank-you { font-size: 10px; font-weight: bold; margin-bottom: 4px; }
-    .policy-box { font-size: 9.5px; line-height: 1.35; margin: 4px 0; color: #222; }
+    .footer { text-align: center; margin-top: 8px; color: #000; }
+    .thank-you { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+    .policy-box { font-size: 11px; line-height: 1.35; margin: 4px 0; color: #000; font-weight: 700; }
 
     .social-section {
       margin-top: 10px;
@@ -178,19 +203,27 @@
       border-top: 1px dashed #000;
       text-align: center;
     }
-    .social-title { font-size: 10px; font-weight: bold; margin-bottom: 4px; }
-    .qr-img { width: 75px; height: 75px; display: block; margin: 0 auto; }
+    .social-title { font-size: 11px; font-weight: 700; margin-bottom: 4px; color: #000; }
+    .qr-img {
+      width: 75px;
+      height: 75px;
+      display: block;
+      margin: 0 auto;
+      image-rendering: pixelated;
+      filter: grayscale(100%) contrast(1000%);
+    }
     .receipt-type-title {
-      font-size: 11px;
-      font-weight: bold;
+      font-size: 12px;
+      font-weight: 700;
       margin-top: 6px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
     .software-tag {
       margin-top: 8px;
-      font-size: 8.5px;
-      color: #555;
+      font-size: 10px;
+      color: #000;
+      font-weight: 700;
     }
   </style>
 </head>
@@ -290,35 +323,85 @@
 
     let cachedMonochromeLogoUrl = null;
 
+    /**
+     * Prepare logo for 203dpi thermal: downscale to print size, hard 1-bit threshold,
+     * then thicken black strokes so fine dress/hanger lines don't disappear.
+     */
     function applyThermalLogo(logo) {
       if (!logo || !logo.complete) return Promise.resolve();
       return new Promise((resolve) => {
+        const finishWithUrl = (url) => {
+          if (logo.src === url && logo.complete) return resolve();
+          logo.onload = () => resolve();
+          logo.onerror = () => resolve();
+          logo.src = url;
+        };
+
         try {
           if (cachedMonochromeLogoUrl) {
-            logo.src = cachedMonochromeLogoUrl;
-            return resolve();
+            finishWithUrl(cachedMonochromeLogoUrl);
+            return;
           }
+
+          const srcW = logo.naturalWidth || logo.width;
+          const srcH = logo.naturalHeight || logo.height;
+          if (!srcW || !srcH) return resolve();
+
+          // ~52mm on an 80mm roll at 2× CSS density → sharp in the PDF rasterizer.
+          const TARGET_PX = 420;
+          const scale = TARGET_PX / Math.max(srcW, srcH);
+          const tw = Math.max(1, Math.round(srcW * scale));
+          const th = Math.max(1, Math.round(srcH * scale));
+
           const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = logo.naturalWidth || logo.width;
-          canvas.height = logo.naturalHeight || logo.height;
-          ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          canvas.width = tw;
+          canvas.height = th;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, tw, th);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(logo, 0, 0, tw, th);
+
+          const imageData = ctx.getImageData(0, 0, tw, th);
           const data = imageData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const brightness = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            const value = brightness > 160 ? 255 : 0;
-            data[i] = value;
-            data[i + 1] = value;
-            data[i + 2] = value;
+          const ink = new Uint8Array(tw * th);
+
+          // Pure B/W — gray AA edges become white or black (no dither dots).
+          for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+            const a = data[i + 3] / 255;
+            const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            const onWhite = lum * a + 255 * (1 - a);
+            ink[p] = onWhite < 175 ? 1 : 0;
           }
+
+          // 1px dilate: thicken thin strokes so they survive thermal print heads.
+          const thick = new Uint8Array(ink);
+          for (let y = 1; y < th - 1; y++) {
+            for (let x = 1; x < tw - 1; x++) {
+              const i = y * tw + x;
+              if (ink[i]) continue;
+              if (ink[i - 1] || ink[i + 1] || ink[i - tw] || ink[i + tw]) {
+                thick[i] = 1;
+              }
+            }
+          }
+
+          for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+            const v = thick[p] ? 0 : 255;
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+            data[i + 3] = 255;
+          }
+
           ctx.putImageData(imageData, 0, 0);
           cachedMonochromeLogoUrl = canvas.toDataURL('image/png');
-          logo.src = cachedMonochromeLogoUrl;
+          finishWithUrl(cachedMonochromeLogoUrl);
         } catch (err) {
           console.warn('[Receipt] Logo thermal processing skipped:', err);
+          resolve();
         }
-        resolve();
       });
     }
 
