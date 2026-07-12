@@ -170,7 +170,8 @@ export function registerPrintHandlers() {
             document.documentElement?.scrollHeight || 0
           ));
 
-          const heightMm = Math.max(50, (heightPx / ${CSS_DPI}) * 25.4 + 10);
+          // Small cutter feed only — large extras show up as blank top/bottom paper.
+          const heightMm = Math.max(40, (heightPx / ${CSS_DPI}) * 25.4 + 3);
           let style = document.getElementById('dynamic-page-style');
           if (!style) {
             style = document.createElement('style');
