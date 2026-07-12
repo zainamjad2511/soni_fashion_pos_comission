@@ -170,6 +170,103 @@ export function recordItemizedCommissionReversal(db, {
   }
 }
 
+/**
+ * Undo commission effects of a voided return:
+ * - Mark return clawback rows (negative amounts linked to return_id) as reversed
+ * - Reverse exchange-sale accruals; if any were paid, insert a negative commission
+ *   so the salesperson balance can go negative (no payout block).
+ */
+export function reverseCommissionsForVoidedReturn(db, {
+  returnId,
+  exchangeSaleId = null,
+  returnNumber = null,
+}) {
+  const markReversed = db.prepare(`
+    UPDATE commissions
+    SET status = 'reversed'
+    WHERE id = ?
+  `)
+
+  // Undo itemized clawbacks created when the return was processed
+  const clawbacks = db.prepare(`
+    SELECT id, salesperson_id, month
+    FROM commissions
+    WHERE return_id = ?
+      AND status != 'reversed'
+  `).all(returnId)
+
+  for (const row of clawbacks) {
+    markReversed.run(row.id)
+  }
+
+  let debtInserted = null
+
+  if (exchangeSaleId) {
+    const exchangeRows = db.prepare(`
+      SELECT *
+      FROM commissions
+      WHERE sale_id = ?
+        AND (return_id IS NULL)
+        AND status != 'reversed'
+    `).all(exchangeSaleId)
+
+    let paidTotal = 0
+    let salespersonId = null
+    let month = null
+    let ratePercent = 0
+    let saleAmountBasis = 0
+
+    for (const row of exchangeRows) {
+      const amt = Number(row.commission_amount || 0)
+      if (amt > 0) {
+        paidTotal += Number(row.paid_amount || 0)
+        salespersonId = row.salesperson_id
+        month = row.month
+        ratePercent = Number(row.rate_percent || 0)
+        saleAmountBasis += Number(row.sale_amount || 0)
+      }
+      markReversed.run(row.id)
+    }
+
+    // Paid commission must still reduce future balance (allow negative)
+    if (paidTotal > 0.0001 && salespersonId && month) {
+      const notes = [
+        `Void return ${returnNumber || `#${returnId}`}`,
+        `Exchange sale #${exchangeSaleId} — reclaim paid commission Rs. ${paidTotal.toLocaleString()}`,
+      ].join(' — ')
+
+      const result = db.prepare(`
+        INSERT INTO commissions (
+          sale_id, salesperson_id, sale_amount, rate_percent, commission_amount,
+          month, status, paid_amount, return_id, sale_item_id, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 'pending', 0, ?, NULL, ?)
+      `).run(
+        exchangeSaleId,
+        salespersonId,
+        -Math.abs(saleAmountBasis || paidTotal),
+        ratePercent,
+        -paidTotal,
+        month,
+        returnId,
+        notes
+      )
+
+      debtInserted = {
+        id: result.lastInsertRowid,
+        salesperson_id: salespersonId,
+        month,
+        amount: paidTotal,
+      }
+    }
+  }
+
+  return {
+    clawbacks_reversed: clawbacks.length,
+    debt: debtInserted,
+  }
+}
+
 export function recordCommissionPayout(db, { salespersonId, month, amount, notes = null }) {
   const payoutAmount = Number(amount)
 

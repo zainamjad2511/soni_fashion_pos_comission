@@ -172,6 +172,9 @@ export function Returns() {
   const [historyEndDate, setHistoryEndDate] = useState(historyInitial.endDate)
   const [selectedHistoryDetail, setSelectedHistoryDetail] = useState(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [voidTarget, setVoidTarget] = useState(null)
+  const [voidReason, setVoidReason] = useState('')
+  const [voiding, setVoiding] = useState(false)
 
   const handleHistoryDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
     setHistoryDatePreset(preset)
@@ -277,6 +280,41 @@ export function Returns() {
       showToast('error', `Error fetching return details: ${e.message}`)
     } finally {
       setLoadingDetail(false)
+    }
+  }
+
+  const openVoidReturn = (ret) => {
+    if (!ret?.id || String(ret.status || 'completed') === 'voided') return
+    setVoidReason('')
+    setVoidTarget(ret)
+  }
+
+  const handleVoidReturn = async () => {
+    if (!voidTarget?.id) return
+    setVoiding(true)
+    try {
+      if (!window.electronAPI?.returns?.void) {
+        throw new Error('Void return API unavailable.')
+      }
+      const res = await window.electronAPI.returns.void(voidTarget.id, voidReason.trim() || null)
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Failed to void return.')
+      }
+      showToast(
+        'success',
+        `Return #${voidTarget.return_number} voided. Stock and commissions updated.`
+      )
+      setVoidTarget(null)
+      setVoidReason('')
+      if (selectedHistoryDetail?.id === voidTarget.id) {
+        setSelectedHistoryDetail(null)
+      }
+      fetchReturnsHistory()
+    } catch (e) {
+      console.error('Failed to void return:', e)
+      showToast('error', e.message || 'Failed to void return.')
+    } finally {
+      setVoiding(false)
     }
   }
 
@@ -2115,9 +2153,16 @@ export function Returns() {
                       </td>
                     </tr>
                   ) : (
-                    (Array.isArray(historyList) ? historyList : []).map((ret) => (
-                      <tr key={ret.id}>
-                        <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">{ret.return_number}</td>
+                    (Array.isArray(historyList) ? historyList : []).map((ret) => {
+                      const isVoided = String(ret.status || 'completed') === 'voided'
+                      return (
+                      <tr key={ret.id} className={isVoided ? 'opacity-55' : ''}>
+                        <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">
+                          {ret.return_number}
+                          {isVoided && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wider text-[#7A6F69]">[Voided]</span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{new Date(ret.return_date).toLocaleString()}</td>
                         <td className="py-3.5 px-4 text-center">
                           <span className="font-bold text-[10px] uppercase tracking-[0.14em] text-[#2E2822]">
@@ -2146,10 +2191,20 @@ export function Returns() {
                             >
                               <PrintIcon className="w-4 h-4" />
                             </button>
+                            {!isVoided && (
+                              <button
+                                onClick={() => openVoidReturn(ret)}
+                                title="Void / delete return"
+                                className="p-1.5 hover:bg-[#EFEBE3] text-[#7A6F69] hover:text-[#9A4A4A] rounded-[2px] transition-colors"
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
-                    ))
+                      )
+                    })
                   )}
                 </tbody>
               </table>
@@ -2185,12 +2240,14 @@ export function Returns() {
                   <span className="font-bold text-[#2E2822] uppercase mt-0.5 block">{selectedHistoryDetail.return_type}</span>
                 </div>
                 <div>
-                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Original Invoice</span>
-                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">{selectedHistoryDetail.original_invoice_number || 'None (Manual)'}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Status</span>
+                  <span className="font-bold text-[#2E2822] uppercase mt-0.5 block">
+                    {String(selectedHistoryDetail.status || 'completed') === 'voided' ? 'Voided' : 'Completed'}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Processed By</span>
-                  <span className="font-bold text-[#2E2822] mt-0.5 block">{selectedHistoryDetail.processed_by_name || 'Staff'}</span>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Original Invoice</span>
+                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">{selectedHistoryDetail.original_invoice_number || 'None (Manual)'}</span>
                 </div>
                 <div>
                   <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Total Refund Credit</span>
@@ -2279,6 +2336,14 @@ export function Returns() {
               >
                 Close Window
               </button>
+              {String(selectedHistoryDetail.status || 'completed') !== 'voided' && (
+                <button
+                  onClick={() => openVoidReturn(selectedHistoryDetail)}
+                  className="px-5 py-2.5 border border-[#C9C0B5] hover:border-[#9A4A4A] hover:text-[#9A4A4A] text-[#7A6F69] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+                >
+                  <TrashIcon className="w-4 h-4" /> Void Return
+                </button>
+              )}
               <button
                 onClick={() => handlePrintReturnVoucher(selectedHistoryDetail)}
                 className="px-6 py-2.5 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
@@ -2316,6 +2381,68 @@ export function Returns() {
         <p className="text-[11px] text-[#7A6F69] mt-3">
           Applied to replacement articles total after per-item discounts, same as POS order discount.
         </p>
+      </StandardModal>
+
+      <StandardModal
+        isOpen={!!voidTarget}
+        onClose={() => {
+          if (voiding) return
+          setVoidTarget(null)
+          setVoidReason('')
+        }}
+        title="Void Return Voucher"
+        titleId="void-return-modal-title"
+        subtitle={voidTarget ? `Voucher ${voidTarget.return_number}` : ''}
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <StandardModalAction
+              onClick={() => {
+                if (voiding) return
+                setVoidTarget(null)
+                setVoidReason('')
+              }}
+              disabled={voiding}
+              className="bg-transparent text-[#2E2822] border border-[#C9C0B5]"
+            >
+              Cancel
+            </StandardModalAction>
+            <StandardModalAction onClick={handleVoidReturn} disabled={voiding}>
+              {voiding ? 'Voiding...' : 'Confirm Void'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        <p className="text-sm text-[#2E2822] mb-4">
+          This voids the return voucher. Returned stock is removed from inventory again, any linked
+          exchange invoice is voided, drawer/refund credit is undone, and commission clawbacks are
+          reversed (paid exchange commission may create a negative balance).
+        </p>
+        {voidTarget && (
+          <div className="bg-[#EFEBE3] p-3 rounded-[2px] text-xs space-y-1 mb-4">
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Voucher</span>
+              <span className="font-mono font-bold">{voidTarget.return_number}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Type</span>
+              <span className="font-bold uppercase">{voidTarget.return_type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Refund Credit</span>
+              <span className="font-mono font-bold">{formatCurrency(voidTarget.refund_credit)}</span>
+            </div>
+          </div>
+        )}
+        <StandardModalLabel htmlFor="void-return-reason">Reason (optional)</StandardModalLabel>
+        <StandardModalInput
+          id="void-return-reason"
+          type="text"
+          value={voidReason}
+          onChange={(e) => setVoidReason(e.target.value)}
+          disabled={voiding}
+          placeholder="Mistaken entry, wrong items, etc."
+        />
       </StandardModal>
     </div>
   )

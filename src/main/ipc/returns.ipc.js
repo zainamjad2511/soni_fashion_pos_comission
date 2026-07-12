@@ -2,7 +2,7 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { getRequiredSetting } from '../db/officialSettings.js'
 import { auditLog } from '../services/audit.service.js'
-import { accrueSaleCommission, recordItemizedCommissionReversal } from '../services/commission.service.js'
+import { accrueSaleCommission, recordItemizedCommissionReversal, reverseCommissionsForVoidedReturn } from '../services/commission.service.js'
 import { localDateKey, localDateTimeString } from '../utils/localDateTime.js'
 import { resolveBusinessRange } from '../utils/businessDay.js'
 import {
@@ -57,7 +57,13 @@ export function registerReturnsHandlers() {
 
     const items = db.prepare(`
       SELECT si.*, a.sku, a.name as article_name, a.supplier_article_code,
-             COALESCE((SELECT SUM(ri.quantity_returned) FROM return_items ri WHERE ri.sale_item_id = si.id), 0) AS already_returned
+             COALESCE((
+               SELECT SUM(ri.quantity_returned)
+               FROM return_items ri
+               JOIN returns r ON r.id = ri.return_id
+               WHERE ri.sale_item_id = si.id
+                 AND COALESCE(r.status, 'completed') != 'voided'
+             ), 0) AS already_returned
       FROM sale_items si
       JOIN articles a ON si.article_id = a.id
       WHERE si.sale_id = ?
@@ -149,7 +155,13 @@ export function registerReturnsHandlers() {
           const si = db.prepare('SELECT * FROM sale_items WHERE id = ?').get(item.sale_item_id)
           if (!si) throw new Error(`Sale item ID ${item.sale_item_id} not found.`)
           
-          const returnedRow = db.prepare('SELECT COALESCE(SUM(quantity_returned), 0) as already_ret FROM return_items WHERE sale_item_id = ?').get(item.sale_item_id)
+          const returnedRow = db.prepare(`
+            SELECT COALESCE(SUM(ri.quantity_returned), 0) as already_ret
+            FROM return_items ri
+            JOIN returns r ON r.id = ri.return_id
+            WHERE ri.sale_item_id = ?
+              AND COALESCE(r.status, 'completed') != 'voided'
+          `).get(item.sale_item_id)
           const avail = si.quantity - (returnedRow ? returnedRow.already_ret : 0)
           if (qty > avail) {
             throw new Error(`Cannot return ${qty} units. Only ${avail} units available to return.`)
@@ -176,8 +188,8 @@ export function registerReturnsHandlers() {
 
       // Insert Return header
       const insertRetStmt = db.prepare(`
-        INSERT INTO returns (return_number, original_sale_id, return_type, processed_by, refund_amount, refund_credit, notes, return_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO returns (return_number, original_sale_id, return_type, processed_by, refund_amount, refund_credit, notes, return_date, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'completed')
       `)
       const retResult = insertRetStmt.run(returnNumber, original_sale_id || null, return_type, staffId, refundCredit, refundCredit, notes || null, returnDateTime)
       const returnId = retResult.lastInsertRowid
@@ -422,6 +434,141 @@ export function registerReturnsHandlers() {
       items,
       replacement_items
     }
+  })
+
+  handleIpc('returns:void', (_, id, reason) => {
+    const db = getDb()
+    const returnId = Number(id)
+    if (!returnId) throw new Error('Valid Return ID required for voiding.')
+
+    const tx = db.transaction(() => {
+      const ret = db.prepare('SELECT * FROM returns WHERE id = ?').get(returnId)
+      if (!ret) throw new Error(`Return ID #${returnId} not found.`)
+      if (String(ret.status || 'completed') === 'voided') {
+        throw new Error(`Return #${ret.return_number} is already voided.`)
+      }
+
+      const items = db.prepare('SELECT * FROM return_items WHERE return_id = ?').all(returnId)
+      if (!items.length) {
+        throw new Error(`Return #${ret.return_number} has no line items to reverse.`)
+      }
+
+      // Ensure returned stock is still available to pull back out of inventory
+      for (const item of items) {
+        const art = db.prepare('SELECT id, name, sku, quantity FROM articles WHERE id = ?').get(item.article_id)
+        if (!art) throw new Error(`Article ID ${item.article_id} not found while voiding return.`)
+        const qty = Number(item.quantity_returned)
+        if (art.quantity < qty) {
+          throw new Error(
+            `Cannot void return #${ret.return_number}: insufficient stock for "${art.name}" (${art.sku}). ` +
+            `Need ${qty} in stock to reverse RETURN_IN, but only ${art.quantity} available.`
+          )
+        }
+      }
+
+      let exchangeSale = null
+      if (ret.exchange_new_sale_id) {
+        exchangeSale = db.prepare('SELECT * FROM sales WHERE id = ?').get(ret.exchange_new_sale_id)
+        if (!exchangeSale) {
+          throw new Error(`Linked exchange sale #${ret.exchange_new_sale_id} not found.`)
+        }
+        if (exchangeSale.status === 'voided') {
+          // Already voided — continue reversing return stock/commission only
+          exchangeSale = { ...exchangeSale, _alreadyVoided: true }
+        } else {
+          const childReturns = db.prepare(`
+            SELECT COUNT(*) AS cnt
+            FROM returns
+            WHERE original_sale_id = ?
+              AND COALESCE(status, 'completed') != 'voided'
+          `).get(exchangeSale.id)
+          if (childReturns?.cnt > 0) {
+            throw new Error(
+              `Cannot void return #${ret.return_number}: the exchange invoice ${exchangeSale.invoice_number} ` +
+              `already has returns against it. Void those first.`
+            )
+          }
+        }
+      }
+
+      const voidNotes = reason ? ` [VOIDED: ${reason.trim()}]` : ' [VOIDED]'
+      db.prepare(`
+        UPDATE returns
+        SET status = 'voided',
+            notes = coalesce(notes, '') || ?
+        WHERE id = ?
+      `).run(voidNotes, returnId)
+
+      const deductStockStmt = db.prepare('UPDATE articles SET quantity = quantity - ? WHERE id = ?')
+      const insertMovementStmt = db.prepare(`
+        INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
+        VALUES (?, 'OUT', ?, 'VOID_RETURN', ?, ?)
+      `)
+
+      for (const item of items) {
+        const qty = Number(item.quantity_returned)
+        deductStockStmt.run(qty, item.article_id)
+        insertMovementStmt.run(
+          item.article_id,
+          qty,
+          returnId,
+          `Voided Return #${ret.return_number}`
+        )
+      }
+
+      // Void linked exchange replacement sale (restore its stock; commissions handled below)
+      if (exchangeSale && !exchangeSale._alreadyVoided) {
+        const saleItems = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(exchangeSale.id)
+        const restoreStockStmt = db.prepare('UPDATE articles SET quantity = quantity + ? WHERE id = ?')
+        const insertInMovementStmt = db.prepare(`
+          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note)
+          VALUES (?, 'IN', ?, 'VOID_SALE', ?, ?)
+        `)
+
+        for (const sItem of saleItems) {
+          const q = Number(sItem.quantity)
+          restoreStockStmt.run(q, sItem.article_id)
+          insertInMovementStmt.run(
+            sItem.article_id,
+            q,
+            exchangeSale.id,
+            `Voided exchange sale #${exchangeSale.invoice_number} via return #${ret.return_number}`
+          )
+        }
+
+        db.prepare(`
+          UPDATE sales
+          SET status = 'voided',
+              notes = coalesce(notes, '') || ?
+          WHERE id = ?
+        `).run(` [VOIDED via return ${ret.return_number}]`, exchangeSale.id)
+      }
+
+      // Commission: undo clawbacks; allow negative balance if exchange commission was paid
+      reverseCommissionsForVoidedReturn(db, {
+        returnId,
+        exchangeSaleId: ret.exchange_new_sale_id || null,
+        returnNumber: ret.return_number,
+      })
+
+      auditLog(
+        db,
+        'RETURN_VOIDED',
+        'returns',
+        returnId,
+        `Voided return #${ret.return_number} (Rs. ${ret.refund_credit}). Reason: ${reason || 'N/A'}`,
+        JSON.stringify({
+          status: 'completed',
+          refund_credit: ret.refund_credit,
+          exchange_new_sale_id: ret.exchange_new_sale_id,
+        }),
+        JSON.stringify({ status: 'voided', reason: reason || null })
+      )
+
+      return db.prepare('SELECT * FROM returns WHERE id = ?').get(returnId)
+    })
+
+    return tx()
   })
 
   console.log('[IPC] Registered Returns handlers.')

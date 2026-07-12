@@ -46,7 +46,8 @@ const customElectronAPI = {
     lookupBySku: (term) => ipcRenderer.invoke('returns:lookupBySku', term),
     list: (filters) => ipcRenderer.invoke('returns:list', filters),
     get: (idOrNumber) => ipcRenderer.invoke('returns:get', idOrNumber),
-    create: (payload) => ipcRenderer.invoke('returns:create', payload)
+    create: (payload) => ipcRenderer.invoke('returns:create', payload),
+    void: (id, reason) => ipcRenderer.invoke('returns:void', id, reason)
   },
 
   reports: {

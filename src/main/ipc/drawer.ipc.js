@@ -96,6 +96,7 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
     SELECT COALESCE(SUM(refund_amount), 0) AS returns_out
     FROM returns
     WHERE return_type IN ('refund', 'exchange', 'manual')
+      AND COALESCE(status, 'completed') != 'voided'
       AND return_date >= ?
       AND return_date < ?
   `).get(start, end)

@@ -92,6 +92,7 @@ export function registerReportsHandlers() {
       FROM returns r
       LEFT JOIN salespersons sp ON r.processed_by = sp.id
       WHERE r.return_date >= ? AND r.return_date < ?
+        AND COALESCE(r.status, 'completed') != 'voided'
       ORDER BY r.return_date DESC
     `).all(windowStart, windowEnd)
 
@@ -171,6 +172,7 @@ export function registerReportsHandlers() {
       SELECT COALESCE(SUM(r.refund_credit), 0) AS return_revenue
       FROM returns r
       WHERE r.return_date >= ? AND r.return_date < ?
+        AND COALESCE(r.status, 'completed') != 'voided'
     `).get(windowStart, windowEnd)
 
     const returnCogsRes = db.prepare(`
@@ -185,6 +187,7 @@ export function registerReportsHandlers() {
       LEFT JOIN sale_items si ON ri.sale_item_id = si.id
       JOIN articles a ON ri.article_id = a.id
       WHERE r.return_date >= ? AND r.return_date < ?
+        AND COALESCE(r.status, 'completed') != 'voided'
     `).get(windowStart, windowEnd)
 
     const expRes = db.prepare(`
@@ -406,6 +409,7 @@ export function registerReportsHandlers() {
       SELECT COALESCE(SUM(refund_amount), 0) AS cash_out
       FROM returns
       WHERE return_type IN ('refund', 'exchange', 'manual')
+        AND COALESCE(status, 'completed') != 'voided'
         AND return_date >= ? AND return_date < ?
     `).get(windowStart, windowEnd)
 

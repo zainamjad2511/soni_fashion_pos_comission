@@ -538,4 +538,32 @@ export function runMigrations(db) {
     migrateV10()
     console.log('[Migrations] Successfully applied V10 Migration.')
   }
+
+  if (currentVersion < 11) {
+    console.log('[Migrations] Applying V11 Migration (returns status for void/undo)...')
+    const migrateV11 = db.transaction(() => {
+      const returnColumns = db.prepare('PRAGMA table_info(returns)').all()
+      const hasStatus = returnColumns.some((col) => col.name === 'status')
+
+      if (!hasStatus) {
+        db.exec(`
+          ALTER TABLE returns
+          ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'
+        `)
+      }
+
+      db.prepare(`
+        UPDATE returns SET status = 'completed' WHERE status IS NULL OR TRIM(status) = ''
+      `).run()
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '11', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '11', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV11()
+    console.log('[Migrations] Successfully applied V11 Migration.')
+  }
 }

@@ -83,13 +83,14 @@ export function ReprintModal({ isOpen, onClose }) {
     (Array.isArray(rows) ? rows : []).map((ret) => {
       const isExchange = Boolean(ret.exchange_new_sale_id)
       const refundCredit = Number(ret.refund_credit || 0)
+      const isVoided = String(ret.status || 'completed') === 'voided'
       return {
         id: `return-${ret.id}`,
         kind: 'return',
         refNumber: ret.return_number,
         date: ret.return_date,
         staffName: ret.processed_by_name || 'Returns Staff',
-        status: ret.return_type || 'return',
+        status: isVoided ? 'voided' : (ret.return_type || 'return'),
         paymentLabel: isExchange ? 'EXCHANGE' : (ret.return_type || 'return').toUpperCase(),
         amount: isExchange ? null : -refundCredit,
         raw: ret,
@@ -184,32 +185,47 @@ export function ReprintModal({ isOpen, onClose }) {
   }
 
   const openVoidConfirm = (txn) => {
-    if (txn.kind !== 'sale' || txn.status === 'voided') return
+    if (txn.status === 'voided') return
+    if (txn.kind !== 'sale' && txn.kind !== 'return') return
     setVoidReason('')
     setVoidTarget(txn)
   }
 
-  const handleVoidSale = async () => {
+  const handleVoidTransaction = async () => {
     if (!voidTarget?.raw?.id) return
     setVoiding(true)
     try {
-      if (!window.electronAPI?.sales?.void) {
-        throw new Error('Delete sale API unavailable.')
+      if (voidTarget.kind === 'sale') {
+        if (!window.electronAPI?.sales?.void) {
+          throw new Error('Delete sale API unavailable.')
+        }
+        const res = await window.electronAPI.sales.void(voidTarget.raw.id, voidReason.trim() || null)
+        if (res && res.success === false) {
+          throw new Error(res.error || 'Failed to delete sale.')
+        }
+        showToast(
+          'success',
+          `Sale #${voidTarget.refNumber} deleted. Stock restored and drawer balance updated.`
+        )
+      } else if (voidTarget.kind === 'return') {
+        if (!window.electronAPI?.returns?.void) {
+          throw new Error('Void return API unavailable.')
+        }
+        const res = await window.electronAPI.returns.void(voidTarget.raw.id, voidReason.trim() || null)
+        if (res && res.success === false) {
+          throw new Error(res.error || 'Failed to void return.')
+        }
+        showToast(
+          'success',
+          `Return #${voidTarget.refNumber} voided. Stock and commissions updated.`
+        )
       }
-      const res = await window.electronAPI.sales.void(voidTarget.raw.id, voidReason.trim() || null)
-      if (res && res.success === false) {
-        throw new Error(res.error || 'Failed to delete sale.')
-      }
-      showToast(
-        'success',
-        `Sale #${voidTarget.refNumber} deleted. Stock restored and drawer balance updated.`
-      )
       setVoidTarget(null)
       setVoidReason('')
       fetchTransactions(searchTerm)
     } catch (err) {
       console.error('[ReprintModal] Void error:', err)
-      showToast('error', err.message || 'Failed to delete sale.')
+      showToast('error', err.message || 'Failed to void transaction.')
     } finally {
       setVoiding(false)
     }
@@ -289,7 +305,7 @@ export function ReprintModal({ isOpen, onClose }) {
           ) : (
             <div className="divide-y divide-[#C9C0B5]">
               {transactions.map((txn) => {
-                const isVoided = txn.kind === 'sale' && txn.status === 'voided'
+                const isVoided = txn.status === 'voided'
                 const isPrinting = printingId === txn.id
                 const isReturn = txn.kind === 'return'
 
@@ -308,7 +324,7 @@ export function ReprintModal({ isOpen, onClose }) {
                         <span className={`font-mono text-[10px] font-bold uppercase tracking-wider ${
                           isReturn ? 'text-[#4A423A]' : 'text-[#7A6F69]'
                         }`}>
-                          [{isReturn ? 'RETURN/EXCHANGE' : txn.status}]
+                          [{isVoided ? 'VOIDED' : isReturn ? 'RETURN/EXCHANGE' : txn.status}]
                         </span>
                       </div>
 
@@ -359,11 +375,11 @@ export function ReprintModal({ isOpen, onClose }) {
                             </>
                           )}
                         </button>
-                        {txn.kind === 'sale' && !isVoided && (
+                        {!isVoided && (
                           <button
                             onClick={() => openVoidConfirm(txn)}
                             className="px-3 py-2 rounded-[2px] bg-transparent border border-[#C9C0B5] hover:border-[#9A4A4A] hover:text-[#9A4A4A] text-[#7A6F69] font-bold text-[11px] uppercase tracking-[0.1em] transition-all flex items-center gap-1.5"
-                            title="Delete sale and reverse stock + drawer"
+                            title={isReturn ? 'Void return voucher' : 'Delete sale and reverse stock + drawer'}
                           >
                             <TrashIcon className="w-3.5 h-3.5" />
                             <span>Delete</span>
@@ -404,8 +420,8 @@ export function ReprintModal({ isOpen, onClose }) {
           setVoidTarget(null)
           setVoidReason('')
         }}
-        title="Delete Sale?"
-        subtitle={voidTarget ? `Invoice ${voidTarget.refNumber}` : ''}
+        title={voidTarget?.kind === 'return' ? 'Void Return?' : 'Delete Sale?'}
+        subtitle={voidTarget ? `${voidTarget.kind === 'return' ? 'Voucher' : 'Invoice'} ${voidTarget.refNumber}` : ''}
         maxWidth="sm"
         zIndex={120}
         footer={
@@ -422,31 +438,37 @@ export function ReprintModal({ isOpen, onClose }) {
               Cancel
             </button>
             <StandardModalAction
-              onClick={handleVoidSale}
+              onClick={handleVoidTransaction}
               disabled={voiding}
               className="bg-[#9A4A4A] hover:bg-[#7A3A3A] border-[#9A4A4A]"
             >
-              {voiding ? 'Deleting...' : 'Delete Sale'}
+              {voiding
+                ? (voidTarget?.kind === 'return' ? 'Voiding...' : 'Deleting...')
+                : (voidTarget?.kind === 'return' ? 'Void Return' : 'Delete Sale')}
             </StandardModalAction>
           </div>
         }
       >
         <div className="space-y-4 text-sm font-sans text-[#2E2822]">
           <p className="text-[#7A6F69]">
-            This permanently voids the sale. Stock is returned to inventory, the amount is removed
-            from cash-in-drawer totals, and commission for this invoice is reversed. Invoice number
-            is kept for audit.
+            {voidTarget?.kind === 'return'
+              ? 'This voids the return voucher. Returned stock is pulled back out of inventory, any linked exchange invoice is voided, and commission clawbacks are reversed (paid exchange commission may create a negative balance).'
+              : 'This permanently voids the sale. Stock is returned to inventory, the amount is removed from cash-in-drawer totals, and commission for this invoice is reversed. Invoice number is kept for audit.'}
           </p>
           {voidTarget && (
             <div className="border border-[#C9C0B5] divide-y divide-[#C9C0B5] text-xs">
               <div className="flex justify-between px-3 py-2">
-                <span className="uppercase tracking-wider text-[#7A6F69] font-bold">Invoice</span>
+                <span className="uppercase tracking-wider text-[#7A6F69] font-bold">
+                  {voidTarget.kind === 'return' ? 'Voucher' : 'Invoice'}
+                </span>
                 <span className="font-mono font-bold">{voidTarget.refNumber}</span>
               </div>
               <div className="flex justify-between px-3 py-2">
                 <span className="uppercase tracking-wider text-[#7A6F69] font-bold">Amount</span>
                 <span className="font-mono font-bold">
-                  Rs. {Number(voidTarget.amount).toLocaleString()}
+                  {voidTarget.amount === null
+                    ? 'Exchange'
+                    : `Rs. ${Number(voidTarget.amount).toLocaleString()}`}
                 </span>
               </div>
               <div className="flex justify-between px-3 py-2">
@@ -468,13 +490,15 @@ export function ReprintModal({ isOpen, onClose }) {
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
               disabled={voiding}
-              placeholder="Wrong article / wrong price / test sale..."
+              placeholder="Mistaken entry, wrong items, etc."
               className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-sm focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
             />
           </div>
-          <p className="text-[11px] text-[#7A6F69]">
-            Sales with returns, exchange replacements, or paid commissions cannot be deleted.
-          </p>
+          {voidTarget?.kind === 'sale' && (
+            <p className="text-[11px] text-[#7A6F69]">
+              Sales with active returns or exchange replacements cannot be deleted — void the return voucher first.
+            </p>
+          )}
         </div>
       </StandardModal>
     </>

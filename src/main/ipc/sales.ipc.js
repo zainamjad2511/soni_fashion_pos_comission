@@ -234,7 +234,9 @@ export function registerSalesHandlers() {
       }
 
       const linkedReturns = db.prepare(`
-        SELECT COUNT(*) AS cnt FROM returns WHERE original_sale_id = ?
+        SELECT COUNT(*) AS cnt FROM returns
+        WHERE original_sale_id = ?
+          AND COALESCE(status, 'completed') != 'voided'
       `).get(saleId)
       if (linkedReturns?.cnt > 0) {
         throw new Error(
@@ -243,7 +245,9 @@ export function registerSalesHandlers() {
       }
 
       const usedAsExchange = db.prepare(`
-        SELECT COUNT(*) AS cnt FROM returns WHERE exchange_new_sale_id = ?
+        SELECT COUNT(*) AS cnt FROM returns
+        WHERE exchange_new_sale_id = ?
+          AND COALESCE(status, 'completed') != 'voided'
       `).get(saleId)
       if (usedAsExchange?.cnt > 0) {
         throw new Error(
@@ -273,7 +277,9 @@ export function registerSalesHandlers() {
           COALESCE((
             SELECT SUM(ri.quantity_returned)
             FROM return_items ri
+            JOIN returns r ON r.id = ri.return_id
             WHERE ri.sale_item_id = si.id
+              AND COALESCE(r.status, 'completed') != 'voided'
           ), 0) AS already_returned
         FROM sale_items si
         WHERE si.sale_id = ?
