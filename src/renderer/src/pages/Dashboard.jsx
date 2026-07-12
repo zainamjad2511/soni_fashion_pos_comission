@@ -7,12 +7,14 @@ import { DateRangePresets, getDefaultDateRange, DATE_PRESETS } from '../componen
 import { getBusinessDayBounds } from '../utils/businessDay.js'
 
 const EMPTY_DRAWER = {
+  opening_balance: 0,
   cash_in: 0,
   sales_in: 0,
   stock_out: 0,
   returns_out: 0,
   expenses_out: 0,
   expected_balance: 0,
+  current_balance: 0,
   window_start: null,
   window_end: null,
 }
@@ -75,12 +77,16 @@ export function Dashboard() {
         const cfRes = await window.electronAPI.drawer.getReconciliation({ startDate, endDate })
         if (cfRes?.success && cfRes.data) {
           setDrawer({
-            cash_in: Number(cfRes.data.cash_in ?? cfRes.data.opening_balance ?? 0),
+            opening_balance: Number(cfRes.data.opening_balance || 0),
+            cash_in: Number(cfRes.data.cash_in || 0),
             sales_in: Number(cfRes.data.sales_in || 0),
             stock_out: Number(cfRes.data.stock_out || 0),
             returns_out: Number(cfRes.data.returns_out || 0),
             expenses_out: Number(cfRes.data.expenses_out || 0),
             expected_balance: Number(cfRes.data.expected_balance || 0),
+            current_balance: Number(
+              cfRes.data.current_balance ?? cfRes.data.expected_balance ?? 0
+            ),
             window_start: cfRes.data.window_start || null,
             window_end: cfRes.data.window_end || null,
           })
@@ -182,11 +188,11 @@ export function Dashboard() {
               Cash in Drawer
             </div>
             <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
-              {loading ? '...' : `Rs. ${formatMoney(drawer.expected_balance)}`}
+              {loading ? '...' : `Rs. ${formatMoney(drawer.current_balance)}`}
             </div>
           </div>
           <div className="text-xs font-sans text-[#7A6F69] mt-3">
-            Expected physical drawer balance
+            Running balance (carries forward each day)
           </div>
         </div>
 
@@ -229,7 +235,7 @@ export function Dashboard() {
               Cash Drawer Reconciliation
             </h3>
             <p className="font-sans text-xs text-[#7A6F69] mt-1">
-              Cash added + sales − stock purchases − returns − expenses
+              Opening (carry-forward) + deposits + sales − stock − returns − expenses
             </p>
           </div>
           <div className="text-right">
@@ -248,9 +254,21 @@ export function Dashboard() {
         <div className="divide-y divide-[#C9C0B5]">
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
+              <span className="font-sans text-sm font-bold text-[#2E2822] block">Opening Balance</span>
+              <span className="font-sans text-xs text-[#7A6F69]">
+                Cash left in drawer from previous days (carry-forward)
+              </span>
+            </div>
+            <span className="font-mono font-bold text-base text-[#2E2822]">
+              Rs. {formatMoney(drawer.opening_balance)}
+            </span>
+          </div>
+
+          <div className="py-5 flex items-center justify-between gap-4">
+            <div>
               <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Added</span>
               <span className="font-sans text-xs text-[#7A6F69]">
-                Deposits from Cash &amp; Expenses ·{' '}
+                Deposits in this period ·{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/expenses')}
@@ -268,7 +286,7 @@ export function Dashboard() {
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
               <span className="font-sans text-sm font-bold text-[#2E2822] block">Sales In</span>
-              <span className="font-sans text-xs text-[#7A6F69]">All completed POS sales into the drawer</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Completed POS sales in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
               + Rs. {formatMoney(drawer.sales_in)}
@@ -278,7 +296,7 @@ export function Dashboard() {
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
               <span className="font-sans text-sm font-bold text-[#2E2822] block">Stock Purchases</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Stock IN cost (qty × wholesale) paid from drawer</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Stock IN cost (qty × wholesale) in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#7A6F69]">
               − Rs. {formatMoney(drawer.stock_out)}
@@ -288,7 +306,7 @@ export function Dashboard() {
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
               <span className="font-sans text-sm font-bold text-[#2E2822] block">Returns Out</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds paid from the drawer</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#7A6F69]">
               − Rs. {formatMoney(drawer.returns_out)}
@@ -298,7 +316,7 @@ export function Dashboard() {
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
               <span className="font-sans text-sm font-bold text-[#2E2822] block">Expenses</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Operating expenses paid from the drawer</span>
+              <span className="font-sans text-xs text-[#7A6F69]">Operating expenses in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#7A6F69]">
               − Rs. {formatMoney(drawer.expenses_out)}
@@ -306,16 +324,29 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="pt-6 border-t border-[#2E2822]">
-          <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
-            Expected Cash in Drawer
+        <div className="pt-6 border-t border-[#2E2822] grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
+              Closing (Selected Period)
+            </div>
+            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
+              {loading ? '...' : `Rs. ${formatMoney(drawer.expected_balance)}`}
+            </div>
+            <p className="text-xs font-sans text-[#7A6F69] mt-2 max-w-xl">
+              Opening + period activity. Yesterday&apos;s closing becomes tomorrow&apos;s opening.
+            </p>
           </div>
-          <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
-            {loading ? '...' : `Rs. ${formatMoney(drawer.expected_balance)}`}
+          <div>
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
+              Cash in Drawer Now
+            </div>
+            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
+              {loading ? '...' : `Rs. ${formatMoney(drawer.current_balance)}`}
+            </div>
+            <p className="text-xs font-sans text-[#7A6F69] mt-2 max-w-xl">
+              Full running balance from day one — not changed by the date filter above.
+            </p>
           </div>
-          <p className="text-xs font-sans text-[#7A6F69] mt-2 max-w-xl">
-            Cash added + sales − stock purchases − returns − expenses. Count physical notes against this figure.
-          </p>
         </div>
       </div>
     </div>

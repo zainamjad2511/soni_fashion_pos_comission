@@ -8,6 +8,8 @@ import {
 } from '../utils/businessDay.js'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const FAR_FUTURE = '2100-01-01 00:00:00'
+const FAR_FUTURE_DATE = '2100-01-01'
 
 /**
  * Normalize IPC payload into inclusive business-date labels.
@@ -68,7 +70,16 @@ function listCashEntries(db, { start, end, limit = 50 }) {
   `).all(start, end, Number(limit) || 50)
 }
 
-function computeReconciliation(db, { startDate, endDate, start, end }) {
+/**
+ * Sum drawer inflows/outflows in a half-open datetime window [start, end)
+ * and inclusive expense_date labels [expenseStartDate, expenseEndDate].
+ */
+function sumDrawerActivity(db, {
+  start,
+  end,
+  expenseStartDate,
+  expenseEndDate,
+}) {
   const cashInRes = db.prepare(`
     SELECT COALESCE(SUM(amount), 0) AS cash_in
     FROM drawer_cash_entries
@@ -107,14 +118,92 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
     FROM expenses
     WHERE expense_date >= ?
       AND expense_date <= ?
-  `).get(startDate, endDate)
+  `).get(expenseStartDate, expenseEndDate)
 
   const cash_in = Number(cashInRes?.cash_in || 0)
   const sales_in = Number(salesRes?.sales_in || 0)
   const stock_out = Number(stockRes?.stock_out || 0)
   const returns_out = Number(returnsRes?.returns_out || 0)
   const expenses_out = Number(expensesRes?.expenses_out || 0)
-  const expected_balance = cash_in + sales_in - stock_out - returns_out - expenses_out
+  const net = cash_in + sales_in - stock_out - returns_out - expenses_out
+
+  return {
+    cash_in,
+    sales_in,
+    stock_out,
+    returns_out,
+    expenses_out,
+    net,
+  }
+}
+
+/**
+ * Net drawer balance from the beginning of time up to (but not including) a cutoff.
+ * Used as opening / carry-forward into a business day or range.
+ */
+function computeCarryForward(db, beforeDatetime, beforeExpenseDateExclusive) {
+  const cashInRes = db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS cash_in
+    FROM drawer_cash_entries
+    WHERE created_at < ?
+  `).get(beforeDatetime)
+
+  const salesRes = db.prepare(`
+    SELECT COALESCE(SUM(grand_total), 0) AS sales_in
+    FROM sales
+    WHERE status = 'completed'
+      AND sale_date < ?
+  `).get(beforeDatetime)
+
+  const stockRes = db.prepare(`
+    SELECT COALESCE(SUM(sm.quantity * COALESCE(a.wholesale_price, 0)), 0) AS stock_out
+    FROM stock_movements sm
+    JOIN articles a ON a.id = sm.article_id
+    WHERE sm.movement_type = 'IN'
+      AND COALESCE(sm.reference_type, '') NOT IN ('VOID_SALE')
+      AND sm.created_at < ?
+  `).get(beforeDatetime)
+
+  const returnsRes = db.prepare(`
+    SELECT COALESCE(SUM(refund_amount), 0) AS returns_out
+    FROM returns
+    WHERE return_type IN ('refund', 'exchange', 'manual')
+      AND COALESCE(status, 'completed') != 'voided'
+      AND return_date < ?
+  `).get(beforeDatetime)
+
+  const expensesRes = db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS expenses_out
+    FROM expenses
+    WHERE expense_date < ?
+  `).get(beforeExpenseDateExclusive)
+
+  const cash_in = Number(cashInRes?.cash_in || 0)
+  const sales_in = Number(salesRes?.sales_in || 0)
+  const stock_out = Number(stockRes?.stock_out || 0)
+  const returns_out = Number(returnsRes?.returns_out || 0)
+  const expenses_out = Number(expensesRes?.expenses_out || 0)
+
+  return cash_in + sales_in - stock_out - returns_out - expenses_out
+}
+
+/**
+ * Full lifetime / current physical drawer balance (all activity to date).
+ */
+function computeCurrentBalance(db) {
+  return computeCarryForward(db, FAR_FUTURE, FAR_FUTURE_DATE)
+}
+
+function computeReconciliation(db, { startDate, endDate, start, end }) {
+  const opening_balance = computeCarryForward(db, start, startDate)
+  const period = sumDrawerActivity(db, {
+    start,
+    end,
+    expenseStartDate: startDate,
+    expenseEndDate: endDate,
+  })
+  const expected_balance = opening_balance + period.net
+  const current_balance = computeCurrentBalance(db)
 
   const entries = listCashEntries(db, { start, end, limit: 25 })
 
@@ -123,14 +212,17 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
     end_date: endDate,
     window_start: start,
     window_end: end,
-    cash_in,
-    // Backward-compatible aliases used by earlier Dashboard code
-    opening_balance: cash_in,
-    sales_in,
-    stock_out,
-    returns_out,
-    expenses_out,
+    opening_balance,
+    cash_in: period.cash_in,
+    sales_in: period.sales_in,
+    stock_out: period.stock_out,
+    returns_out: period.returns_out,
+    expenses_out: period.expenses_out,
+    period_net: period.net,
+    // Closing balance for the selected window (opening + period activity)
     expected_balance,
+    // Running drawer from day-one through now — not affected by the date filter
+    current_balance,
     entries,
   }
 }
@@ -222,19 +314,15 @@ export function registerDrawerHandlers() {
     return computeReconciliation(db, range)
   })
 
-  // Legacy aliases — map old "set opening" calls to a new cash-in entry
+  // Legacy: opening for a day = carry-forward from everything before that business day
   handleIpc('drawer:getOpeningBalance', (_, arg1) => {
     const db = getDb()
     const range = unpackDrawerRange(arg1)
-    const cashInRes = db.prepare(`
-      SELECT COALESCE(SUM(amount), 0) AS amount
-      FROM drawer_cash_entries
-      WHERE created_at >= ? AND created_at < ?
-    `).get(range.start, range.end)
+    const amount = computeCarryForward(db, range.start, range.startDate)
     return {
       business_date: range.startDate,
-      amount: Number(cashInRes?.amount || 0),
-      exists: Number(cashInRes?.amount || 0) > 0,
+      amount,
+      exists: true,
     }
   })
 
@@ -245,7 +333,6 @@ export function registerDrawerHandlers() {
     if (Number.isNaN(amount) || amount <= 0) {
       throw new Error('Cash entry amount must be greater than zero.')
     }
-    // Delegate to addCashEntry semantics
     const businessDate = String(
       payload.businessDate ||
       payload.business_date ||
