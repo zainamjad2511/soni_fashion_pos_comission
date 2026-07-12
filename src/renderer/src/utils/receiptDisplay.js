@@ -47,7 +47,7 @@ export function formatReceiptLineAmount(value) {
   return num.toLocaleString()
 }
 
-/** Receipt sub-line under item name — unit discount only when discounted; otherwise retail price. */
+/** Receipt sub-line under item name — per-unit price along with discount when discounted; otherwise retail price alone (Option A format). */
 export function formatReceiptItemSubline(item) {
   const retail = Number(item.retail_price_snapshot || 0)
   const qty = Math.max(1, Number(item.quantity || 1))
@@ -58,7 +58,7 @@ export function formatReceiptItemSubline(item) {
     const label = Number.isInteger(unitDiscount)
       ? unitDiscount.toLocaleString()
       : unitDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 })
-    return `(-${label})`
+    return `@ ${retail.toLocaleString()} (-${label})`
   }
 
   return `@ ${retail.toLocaleString()}`

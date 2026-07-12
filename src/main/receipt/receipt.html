@@ -280,7 +280,10 @@
       const unitDiscount = qty > 0 ? lineDiscount / qty : 0;
 
       if (lineDiscount > 0 && unitDiscount > 0) {
-        return '(-' + unitDiscount.toLocaleString() + ')';
+        const label = Number.isInteger(unitDiscount)
+          ? unitDiscount.toLocaleString()
+          : unitDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        return '@ ' + retail.toLocaleString() + ' (-' + label + ')';
       }
       return '@ ' + retail.toLocaleString();
     }
