@@ -94,4 +94,5 @@ if (process.platform === 'win32') {
   console.log('[reset-db] Note: D:\\SoniFashionPOS\\backups is not cleared by this script.')
 }
 
-console.log('[reset-db] Done. Restart the app (npm run dev) to create a new empty database.')
+console.log('[reset-db] Done. Restart the app (npm run dev) for an empty database,')
+console.log('[reset-db] or run: npm run seed-demo   to load a full demo dataset.')

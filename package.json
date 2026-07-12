@@ -14,6 +14,7 @@
     "postinstall": "electron-builder install-app-deps && node scripts/sync-fonts.js && node scripts/sync-app-icon.js",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "reset-db": "node scripts/reset-db.js",
+    "seed-demo": "cross-env ELECTRON_RUN_AS_NODE=1 electron scripts/seed-demo.js",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
