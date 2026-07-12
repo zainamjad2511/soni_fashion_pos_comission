@@ -14,7 +14,15 @@ function pad2(n) {
 function parseYmd(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   const [y, m, d] = value.split('-').map(Number)
+  if (!isValidDateParts(y, m, d)) return null
   return { year: y, month: m, day: d }
+}
+
+function isValidDateParts(year, month, day) {
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return false
+  const dim = daysInMonth(year, month)
+  if (day > dim) return false
+  return true
 }
 
 function toYmd(year, month, day) {
@@ -30,7 +38,18 @@ function firstWeekday(year, month) {
 }
 
 /**
- * Date input that opens a fixed-position calendar portal (avoids Layout overflow clipping).
+ * Accept typed YYYY-MM-DD only. Returns YYYY-MM-DD or null.
+ */
+export function normalizeTypedDate(raw) {
+  const text = String(raw || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null
+  const [year, month, day] = text.split('-').map(Number)
+  if (!isValidDateParts(year, month, day)) return null
+  return toYmd(year, month, day)
+}
+
+/**
+ * Editable date field with optional calendar popover (portal — avoids overflow clipping).
  */
 export function DateField({
   value = '',
@@ -44,26 +63,34 @@ export function DateField({
     return { year: n.getFullYear(), month: n.getMonth() + 1, day: n.getDate() }
   })()
 
+  const [draft, setDraft] = useState(value || '')
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => ({
     year: parsed?.year || today.year,
     month: parsed?.month || today.month,
   }))
   const [pos, setPos] = useState({ top: 0, left: 0 })
-  const triggerRef = useRef(null)
+  const wrapRef = useRef(null)
   const popoverRef = useRef(null)
 
   useEffect(() => {
+    setDraft(value || '')
+  }, [value])
+
+  useEffect(() => {
     if (!open) return
-    const next = parseYmd(value)
-    if (next) setView({ year: next.year, month: next.month })
-  }, [open, value])
+    const next = parseYmd(value) || normalizeTypedDate(draft)
+    if (next) {
+      const parts = parseYmd(next)
+      if (parts) setView({ year: parts.year, month: parts.month })
+    }
+  }, [open, value, draft])
 
   useLayoutEffect(() => {
-    if (!open || !triggerRef.current) return
+    if (!open || !wrapRef.current) return
 
     const place = () => {
-      const rect = triggerRef.current.getBoundingClientRect()
+      const rect = wrapRef.current.getBoundingClientRect()
       const calW = 288
       const calH = 320
       let left = rect.left
@@ -89,7 +116,7 @@ export function DateField({
   useEffect(() => {
     if (!open) return
     const onPointerDown = (e) => {
-      if (triggerRef.current?.contains(e.target)) return
+      if (wrapRef.current?.contains(e.target)) return
       if (popoverRef.current?.contains(e.target)) return
       setOpen(false)
     }
@@ -103,6 +130,17 @@ export function DateField({
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
+
+  const commitDraft = (raw = draft) => {
+    const normalized = normalizeTypedDate(raw)
+    if (normalized) {
+      setDraft(normalized)
+      if (normalized !== value) onChange?.(normalized)
+      return true
+    }
+    setDraft(value || '')
+    return false
+  }
 
   const shiftMonth = (delta) => {
     setView((prev) => {
@@ -125,20 +163,40 @@ export function DateField({
   for (let i = 0; i < offset; i += 1) cells.push(null)
   for (let d = 1; d <= totalDays; d += 1) cells.push(d)
 
-  const display = value || 'Select'
-
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className={`bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs cursor-pointer border-b border-[#C9C0B5] hover:border-[#2E2822] transition-colors ${className}`}
-      >
-        {display}
-      </button>
+      <div ref={wrapRef} className={`inline-flex items-center gap-1 ${className}`}>
+        <input
+          type="text"
+          inputMode="numeric"
+          aria-label={ariaLabel}
+          value={draft}
+          placeholder="YYYY-MM-DD"
+          spellCheck={false}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => commitDraft()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              if (commitDraft()) setOpen(false)
+            }
+          }}
+          className="w-[7.25rem] bg-transparent text-[#2E2822] focus:outline-none font-mono text-xs border-b border-[#C9C0B5] focus:border-[#2E2822] placeholder:text-[#C9C0B5]"
+        />
+        <button
+          type="button"
+          aria-label={`Open calendar for ${ariaLabel}`}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="shrink-0 p-0.5 text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+          title="Pick from calendar"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <rect x="3" y="5" width="18" height="16" rx="1" />
+            <path d="M3 10h18M8 3v4M16 3v4" />
+          </svg>
+        </button>
+      </div>
 
       {open && createPortal(
         <div
@@ -198,6 +256,7 @@ export function DateField({
                   key={ymd}
                   type="button"
                   onClick={() => {
+                    setDraft(ymd)
                     onChange?.(ymd)
                     setOpen(false)
                   }}
@@ -220,7 +279,9 @@ export function DateField({
             <button
               type="button"
               onClick={() => {
-                onChange?.(toYmd(today.year, today.month, today.day))
+                const ymd = toYmd(today.year, today.month, today.day)
+                setDraft(ymd)
+                onChange?.(ymd)
                 setOpen(false)
               }}
               className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822]"
