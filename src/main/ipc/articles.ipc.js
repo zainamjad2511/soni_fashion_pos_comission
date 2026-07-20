@@ -292,22 +292,35 @@ export function registerArticlesHandlers() {
     const reorder_level = data?.reorder_level !== undefined ? Number(data.reorder_level) : oldRow.reorder_level
     const notes = data?.notes !== undefined ? (data.notes?.trim() || null) : oldRow.notes
 
+    const supplier_id = data?.supplier_id !== undefined ? Number(data.supplier_id) : oldRow.supplier_id
+    if (!supplier_id) {
+      throw new Error('Supplier is required.')
+    }
+
+    const supplier = db.prepare('SELECT id, name, code FROM suppliers WHERE id = ?').get(supplier_id)
+    if (!supplier) {
+      throw new Error(`Supplier ID ${supplier_id} does not exist.`)
+    }
+
     let supplier_article_code = oldRow.supplier_article_code
     if (data?.supplier_article_code !== undefined) {
       supplier_article_code = String(data.supplier_article_code || '').trim().toUpperCase()
       if (!supplier_article_code) {
         throw new Error('Article number is required.')
       }
-      if (supplier_article_code !== oldRow.supplier_article_code) {
-        const duplicate = db.prepare(`
-          SELECT id, sku FROM articles
-          WHERE supplier_id = ? AND supplier_article_code = ? AND id != ?
-        `).get(oldRow.supplier_id, supplier_article_code, articleId)
-        if (duplicate) {
-          throw new Error(
-            `Article code "${supplier_article_code}" already exists for this supplier under SKU ${duplicate.sku}.`
-          )
-        }
+    }
+
+    const supplierChanged = supplier_id !== oldRow.supplier_id
+    const codeChanged = supplier_article_code !== oldRow.supplier_article_code
+    if (supplierChanged || codeChanged) {
+      const duplicate = db.prepare(`
+        SELECT id, sku FROM articles
+        WHERE supplier_id = ? AND supplier_article_code = ? AND id != ?
+      `).get(supplier_id, supplier_article_code, articleId)
+      if (duplicate) {
+        throw new Error(
+          `Article code "${supplier_article_code}" already exists for supplier "${supplier.name}" under SKU ${duplicate.sku}.`
+        )
       }
     }
 
@@ -322,11 +335,12 @@ export function registerArticlesHandlers() {
 
     const updateStmt = db.prepare(`
       UPDATE articles
-      SET supplier_article_code = ?, name = ?, category = ?, colour = ?, size = ?, wholesale_price = ?, retail_price = ?, reorder_level = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+      SET supplier_id = ?, supplier_article_code = ?, name = ?, category = ?, colour = ?, size = ?, wholesale_price = ?, retail_price = ?, reorder_level = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `)
 
     updateStmt.run(
+      supplier_id,
       supplier_article_code,
       name,
       category,
@@ -346,14 +360,20 @@ export function registerArticlesHandlers() {
       WHERE articles.id = ?
     `).get(articleId)
 
-    const codeChanged = supplier_article_code !== oldRow.supplier_article_code
+    const changeNotes = []
+    if (supplierChanged) {
+      changeNotes.push(`supplier → ${supplier.code}`)
+    }
+    if (codeChanged) {
+      changeNotes.push(`article number ${oldRow.supplier_article_code} → ${supplier_article_code}`)
+    }
     auditLog(
       db,
       'ARTICLE_UPDATE',
       'articles',
       articleId,
-      codeChanged
-        ? `Updated article "${oldRow.sku}" (${name}); article number ${oldRow.supplier_article_code} → ${supplier_article_code}`
+      changeNotes.length
+        ? `Updated article "${oldRow.sku}" (${name}); ${changeNotes.join('; ')}`
         : `Updated article "${oldRow.sku}" (${name})`,
       JSON.stringify(oldRow),
       JSON.stringify(newRow)

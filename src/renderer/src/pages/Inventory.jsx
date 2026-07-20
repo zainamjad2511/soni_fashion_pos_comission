@@ -600,11 +600,19 @@ export function Inventory() {
                     name="supplier_id"
                     value={formData.supplier_id}
                     onChange={handleFormChange}
-                    disabled={!!editingArticle}
                     required
-                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-semibold focus:outline-none focus:border-[#2E2822] disabled:opacity-50"
+                    className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-xs font-semibold focus:outline-none focus:border-[#2E2822]"
                   >
                     <option value="" disabled>Select Supplier...</option>
+                    {editingArticle &&
+                      formData.supplier_id &&
+                      !suppliers.some((sup) => String(sup.id) === String(formData.supplier_id)) && (
+                        <option value={formData.supplier_id}>
+                          {editingArticle.supplier_code
+                            ? `${editingArticle.supplier_code} - ${editingArticle.supplier_name}`
+                            : `Current supplier (#${formData.supplier_id})`}
+                        </option>
+                      )}
                     {suppliers.map((sup) => (
                       <option key={sup.id} value={sup.id}>
                         {sup.code} - {sup.name}
