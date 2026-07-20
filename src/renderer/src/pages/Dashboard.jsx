@@ -107,9 +107,12 @@ export function Dashboard() {
         ? 'Last 7 Days'
         : datePreset === DATE_PRESETS.LAST_30_DAYS
           ? 'Last 30 Days'
-          : 'Custom Range'
+          : datePreset === DATE_PRESETS.ALL_TIME
+            ? 'All Time'
+            : 'Custom Range'
 
   const windowLabel = (() => {
+    if (datePreset === DATE_PRESETS.ALL_TIME) return ''
     if (drawer.window_start && drawer.window_end) {
       return `${drawer.window_start} → ${drawer.window_end} PKT`
     }
@@ -241,7 +244,9 @@ export function Dashboard() {
           <div className="text-right">
             <span className="font-sans text-xs tracking-[0.14em] uppercase text-[#7A6F69] font-semibold block">
               {periodLabel}
-              {startDate === endDate ? ` · ${startDate}` : ` · ${startDate} → ${endDate}`}
+              {datePreset !== DATE_PRESETS.ALL_TIME && (
+                startDate === endDate ? ` · ${startDate}` : ` · ${startDate} → ${endDate}`
+              )}
             </span>
             {windowLabel && (
               <span className="font-mono text-[10px] text-[#7A6F69] mt-1 block">

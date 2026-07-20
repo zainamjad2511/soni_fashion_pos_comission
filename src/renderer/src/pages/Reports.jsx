@@ -16,7 +16,7 @@ import {
   ArrowRightIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
-import { DateRangePresets, getDefaultDateRange } from '../components/DateRangePresets.jsx'
+import { DateRangePresets, getDefaultDateRange, DATE_PRESETS } from '../components/DateRangePresets.jsx'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
 
 export function Reports() {
@@ -186,7 +186,7 @@ export function Reports() {
         <h1 className="text-2xl font-bold uppercase tracking-wider text-black">Soni Fashion | سونی فیشن POS — Financial Report</h1>
         <div className="flex justify-between text-sm mt-2 text-black font-semibold">
           <span>Report Type: {activeTab.toUpperCase()}</span>
-          <span>Period: {startDate} to {endDate}</span>
+          <span>Period: {datePreset === DATE_PRESETS.ALL_TIME ? 'All Time' : `${startDate} to ${endDate}`}</span>
           <span>Generated: {new Date().toLocaleString()}</span>
         </div>
       </div>

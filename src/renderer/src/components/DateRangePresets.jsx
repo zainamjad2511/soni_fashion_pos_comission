@@ -7,6 +7,7 @@ const PRESET_OPTIONS = [
   { id: DATE_PRESETS.TODAY, label: 'Today' },
   { id: DATE_PRESETS.LAST_7_DAYS, label: 'Last 7 Days' },
   { id: DATE_PRESETS.LAST_30_DAYS, label: 'Last 30 Days' },
+  { id: DATE_PRESETS.ALL_TIME, label: 'All Time' },
   { id: DATE_PRESETS.CUSTOM, label: 'Custom' },
 ]
 
@@ -57,6 +58,7 @@ export function DateRangePresets({
   }
 
   const isCustom = preset === DATE_PRESETS.CUSTOM
+  const isAllTime = preset === DATE_PRESETS.ALL_TIME
 
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
@@ -89,6 +91,10 @@ export function DateRangePresets({
             onChange={handleEndChange}
           />
         </div>
+      ) : isAllTime ? (
+        <span className="font-mono text-[10px] text-[#7A6F69] tracking-wide uppercase">
+          Entire history
+        </span>
       ) : showResolvedRange && startDate && endDate ? (
         <span className="font-mono text-[10px] text-[#7A6F69] tracking-wide">
           {startDate === endDate ? startDate : `${startDate} → ${endDate}`}

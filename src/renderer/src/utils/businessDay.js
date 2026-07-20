@@ -20,8 +20,13 @@ export const DATE_PRESETS = Object.freeze({
   TODAY: 'today',
   LAST_7_DAYS: 'last7',
   LAST_30_DAYS: 'last30',
+  ALL_TIME: 'all',
   CUSTOM: 'custom',
 })
+
+/** Inclusive business-date span used for the All time preset / open-ended filters. */
+export const ALL_TIME_START_DATE = '2000-01-01'
+export const ALL_TIME_END_DATE = '2100-12-31'
 
 function pad2(n) {
   return String(n).padStart(2, '0')
@@ -115,7 +120,7 @@ export function getBusinessDayBounds(businessDate) {
 
 /**
  * Resolve a named preset to business-date labels (inclusive).
- * @param {string} preset 'today' | 'last7' | 'last30' | 'custom'
+ * @param {string} preset 'today' | 'last7' | 'last30' | 'all' | 'custom'
  * @param {Date} [now]
  * @returns {{ preset: string, startDate: string, endDate: string }}
  */
@@ -146,6 +151,16 @@ export function getPresetRange(preset, now = new Date()) {
         preset: DATE_PRESETS.LAST_30_DAYS,
         startDate: addDaysToDateString(endDate, -29),
         endDate,
+      }
+
+    case DATE_PRESETS.ALL_TIME:
+    case 'all':
+    case 'all_time':
+    case 'alltime':
+      return {
+        preset: DATE_PRESETS.ALL_TIME,
+        startDate: ALL_TIME_START_DATE,
+        endDate: ALL_TIME_END_DATE,
       }
 
     case DATE_PRESETS.CUSTOM:
@@ -249,8 +264,8 @@ export function resolveBusinessRange(filters, options = {}) {
 
   if (!startDate && !endDate) {
     if (wideDefault) {
-      startDate = '2000-01-01'
-      endDate = '2100-12-31'
+      startDate = ALL_TIME_START_DATE
+      endDate = ALL_TIME_END_DATE
     } else if (required) {
       const today = getCurrentBusinessDate()
       startDate = today
@@ -259,9 +274,9 @@ export function resolveBusinessRange(filters, options = {}) {
       return null
     }
   } else if (!startDate) {
-    startDate = openEnded ? '2000-01-01' : endDate
+    startDate = openEnded ? ALL_TIME_START_DATE : endDate
   } else if (!endDate) {
-    endDate = openEnded ? '2100-12-31' : startDate
+    endDate = openEnded ? ALL_TIME_END_DATE : startDate
   }
 
   return getRangeBounds(startDate, endDate)
