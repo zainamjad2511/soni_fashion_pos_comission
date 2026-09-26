@@ -162,16 +162,9 @@ export function POSSale() {
     }
 
     for (const item of items) {
-      const { retail, unitFinal, lineSubtotal, lineTotal } = computeItemLineTotals(item)
+      const { unitFinal } = computeItemLineTotals(item)
       if (item.final_amount_input === '' || unitFinal <= 0) {
         showToast('error', `Cannot finalize sale: Unit price for "${item.name}" cannot be empty or zero.`)
-        return false
-      }
-      if (unitFinal > retail) {
-        showToast(
-          'error',
-          `Cannot finalize sale: Unit price for "${item.name}" (Rs. ${unitFinal.toLocaleString()}) cannot exceed retail price (Rs. ${retail.toLocaleString()}). Line total would be Rs. ${lineTotal.toLocaleString()} vs Rs. ${lineSubtotal.toLocaleString()}.`
-        )
         return false
       }
     }

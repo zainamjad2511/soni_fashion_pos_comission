@@ -318,6 +318,17 @@
           : unitDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 });
         return '@ ' + retail.toLocaleString() + ' (-' + label + ')';
       }
+
+      // Sold above retail (a markup, not a discount) — show the actual price
+      // charged instead of the stale retail price, with no discount annotation.
+      const actualUnit = qty > 0 ? Number(item.line_total || 0) / qty : retail;
+      if (actualUnit > retail) {
+        const label = Number.isInteger(actualUnit)
+          ? actualUnit.toLocaleString()
+          : actualUnit.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        return '@ ' + label;
+      }
+
       return '@ ' + retail.toLocaleString();
     }
 

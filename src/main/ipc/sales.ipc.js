@@ -60,11 +60,11 @@ export function registerSalesHandlers() {
         if (isNaN(lineTotal) || lineTotal < 0) {
           throw new Error(`Invalid line total for "${article.name}".`)
         }
-        if (lineTotal > lineSubtotal) {
-          throw new Error(`Final amount for "${article.name}" cannot exceed retail subtotal (Rs. ${lineSubtotal.toLocaleString()}).`)
-        }
 
-        const resolvedDiscount = lineSubtotal - lineTotal
+        // A markup (lineTotal > lineSubtotal) is allowed — it's not a discount,
+        // so it's never recorded as one; discount_amount only reflects a genuine
+        // markdown below retail.
+        const resolvedDiscount = Math.max(0, lineSubtotal - lineTotal)
 
         subtotal += lineSubtotal
         itemsTotalDiscount += resolvedDiscount
