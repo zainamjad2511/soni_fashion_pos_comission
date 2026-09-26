@@ -20,6 +20,8 @@ import {
   getOverlayDismissProps,
   getOverlayPanelProps,
   useDismissOnEscape,
+  StandardModal,
+  StandardModalAction,
 } from '../components/StandardModal.jsx'
 
 const LAST_SUPPLIER_KEY = 'inventory_last_supplier_id'
@@ -50,6 +52,8 @@ export function Inventory() {
   const [editingArticle, setEditingArticle] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [statusTarget, setStatusTarget] = useState(null)
+  const [statusBusy, setStatusBusy] = useState(false)
 
   const [formData, setFormData] = useState({
     supplier_id: '',
@@ -293,26 +297,21 @@ export function Inventory() {
     }
   }
 
-  const handleToggleStatus = async (article) => {
-    const newStatus = !article.is_active
-    const actionText = newStatus ? 'activate' : 'deactivate'
-    const stockWarning =
-      !newStatus && Number(article.quantity) > 0
-        ? ` This will also write off its remaining ${article.quantity} units of stock to 0.`
-        : ''
-    if (
-      !window.confirm(
-        `Are you sure you want to ${actionText} SKU "${article.sku}" (${article.name})?${stockWarning}`
-      )
-    ) {
-      return
-    }
+  const handleToggleStatus = (article) => {
+    setStatusTarget(article)
+  }
 
+  const handleConfirmToggleStatus = async () => {
+    if (!statusTarget) return
+    const article = statusTarget
+    const newStatus = !article.is_active
+    setStatusBusy(true)
     try {
       if (window.electronAPI && window.electronAPI.articles) {
         const res = await window.electronAPI.articles.toggleActive(article.id, newStatus)
         if (res.success) {
           showToast('success', `Article "${article.sku}" is now ${newStatus ? 'Active' : 'Archived'}.`)
+          setStatusTarget(null)
           fetchArticles()
         } else {
           showToast('error', res.error || 'Failed to change status.')
@@ -321,6 +320,8 @@ export function Inventory() {
     } catch (err) {
       console.error('[Inventory] Status toggle error:', err)
       showToast('error', err.message || 'Error changing article status.')
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -875,6 +876,50 @@ export function Inventory() {
         onClose={() => setHistoryArticle(null)}
         article={historyArticle}
       />
+
+      {/* Archive/Activate Confirmation Modal */}
+      <StandardModal
+        isOpen={!!statusTarget}
+        onClose={() => {
+          if (statusBusy) return
+          setStatusTarget(null)
+        }}
+        title={statusTarget && !statusTarget.is_active ? 'Activate Article' : 'Archive Article'}
+        titleId="status-toggle-modal-title"
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (statusBusy) return
+                setStatusTarget(null)
+              }}
+              disabled={statusBusy}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction onClick={handleConfirmToggleStatus} disabled={statusBusy}>
+              {statusBusy
+                ? 'Working...'
+                : statusTarget && !statusTarget.is_active
+                  ? 'Confirm Activate'
+                  : 'Confirm Archive'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {statusTarget && (
+          <p className="text-sm text-[#2E2822]">
+            Are you sure you want to {statusTarget.is_active ? 'deactivate' : 'activate'} SKU &quot;
+            {statusTarget.sku}&quot; ({statusTarget.name})?
+            {statusTarget.is_active && Number(statusTarget.quantity) > 0
+              ? ` This will also write off its remaining ${statusTarget.quantity} units of stock to 0.`
+              : ''}
+          </p>
+        )}
+      </StandardModal>
 
     </div>
   )

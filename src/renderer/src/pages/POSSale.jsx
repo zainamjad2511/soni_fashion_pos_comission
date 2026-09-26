@@ -33,6 +33,7 @@ export function POSSale() {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
   const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
   const [pendingCheckoutSalesperson, setPendingCheckoutSalesperson] = useState(null)
+  const [clearCartAction, setClearCartAction] = useState(null)
 
   const searchInputRef = useRef(null)
 
@@ -489,16 +490,10 @@ export function POSSale() {
           itemsLength={items.length}
           onCompleteSale={handleInitiateCheckout}
           onNewDocument={() => {
-            if (items.length > 0 && window.confirm('Clear current active cart?')) {
-              clearCart()
-              setLastCompletedSale(null)
-            }
+            if (items.length > 0) setClearCartAction('new')
           }}
           onDeleteLines={() => {
-            if (items.length > 0 && window.confirm('Delete document lines?')) {
-              clearCart()
-              setLastCompletedSale(null)
-            }
+            if (items.length > 0) setClearCartAction('delete')
           }}
           onPrintDocument={() => {}}
           lastCompletedSale={lastCompletedSale}
@@ -608,6 +603,38 @@ export function POSSale() {
             </button>
           ))
         )}
+      </StandardModal>
+
+      <StandardModal
+        isOpen={!!clearCartAction}
+        onClose={() => setClearCartAction(null)}
+        title={clearCartAction === 'delete' ? 'Delete Document Lines' : 'Clear Active Cart'}
+        titleId="clear-cart-confirm-modal-title"
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <button
+              type="button"
+              onClick={() => setClearCartAction(null)}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none"
+            >
+              Cancel
+            </button>
+            <StandardModalAction
+              onClick={() => {
+                clearCart()
+                setLastCompletedSale(null)
+                setClearCartAction(null)
+              }}
+            >
+              {clearCartAction === 'delete' ? 'Confirm Delete' : 'Confirm Clear'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        <p className="text-sm text-[#2E2822]">
+          {clearCartAction === 'delete' ? 'Delete document lines?' : 'Clear current active cart?'}
+        </p>
       </StandardModal>
 
       <StandardModal

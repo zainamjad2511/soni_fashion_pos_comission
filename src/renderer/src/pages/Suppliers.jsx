@@ -21,6 +21,8 @@ import {
   getOverlayDismissProps,
   getOverlayPanelProps,
   useDismissOnEscape,
+  StandardModal,
+  StandardModalAction,
 } from '../components/StandardModal.jsx'
 
 export function Suppliers() {
@@ -32,6 +34,8 @@ export function Suppliers() {
   const [editingSupplier, setEditingSupplier] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [statusTarget, setStatusTarget] = useState(null)
+  const [statusBusy, setStatusBusy] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -139,18 +143,21 @@ export function Suppliers() {
     }
   }
 
-  const handleToggleStatus = async (supplier) => {
-    const newStatus = !supplier.is_active
-    const actionText = newStatus ? 'activate' : 'deactivate'
-    if (!window.confirm(`Are you sure you want to ${actionText} supplier "${supplier.name}"?`)) {
-      return
-    }
+  const handleToggleStatus = (supplier) => {
+    setStatusTarget(supplier)
+  }
 
+  const handleConfirmToggleStatus = async () => {
+    if (!statusTarget) return
+    const supplier = statusTarget
+    const newStatus = !supplier.is_active
+    setStatusBusy(true)
     try {
       if (window.electronAPI && window.electronAPI.suppliers) {
         const res = await window.electronAPI.suppliers.toggleActive(supplier.id, newStatus)
         if (res.success) {
           showToast('success', `Supplier "${supplier.name}" is now ${newStatus ? 'Active' : 'Deactivated'}.`)
+          setStatusTarget(null)
           fetchSuppliers()
         } else {
           showToast('error', res.error || 'Failed to change status.')
@@ -159,6 +166,8 @@ export function Suppliers() {
     } catch (err) {
       console.error('[Suppliers] Status toggle error:', err)
       showToast('error', err.message || 'Failed to update supplier status.')
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -466,6 +475,47 @@ export function Suppliers() {
         </div>,
         document.body
       )}
+
+      {/* Activate/Deactivate Confirmation Modal */}
+      <StandardModal
+        isOpen={!!statusTarget}
+        onClose={() => {
+          if (statusBusy) return
+          setStatusTarget(null)
+        }}
+        title={statusTarget && !statusTarget.is_active ? 'Activate Supplier' : 'Deactivate Supplier'}
+        titleId="supplier-status-modal-title"
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (statusBusy) return
+                setStatusTarget(null)
+              }}
+              disabled={statusBusy}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction onClick={handleConfirmToggleStatus} disabled={statusBusy}>
+              {statusBusy
+                ? 'Working...'
+                : statusTarget && !statusTarget.is_active
+                  ? 'Confirm Activate'
+                  : 'Confirm Deactivate'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {statusTarget && (
+          <p className="text-sm text-[#2E2822]">
+            Are you sure you want to {statusTarget.is_active ? 'deactivate' : 'activate'} supplier &quot;
+            {statusTarget.name}&quot;?
+          </p>
+        )}
+      </StandardModal>
     </div>
   )
 }

@@ -9,6 +9,10 @@ let logsDirectory = null
 let appLogFilePath = null
 let errorLogFilePath = null
 
+// Serializes writes per file so async appends never interleave or race with rotation,
+// without ever blocking the (single-threaded) main process event loop.
+const writeQueues = new Map()
+
 function ensureLogPaths() {
   if (!logsDirectory) {
     try {
@@ -25,32 +29,29 @@ function ensureLogPaths() {
   }
 }
 
-function rotateFileIfNeeded(filePath) {
+async function rotateFileIfNeeded(filePath) {
   try {
-    if (!fs.existsSync(filePath)) return
-
-    const stats = fs.statSync(filePath)
-    if (stats.size < MAX_LOG_SIZE_BYTES) return
+    const stats = await fs.promises.stat(filePath).catch(() => null)
+    if (!stats || stats.size < MAX_LOG_SIZE_BYTES) return
 
     // Rotate backups: e.g. .2 -> .3, .1 -> .2, original -> .1
     for (let i = MAX_BACKUP_FILES - 1; i >= 1; i--) {
       const older = `${filePath}.${i}`
       const newer = `${filePath}.${i + 1}`
-      if (fs.existsSync(older)) {
+      const olderExists = await fs.promises.stat(older).catch(() => null)
+      if (olderExists) {
         try {
-          if (fs.existsSync(newer)) fs.unlinkSync(newer)
-          fs.renameSync(older, newer)
+          await fs.promises.unlink(newer).catch(() => {})
+          await fs.promises.rename(older, newer)
         } catch (_) {}
       }
     }
 
     const firstBackup = `${filePath}.1`
-    if (fs.existsSync(firstBackup)) {
-      try {
-        fs.unlinkSync(firstBackup)
-      } catch (_) {}
-    }
-    fs.renameSync(filePath, firstBackup)
+    try {
+      await fs.promises.unlink(firstBackup).catch(() => {})
+      await fs.promises.rename(filePath, firstBackup)
+    } catch (_) {}
   } catch (err) {
     console.error('[Logger] Failed to rotate log file:', filePath, err)
   }
@@ -92,15 +93,26 @@ function formatLogEntry(level, tag, message, errorOrMeta = null) {
   return line + '\n'
 }
 
+// Fire-and-forget from callers' perspective, but writes to a given file are
+// chained so they still land in order. Never blocks the main process thread —
+// on Windows a locked/slow log file (AV scan, OneDrive sync, etc.) just delays
+// the next log line instead of freezing the whole app's IPC and UI.
 function appendToLog(filePath, formattedEntry) {
-  try {
-    ensureLogPaths()
-    if (!filePath) return
-    rotateFileIfNeeded(filePath)
-    fs.appendFileSync(filePath, formattedEntry, 'utf8')
-  } catch (err) {
-    console.error('[Logger] Error writing to log file:', err)
-  }
+  if (!filePath) return
+
+  const previous = writeQueues.get(filePath) || Promise.resolve()
+  const next = previous
+    .catch(() => {})
+    .then(async () => {
+      ensureLogPaths()
+      await rotateFileIfNeeded(filePath)
+      await fs.promises.appendFile(filePath, formattedEntry, 'utf8')
+    })
+    .catch((err) => {
+      console.error('[Logger] Error writing to log file:', err)
+    })
+
+  writeQueues.set(filePath, next)
 }
 
 export const logger = {

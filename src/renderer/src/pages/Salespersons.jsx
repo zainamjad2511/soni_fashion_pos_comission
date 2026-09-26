@@ -23,6 +23,8 @@ import {
   getOverlayDismissProps,
   getOverlayPanelProps,
   useDismissOnEscape,
+  StandardModal,
+  StandardModalAction,
 } from '../components/StandardModal.jsx'
 
 export function Salespersons() {
@@ -35,6 +37,8 @@ export function Salespersons() {
   const [editingSalesperson, setEditingSalesperson] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [statusTarget, setStatusTarget] = useState(null)
+  const [statusBusy, setStatusBusy] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -136,18 +140,21 @@ export function Salespersons() {
     }
   }
 
-  const handleToggleStatus = async (staff) => {
-    const newStatus = !staff.is_active
-    const actionText = newStatus ? 'activate' : 'deactivate'
-    if (!window.confirm(`Are you sure you want to ${actionText} staff member "${staff.name}"?`)) {
-      return
-    }
+  const handleToggleStatus = (staff) => {
+    setStatusTarget(staff)
+  }
 
+  const handleConfirmToggleStatus = async () => {
+    if (!statusTarget) return
+    const staff = statusTarget
+    const newStatus = !staff.is_active
+    setStatusBusy(true)
     try {
       if (window.electronAPI && window.electronAPI.salespersons) {
         const res = await window.electronAPI.salespersons.toggleActive(staff.id, newStatus)
         if (res.success) {
           showToast('success', `Staff member "${staff.name}" is now ${newStatus ? 'Active' : 'Deactivated'}.`)
+          setStatusTarget(null)
           fetchSalespersons()
         } else {
           showToast('error', res.error || 'Failed to update status.')
@@ -156,6 +163,8 @@ export function Salespersons() {
     } catch (err) {
       console.error('[Salespersons] Status toggle error:', err)
       showToast('error', err.message || 'Failed to update status.')
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -465,6 +474,47 @@ export function Salespersons() {
         </div>,
         document.body
       )}
+
+      {/* Activate/Deactivate Confirmation Modal */}
+      <StandardModal
+        isOpen={!!statusTarget}
+        onClose={() => {
+          if (statusBusy) return
+          setStatusTarget(null)
+        }}
+        title={statusTarget && !statusTarget.is_active ? 'Activate Staff Member' : 'Deactivate Staff Member'}
+        titleId="salesperson-status-modal-title"
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (statusBusy) return
+                setStatusTarget(null)
+              }}
+              disabled={statusBusy}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction onClick={handleConfirmToggleStatus} disabled={statusBusy}>
+              {statusBusy
+                ? 'Working...'
+                : statusTarget && !statusTarget.is_active
+                  ? 'Confirm Activate'
+                  : 'Confirm Deactivate'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {statusTarget && (
+          <p className="text-sm text-[#2E2822]">
+            Are you sure you want to {statusTarget.is_active ? 'deactivate' : 'activate'} staff member &quot;
+            {statusTarget.name}&quot;?
+          </p>
+        )}
+      </StandardModal>
     </div>
   )
 }
