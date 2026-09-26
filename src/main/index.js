@@ -21,10 +21,23 @@ import { registerExpensesHandlers } from './ipc/expenses.ipc.js'
 import { registerReportsHandlers } from './ipc/reports.ipc.js'
 import { registerDrawerHandlers } from './ipc/drawer.ipc.js'
 import { registerStubHandlers } from './ipc/stubs.ipc.js'
+import { registerLogsHandlers } from './ipc/logs.ipc.js'
+import { logger } from './services/logger.service.js'
+
+// Handle top-level uncaught exceptions and promise rejections
+process.on('uncaughtException', (err) => {
+  logger.error('Process:UncaughtException', err.message, err)
+})
+
+process.on('unhandledRejection', (reason) => {
+  const message = reason instanceof Error ? reason.message : String(reason)
+  logger.error('Process:UnhandledRejection', message, reason)
+})
 
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('no-sandbox')
 }
+
 
 function getWindowIcon() {
   return appIcon
@@ -81,6 +94,11 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  logger.info(
+    'App',
+    `Soni Fashion POS starting up (v${app.getVersion()}, Electron ${process.versions.electron}, Node ${process.versions.node}, Platform ${process.platform} ${process.arch})`
+  )
+
   // Initialize SQLite Database
   getDb()
   startHourlyBackupScheduler(getDbIfOpen)
@@ -98,6 +116,7 @@ app.whenReady().then(() => {
   registerReportsHandlers()
   registerDrawerHandlers()
   registerStubHandlers()
+  registerLogsHandlers()
 
   createWindow()
 
@@ -114,7 +133,9 @@ async function shutdownWithBackup() {
   if (shutdownHandled) return
   shutdownHandled = true
 
+  logger.info('App', 'Initiating application shutdown with database backup...')
   stopHourlyBackupScheduler()
+
 
   try {
     const db = getDbIfOpen()

@@ -12,6 +12,36 @@ if (window.electronAPI && window.electronAPI.ui && window.electronAPI.ui.setZoom
   }
 }
 
+// Global Renderer Exception & Rejection Handlers
+window.addEventListener('error', (event) => {
+  try {
+    if (window.electronAPI?.logs?.recordError) {
+      window.electronAPI.logs.recordError({
+        tag: 'Renderer:WindowError',
+        message: event.message || 'Window error',
+        stack: event.error?.stack || null,
+        url: event.filename ? `${event.filename}:${event.lineno}:${event.colno}` : null
+      })
+    }
+  } catch (_) {}
+})
+
+window.addEventListener('unhandledrejection', (event) => {
+  try {
+    if (window.electronAPI?.logs?.recordError) {
+      const reason = event.reason
+      const message = reason instanceof Error ? reason.message : String(reason)
+      const stack = reason instanceof Error ? reason.stack : null
+      window.electronAPI.logs.recordError({
+        tag: 'Renderer:UnhandledRejection',
+        message,
+        stack
+      })
+    }
+  } catch (_) {}
+})
+
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { logger } from '../services/logger.service.js'
 
 export function handleIpc(channel, handler) {
   ipcMain.handle(channel, async (event, ...args) => {
@@ -6,8 +7,9 @@ export function handleIpc(channel, handler) {
       const data = await handler(event, ...args)
       return { success: true, data }
     } catch (error) {
-      console.error(`[IPC Error: ${channel}]`, error)
+      logger.error(`IPC:${channel}`, error.message || 'Unknown IPC error', error)
       return { success: false, error: error.message || 'Unknown IPC error' }
     }
   })
 }
+

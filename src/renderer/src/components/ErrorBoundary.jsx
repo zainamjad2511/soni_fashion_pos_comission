@@ -14,11 +14,23 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('[ErrorBoundary] Caught runtime rendering error:', error, errorInfo)
     this.setState({ errorInfo })
+
+    try {
+      if (window.electronAPI?.logs?.recordError) {
+        window.electronAPI.logs.recordError({
+          tag: 'ReactErrorBoundary',
+          message: error?.message || 'Component rendering crash',
+          stack: error?.stack || null,
+          componentStack: errorInfo?.componentStack || null
+        })
+      }
+    } catch (_) {}
   }
 
   handleReload = () => {
     window.location.reload()
   }
+
 
   render() {
     if (this.state.hasError) {

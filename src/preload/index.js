@@ -117,6 +117,14 @@ const customElectronAPI = {
     list: (filters) => ipcRenderer.invoke('audit:list', filters)
   },
 
+  logs: {
+    getPaths: () => ipcRenderer.invoke('logs:getPaths'),
+    openFolder: () => ipcRenderer.invoke('logs:openFolder'),
+    getRecent: (options) => ipcRenderer.invoke('logs:getRecent', options),
+    clear: (options) => ipcRenderer.invoke('logs:clear', options),
+    recordError: (payload) => ipcRenderer.invoke('logs:recordRendererError', payload)
+  },
+
   ui: {
     setZoomFactor: (factor) => webFrame.setZoomFactor(factor),
     getZoomFactor: () => webFrame.getZoomFactor()
