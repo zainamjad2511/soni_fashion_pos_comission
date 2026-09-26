@@ -25,8 +25,8 @@ function formatMoney(value) {
 
 export function Dashboard() {
   const [articles, setArticles] = useState([])
-  const [periodSalesCount, setPeriodSalesCount] = useState(0)
   const [periodRevenue, setPeriodRevenue] = useState(0)
+  const [stockValuation, setStockValuation] = useState({ grand_total_cost: 0, grand_total_retail: 0 })
   const [drawer, setDrawer] = useState(EMPTY_DRAWER)
   const initialRange = getDefaultDateRange()
   const [datePreset, setDatePreset] = useState(initialRange.preset)
@@ -67,9 +67,19 @@ export function Dashboard() {
           endDate,
         })
         if (salesRes?.success && salesRes.data?.summary) {
-          const { total_sales, total_returns, total_revenue } = salesRes.data.summary
-          setPeriodSalesCount(Number(total_sales || 0) + Number(total_returns || 0))
+          const { total_revenue } = salesRes.data.summary
           setPeriodRevenue(Number(total_revenue || 0))
+        }
+
+        if (window.electronAPI.reports.inventoryValuation) {
+          const valuationRes = await window.electronAPI.reports.inventoryValuation()
+          if (valuationRes?.success && valuationRes.data?.summary) {
+            const { grand_total_cost, grand_total_retail } = valuationRes.data.summary
+            setStockValuation({
+              grand_total_cost: Number(grand_total_cost || 0),
+              grand_total_retail: Number(grand_total_retail || 0),
+            })
+          }
         }
       }
 
@@ -139,7 +149,7 @@ export function Dashboard() {
             Executive Overview & Analytics
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
-            Live Intelligence
+            Soni Fashion
           </h1>
           <p className="text-[#7A6F69] font-sans text-sm mt-2 max-w-2xl">
             Real-time telemetry on cash drawer balance, catalog articles, and retail checkout performance.
@@ -199,17 +209,20 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-[#C9C0B5] pt-6 lg:pt-0 lg:pl-10">
+        <div
+          onClick={() => navigate('/reports')}
+          className="flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-[#C9C0B5] pt-6 lg:pt-0 lg:pl-10 cursor-pointer group"
+        >
           <div>
-            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3">
-              Customers Dealt
+            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3 group-hover:text-[#2E2822] transition-colors">
+              Stock Evaluation →
             </div>
             <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
-              {loading ? '...' : periodSalesCount}
+              {loading ? '...' : `Rs. ${formatMoney(stockValuation.grand_total_cost)}`}
             </div>
           </div>
           <div className="text-xs font-sans text-[#7A6F69] mt-3">
-            Completed sales checkouts
+            Wholesale value of current stock
           </div>
         </div>
 

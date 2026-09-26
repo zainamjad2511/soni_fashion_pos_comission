@@ -2,6 +2,7 @@ import { handleIpc } from './envelope.js'
 import { getDb } from '../db/database.js'
 import { auditLog } from '../services/audit.service.js'
 import { localDateTimeString } from '../utils/localDateTime.js'
+import { getCurrentBusinessDate } from '../utils/businessDay.js'
 import {
   parseArticleSearchQuery,
   buildArticleSearchClause,
@@ -382,21 +383,57 @@ export function registerArticlesHandlers() {
     return { ...newRow, warning }
   })
 
-  handleIpc('articles:toggleActive', (_, id, status) => {
+  handleIpc('articles:toggleActive', (_, id, status, options) => {
     const db = getDb()
     const articleId = Number(id)
     const activeStatus = status ? 1 : 0
+    const refundToDrawer = !!(options && options.refundToDrawer)
     const oldRow = db.prepare('SELECT * FROM articles WHERE id = ?').get(articleId)
 
     if (!oldRow) {
       throw new Error(`Article ID ${articleId} not found.`)
     }
 
-    if (activeStatus === 0 && oldRow.quantity > 0) {
-      throw new Error(`Cannot deactivate article "${oldRow.sku}" because it currently has ${oldRow.quantity} units in stock. Please adjust stock to 0 before deactivation.`)
-    }
+    const archiveTransaction = db.transaction(() => {
+      if (activeStatus === 0 && oldRow.quantity > 0) {
+        const timestamp = localDateTimeString()
 
-    db.prepare('UPDATE articles SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(activeStatus, articleId)
+        // Write-off: zero the stock. This is a quantity adjustment, not a sale or
+        // restock, so it never feeds the drawer's IN/OUT cash math on its own.
+        db.prepare(`
+          INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, performed_by, created_at)
+          VALUES (?, 'OUT', ?, 'ARCHIVE_WRITE_OFF', NULL, ?, ?, ?)
+        `).run(
+          articleId,
+          oldRow.quantity,
+          `Stock written off on archive (was ${oldRow.quantity} units)`,
+          'Admin',
+          timestamp
+        )
+        db.prepare('UPDATE articles SET quantity = 0, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(activeStatus, articleId)
+
+        // Refund is a separate, explicit cash event (same table used for manual
+        // cash top-ups) — it's opt-in, not implied by the stock write-off above.
+        if (refundToDrawer) {
+          const refundAmount = oldRow.quantity * Number(oldRow.wholesale_price || 0)
+          if (refundAmount > 0) {
+            db.prepare(`
+              INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
+              VALUES (?, ?, ?, ?, ?)
+            `).run(
+              refundAmount,
+              `Refund to drawer — stock written off on archive of "${oldRow.sku}" (${oldRow.quantity} units)`,
+              'Admin',
+              getCurrentBusinessDate(),
+              timestamp
+            )
+          }
+        }
+      } else {
+        db.prepare('UPDATE articles SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(activeStatus, articleId)
+      }
+    })
+    archiveTransaction()
 
     const newRow = db.prepare(`
       SELECT articles.*, suppliers.name as supplier_name, suppliers.code as supplier_code
@@ -437,6 +474,9 @@ export function registerArticlesHandlers() {
     const referenceId = payload.reference_id || null
     const performedBy = payload.performed_by || 'Admin'
     const batchNote = payload.note || `Stock ${movementType} batch processing`
+    // Only meaningful for OUT movements — an explicit, opt-in cash event, separate
+    // from the stock write-off itself (mirrors the archive refund choice).
+    const refundToDrawer = movementType === 'OUT' && !!payload.refund_to_drawer
 
     const selectStmt = db.prepare('SELECT * FROM articles WHERE id = ?')
     const updateStmt = db.prepare('UPDATE articles SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
@@ -444,7 +484,12 @@ export function registerArticlesHandlers() {
       INSERT INTO stock_movements (article_id, movement_type, quantity, reference_type, reference_id, note, performed_by, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
+    const insertDrawerRefundStmt = db.prepare(`
+      INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `)
     const movementAt = localDateTimeString()
+    const businessDate = getCurrentBusinessDate()
 
     const adjustTransaction = db.transaction(() => {
       const results = []
@@ -490,6 +535,19 @@ export function registerArticlesHandlers() {
           performedBy,
           movementAt
         )
+
+        if (refundToDrawer) {
+          const refundAmount = absQty * Number(oldRow.wholesale_price || 0)
+          if (refundAmount > 0) {
+            insertDrawerRefundStmt.run(
+              refundAmount,
+              `Refund to drawer — ${absQty} unit(s) of SKU "${oldRow.sku}" removed from stock`,
+              performedBy,
+              businessDate,
+              movementAt
+            )
+          }
+        }
 
         auditLog(
           db,
