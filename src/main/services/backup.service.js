@@ -17,6 +17,8 @@ export const LATEST_BACKUP_FILE = 'sonifashion_latest.db'
 export const HOURLY_BACKUP_INTERVAL_MS = 60 * 60 * 1000
 const FIRST_BACKUP_DELAY_MS = 3 * 60 * 1000
 const RETENTION_DAYS = 30
+/** Hard cap regardless of age — keeps disk use bounded even if the shop runs daily for months. */
+const MAX_DATED_BACKUPS = 8
 
 let backupInProgress = false
 let hourlyIntervalId = null
@@ -79,16 +81,28 @@ function pruneOldDatedBackups(backupsDir) {
     const retentionMs = RETENTION_DAYS * 24 * 60 * 60 * 1000
     const datedPattern = /^sonifashion_\d{4}-\d{2}-\d{2}\.db$/
 
+    const datedFiles = []
     for (const file of files) {
       if (file === LATEST_BACKUP_FILE) continue
       if (!datedPattern.test(file)) continue
 
       const filePath = path.join(backupsDir, file)
       const stats = fs.statSync(filePath)
+
       if (now - stats.mtimeMs > retentionMs) {
         fs.unlinkSync(filePath)
-        console.log(`[Backup] Pruned old backup file: ${filePath}`)
+        console.log(`[Backup] Pruned old backup file (age): ${filePath}`)
+        continue
       }
+      datedFiles.push({ filePath, mtimeMs: stats.mtimeMs })
+    }
+
+    // Hard cap on count, newest first — covers daily use over long stretches
+    // where nothing is old enough to hit the age-based prune above.
+    datedFiles.sort((a, b) => b.mtimeMs - a.mtimeMs)
+    for (const { filePath } of datedFiles.slice(MAX_DATED_BACKUPS)) {
+      fs.unlinkSync(filePath)
+      console.log(`[Backup] Pruned old backup file (count cap): ${filePath}`)
     }
   } catch (err) {
     console.error(`[Backup] Error pruning backups in ${backupsDir}:`, err)

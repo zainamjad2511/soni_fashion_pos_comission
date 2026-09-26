@@ -17,8 +17,6 @@ import { createPortal } from 'react-dom'
 import { StockMovementsModal } from '../components/StockMovementsModal.jsx'
 import { Toast } from '../components/Toast.jsx'
 import {
-  StandardModal,
-  StandardModalAction,
   getOverlayDismissProps,
   getOverlayPanelProps,
   useDismissOnEscape,
@@ -49,10 +47,6 @@ export function Inventory() {
   const [filterActiveOnly, setFilterActiveOnly] = useState(true)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [historyArticle, setHistoryArticle] = useState(null)
-  const [archiveTarget, setArchiveTarget] = useState(null)
-  const [archiveBusy, setArchiveBusy] = useState(false)
-  const [removeStockPending, setRemoveStockPending] = useState(null)
-  const [removeStockBusy, setRemoveStockBusy] = useState(false)
   const [editingArticle, setEditingArticle] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -248,18 +242,22 @@ export function Inventory() {
           }
 
           if (removeQty > 0) {
-            // Pause here — removing stock needs a decision about the drawer,
-            // so it's finished from the confirm modal instead of inline.
-            setRemoveStockPending({
-              articleId: editingArticle.id,
-              sku: editingArticle.sku,
-              removeQty,
-              // Use the just-saved price, not the stale pre-edit value —
-              // the backend will read the same (now-current) row.
-              wholesalePrice: Number(payload.wholesale_price || 0),
-              addQty,
+            const stockRes = await window.electronAPI.articles.adjustStock({
+              items: [{
+                article_id: editingArticle.id,
+                quantity: removeQty,
+                note: 'Damaged / written off via article edit',
+              }],
+              movement_type: 'OUT',
+              reference_type: 'WRITE_OFF',
+              note: `Removed ${removeQty} unit(s) from ${editingArticle.sku} (damage / write-off)`,
+              performed_by: 'Admin',
             })
-            return
+            if (!stockRes?.success) {
+              showToast('error', stockRes?.error || 'Article saved, but stock could not be removed.')
+              fetchArticles()
+              return
+            }
           }
         } else {
           res = await window.electronAPI.articles.create(payload)
@@ -275,6 +273,7 @@ export function Inventory() {
           }
           const parts = []
           if (editingArticle && addQty > 0) parts.push(`+${addQty}`)
+          if (editingArticle && removeQty > 0) parts.push(`−${removeQty}`)
           const stockNote = parts.length ? ` · ${parts.join(' · ')} stock` : ''
           showToast('success', `Article saved! SKU: ${res.data.sku}${stockNote}`)
           if (res.data?.warning) {
@@ -294,10 +293,24 @@ export function Inventory() {
     }
   }
 
-  const applyToggleStatus = async (article, newStatus, refundToDrawer = false) => {
+  const handleToggleStatus = async (article) => {
+    const newStatus = !article.is_active
+    const actionText = newStatus ? 'activate' : 'deactivate'
+    const stockWarning =
+      !newStatus && Number(article.quantity) > 0
+        ? ` This will also write off its remaining ${article.quantity} units of stock to 0.`
+        : ''
+    if (
+      !window.confirm(
+        `Are you sure you want to ${actionText} SKU "${article.sku}" (${article.name})?${stockWarning}`
+      )
+    ) {
+      return
+    }
+
     try {
       if (window.electronAPI && window.electronAPI.articles) {
-        const res = await window.electronAPI.articles.toggleActive(article.id, newStatus, { refundToDrawer })
+        const res = await window.electronAPI.articles.toggleActive(article.id, newStatus)
         if (res.success) {
           showToast('success', `Article "${article.sku}" is now ${newStatus ? 'Active' : 'Archived'}.`)
           fetchArticles()
@@ -309,83 +322,6 @@ export function Inventory() {
       console.error('[Inventory] Status toggle error:', err)
       showToast('error', err.message || 'Error changing article status.')
     }
-  }
-
-  const handleToggleStatus = (article) => {
-    const newStatus = !article.is_active
-
-    // Archiving stock that's still on hand needs a choice about the drawer,
-    // so it gets its own modal instead of a plain confirm.
-    if (!newStatus && Number(article.quantity) > 0) {
-      setArchiveTarget(article)
-      return
-    }
-
-    const actionText = newStatus ? 'activate' : 'deactivate'
-    if (!window.confirm(`Are you sure you want to ${actionText} SKU "${article.sku}" (${article.name})?`)) {
-      return
-    }
-    applyToggleStatus(article, newStatus, false)
-  }
-
-  const handleConfirmArchive = async (refundToDrawer) => {
-    if (!archiveTarget) return
-    setArchiveBusy(true)
-    try {
-      await applyToggleStatus(archiveTarget, false, refundToDrawer)
-    } finally {
-      setArchiveBusy(false)
-      setArchiveTarget(null)
-    }
-  }
-
-  const finishArticleSave = (sku, addQty, removeQty) => {
-    const parts = []
-    if (addQty > 0) parts.push(`+${addQty}`)
-    if (removeQty > 0) parts.push(`−${removeQty}`)
-    const stockNote = parts.length ? ` · ${parts.join(' · ')} stock` : ''
-    showToast('success', `Article saved! SKU: ${sku}${stockNote}`)
-    handleCloseDrawer()
-    fetchArticles()
-  }
-
-  const handleConfirmRemoveStock = async (refundToDrawer) => {
-    if (!removeStockPending) return
-    const { articleId, sku, removeQty, addQty } = removeStockPending
-    setRemoveStockBusy(true)
-    try {
-      const stockRes = await window.electronAPI.articles.adjustStock({
-        items: [{
-          article_id: articleId,
-          quantity: removeQty,
-          note: 'Damaged / written off via article edit',
-        }],
-        movement_type: 'OUT',
-        reference_type: 'WRITE_OFF',
-        note: `Removed ${removeQty} unit(s) from ${sku} (damage / write-off)`,
-        performed_by: 'Admin',
-        refund_to_drawer: refundToDrawer,
-      })
-      if (!stockRes?.success) {
-        showToast('error', stockRes?.error || 'Article saved, but stock could not be removed.')
-        fetchArticles()
-        return
-      }
-      finishArticleSave(sku, addQty, removeQty)
-    } catch (err) {
-      console.error('[Inventory] Remove stock error:', err)
-      showToast('error', err.message || 'Error removing stock.')
-    } finally {
-      setRemoveStockBusy(false)
-      setRemoveStockPending(null)
-    }
-  }
-
-  const handleCancelRemoveStock = () => {
-    if (!removeStockPending) return
-    const { sku, addQty } = removeStockPending
-    setRemoveStockPending(null)
-    finishArticleSave(sku, addQty, 0)
   }
 
   const isPriceWarning = Number(formData.retail_price) > 0 && Number(formData.retail_price) < Number(formData.wholesale_price)
@@ -940,93 +876,6 @@ export function Inventory() {
         article={historyArticle}
       />
 
-      {/* Archive-with-stock confirmation: choose whether the wholesale value returns to the drawer */}
-      <StandardModal
-        isOpen={!!archiveTarget}
-        onClose={() => !archiveBusy && setArchiveTarget(null)}
-        title="Archive Article"
-        subtitle={
-          archiveTarget
-            ? `SKU "${archiveTarget.sku}" (${archiveTarget.name}) still has ${archiveTarget.quantity} unit(s) in stock.`
-            : ''
-        }
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm font-sans text-[#2E2822]">
-            What is this for? Choose how this stock&apos;s wholesale value should be handled.
-          </p>
-          <div className="space-y-3">
-            <StandardModalAction disabled={archiveBusy} onClick={() => handleConfirmArchive(true)}>
-              {archiveBusy
-                ? 'Processing...'
-                : `Move Money Back to Drawer (Rs. ${(
-                    Number(archiveTarget?.quantity || 0) * Number(archiveTarget?.wholesale_price || 0)
-                  ).toLocaleString()})`}
-            </StandardModalAction>
-            <button
-              type="button"
-              disabled={archiveBusy}
-              onClick={() => handleConfirmArchive(false)}
-              className="w-full py-3.5 border border-[#C9C0B5] text-[#2E2822] hover:bg-[#EFEBE3] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors disabled:opacity-50"
-            >
-              Delete Only (No Drawer Change)
-            </button>
-            <button
-              type="button"
-              disabled={archiveBusy}
-              onClick={() => setArchiveTarget(null)}
-              className="w-full py-2.5 text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </StandardModal>
-
-      {/* Remove-quantity confirmation: same drawer choice as archiving */}
-      <StandardModal
-        isOpen={!!removeStockPending}
-        onClose={() => !removeStockBusy && handleCancelRemoveStock()}
-        title="Remove Stock"
-        subtitle={
-          removeStockPending
-            ? `Removing ${removeStockPending.removeQty} unit(s) of SKU "${removeStockPending.sku}".`
-            : ''
-        }
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm font-sans text-[#2E2822]">
-            What is this for? Choose how the removed stock&apos;s wholesale value should be handled.
-          </p>
-          <div className="space-y-3">
-            <StandardModalAction disabled={removeStockBusy} onClick={() => handleConfirmRemoveStock(true)}>
-              {removeStockBusy
-                ? 'Processing...'
-                : `Move Money Back to Drawer (Rs. ${(
-                    Number(removeStockPending?.removeQty || 0) * Number(removeStockPending?.wholesalePrice || 0)
-                  ).toLocaleString()})`}
-            </StandardModalAction>
-            <button
-              type="button"
-              disabled={removeStockBusy}
-              onClick={() => handleConfirmRemoveStock(false)}
-              className="w-full py-3.5 border border-[#C9C0B5] text-[#2E2822] hover:bg-[#EFEBE3] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors disabled:opacity-50"
-            >
-              Delete Only (No Drawer Change)
-            </button>
-            <button
-              type="button"
-              disabled={removeStockBusy}
-              onClick={handleCancelRemoveStock}
-              className="w-full py-2.5 text-xs font-sans font-bold uppercase tracking-[0.14em] text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-            >
-              Cancel (Keep Stock)
-            </button>
-          </div>
-        </div>
-      </StandardModal>
     </div>
   )
 }

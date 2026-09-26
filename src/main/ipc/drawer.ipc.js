@@ -94,16 +94,8 @@ function sumDrawerActivity(db, {
       AND sale_date < ?
   `).get(start, end)
 
-  const stockRes = db.prepare(`
-    SELECT COALESCE(SUM(sm.quantity * COALESCE(a.wholesale_price, 0)), 0) AS stock_out
-    FROM stock_movements sm
-    JOIN articles a ON a.id = sm.article_id
-    WHERE sm.movement_type = 'IN'
-      AND COALESCE(sm.reference_type, '') NOT IN ('VOID_SALE')
-      AND sm.created_at >= ?
-      AND sm.created_at < ?
-  `).get(start, end)
-
+  // Stock purchases are tracked manually (via Expenses/Cash Deposit) — they no
+  // longer deduct from the drawer automatically.
   const returnsRes = db.prepare(`
     SELECT COALESCE(SUM(refund_amount), 0) AS returns_out
     FROM returns
@@ -122,15 +114,13 @@ function sumDrawerActivity(db, {
 
   const cash_in = Number(cashInRes?.cash_in || 0)
   const sales_in = Number(salesRes?.sales_in || 0)
-  const stock_out = Number(stockRes?.stock_out || 0)
   const returns_out = Number(returnsRes?.returns_out || 0)
   const expenses_out = Number(expensesRes?.expenses_out || 0)
-  const net = cash_in + sales_in - stock_out - returns_out - expenses_out
+  const net = cash_in + sales_in - returns_out - expenses_out
 
   return {
     cash_in,
     sales_in,
-    stock_out,
     returns_out,
     expenses_out,
     net,
@@ -155,15 +145,8 @@ function computeCarryForward(db, beforeDatetime, beforeExpenseDateExclusive) {
       AND sale_date < ?
   `).get(beforeDatetime)
 
-  const stockRes = db.prepare(`
-    SELECT COALESCE(SUM(sm.quantity * COALESCE(a.wholesale_price, 0)), 0) AS stock_out
-    FROM stock_movements sm
-    JOIN articles a ON a.id = sm.article_id
-    WHERE sm.movement_type = 'IN'
-      AND COALESCE(sm.reference_type, '') NOT IN ('VOID_SALE')
-      AND sm.created_at < ?
-  `).get(beforeDatetime)
-
+  // Stock purchases are tracked manually (via Expenses/Cash Deposit) — they no
+  // longer deduct from the drawer automatically.
   const returnsRes = db.prepare(`
     SELECT COALESCE(SUM(refund_amount), 0) AS returns_out
     FROM returns
@@ -180,11 +163,10 @@ function computeCarryForward(db, beforeDatetime, beforeExpenseDateExclusive) {
 
   const cash_in = Number(cashInRes?.cash_in || 0)
   const sales_in = Number(salesRes?.sales_in || 0)
-  const stock_out = Number(stockRes?.stock_out || 0)
   const returns_out = Number(returnsRes?.returns_out || 0)
   const expenses_out = Number(expensesRes?.expenses_out || 0)
 
-  return cash_in + sales_in - stock_out - returns_out - expenses_out
+  return cash_in + sales_in - returns_out - expenses_out
 }
 
 /**
@@ -215,7 +197,6 @@ function computeReconciliation(db, { startDate, endDate, start, end }) {
     opening_balance,
     cash_in: period.cash_in,
     sales_in: period.sales_in,
-    stock_out: period.stock_out,
     returns_out: period.returns_out,
     expenses_out: period.expenses_out,
     period_net: period.net,

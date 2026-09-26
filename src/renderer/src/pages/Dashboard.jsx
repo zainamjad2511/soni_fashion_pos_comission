@@ -10,7 +10,6 @@ const EMPTY_DRAWER = {
   opening_balance: 0,
   cash_in: 0,
   sales_in: 0,
-  stock_out: 0,
   returns_out: 0,
   expenses_out: 0,
   expected_balance: 0,
@@ -90,7 +89,6 @@ export function Dashboard() {
             opening_balance: Number(cfRes.data.opening_balance || 0),
             cash_in: Number(cfRes.data.cash_in || 0),
             sales_in: Number(cfRes.data.sales_in || 0),
-            stock_out: Number(cfRes.data.stock_out || 0),
             returns_out: Number(cfRes.data.returns_out || 0),
             expenses_out: Number(cfRes.data.expenses_out || 0),
             expected_balance: Number(cfRes.data.expected_balance || 0),
@@ -308,16 +306,6 @@ export function Dashboard() {
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
               + Rs. {formatMoney(drawer.sales_in)}
-            </span>
-          </div>
-
-          <div className="py-5 flex items-center justify-between gap-4">
-            <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Stock Purchases</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Stock IN cost (qty × wholesale) in this period</span>
-            </div>
-            <span className="font-mono font-bold text-base text-[#7A6F69]">
-              − Rs. {formatMoney(drawer.stock_out)}
             </span>
           </div>
 

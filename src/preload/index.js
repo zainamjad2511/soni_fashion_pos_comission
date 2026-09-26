@@ -20,7 +20,7 @@ const customElectronAPI = {
     search: (query) => ipcRenderer.invoke('articles:search', query),
     create: (data) => ipcRenderer.invoke('articles:create', data),
     update: (id, data) => ipcRenderer.invoke('articles:update', id, data),
-    toggleActive: (id, status, options) => ipcRenderer.invoke('articles:toggleActive', id, status, options),
+    toggleActive: (id, status) => ipcRenderer.invoke('articles:toggleActive', id, status),
     adjustStock: (payload) => ipcRenderer.invoke('articles:adjustStock', payload),
     getStockMovements: (articleId) => ipcRenderer.invoke('articles:getStockMovements', articleId)
   },
