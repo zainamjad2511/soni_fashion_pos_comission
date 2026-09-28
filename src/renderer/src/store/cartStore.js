@@ -203,7 +203,10 @@ export const useCartStore = create((set, get) => ({
 
   getSubtotal: () => {
     const { items } = get()
-    return items.reduce((sum, item) => sum + computeItemLineTotals(item).lineSubtotal, 0)
+    return items.reduce((sum, item) => {
+      const { lineSubtotal, lineTotal } = computeItemLineTotals(item)
+      return sum + Math.max(lineSubtotal, lineTotal)
+    }, 0)
   },
 
   getTotalDiscount: () => {
@@ -213,8 +216,8 @@ export const useCartStore = create((set, get) => ({
   },
 
   getGrandTotal: () => {
-    const subtotal = get().getSubtotal()
-    const totalDiscount = get().getTotalDiscount()
-    return Math.max(0, subtotal - totalDiscount)
+    const { items, orderDiscount } = get()
+    const itemsTotal = items.reduce((sum, item) => sum + computeItemLineTotals(item).lineTotal, 0)
+    return Math.max(0, itemsTotal - (Number(orderDiscount) || 0))
   },
 }))

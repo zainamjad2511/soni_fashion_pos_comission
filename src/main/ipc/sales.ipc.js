@@ -33,6 +33,7 @@ export function registerSalesHandlers() {
       // 2. Validate stock availability and calculate line totals
       let subtotal = 0
       let itemsTotalDiscount = 0
+      let itemsTotal = 0
 
       const validatedItems = items.map((item) => {
         const articleId = Number(item.article_id)
@@ -66,8 +67,9 @@ export function registerSalesHandlers() {
         // markdown below retail.
         const resolvedDiscount = Math.max(0, lineSubtotal - lineTotal)
 
-        subtotal += lineSubtotal
+        subtotal += Math.max(lineSubtotal, lineTotal)
         itemsTotalDiscount += resolvedDiscount
+        itemsTotal += lineTotal
 
         return {
           article_id: articleId,
@@ -82,7 +84,7 @@ export function registerSalesHandlers() {
       })
 
       const totalDiscount = itemsTotalDiscount + orderDiscount
-      const grandTotal = Math.max(0, subtotal - totalDiscount)
+      const grandTotal = Math.max(0, itemsTotal - orderDiscount)
 
       // 3. Generate sequential invoice number using invoice_prefix setting
       const todayStr = getCurrentBusinessDateKey()
