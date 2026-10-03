@@ -10,6 +10,7 @@ export function createExpenseRecord(db, data) {
   const expenseDate = data?.expense_date || getCurrentBusinessDate()
   const recordedBy = data?.recorded_by || null
   const notes = data?.notes?.trim() || null
+  const sessionStatus = data?.session_status || 'active'
   const stampedAt = localDateTimeString()
 
   if (!category) {
@@ -20,9 +21,9 @@ export function createExpenseRecord(db, data) {
   }
 
   const info = db.prepare(`
-    INSERT INTO expenses (category, description, amount, expense_date, recorded_by, notes, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(category, description, amount, expenseDate, recordedBy, notes, stampedAt, stampedAt)
+    INSERT INTO expenses (category, description, amount, expense_date, recorded_by, notes, session_status, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(category, description, amount, expenseDate, recordedBy, notes, sessionStatus, stampedAt, stampedAt)
 
   return db.prepare('SELECT * FROM expenses WHERE id = ?').get(info.lastInsertRowid)
 }

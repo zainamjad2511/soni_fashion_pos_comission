@@ -37,6 +37,8 @@ export function POSActionPanel({
   onDeleteParkedCart,
   notes,
   onNotesChange,
+  paymentMethod = 'cash',
+  onPaymentMethodChange = () => {},
 }) {
   return (
     <div className="w-full lg:w-80 bg-[#FCFBFA] p-5 flex flex-col gap-3 shrink-0 select-none">
@@ -197,6 +199,34 @@ export function POSActionPanel({
       )}
 
       <div className="mt-auto pt-3">
+        <label className="text-[11px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">
+          Payment Mode
+        </label>
+        <div className="flex gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => onPaymentMethodChange('cash')}
+            className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border ${
+              paymentMethod === 'cash'
+                ? 'bg-[#332822] text-[#F7F5F0] border-[#332822]'
+                : 'bg-transparent text-[#332822] border-[#C9C0B5] hover:bg-[#EFEBE3]'
+            }`}
+          >
+            Cash
+          </button>
+          <button
+            type="button"
+            onClick={() => onPaymentMethodChange('online')}
+            className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors border ${
+              paymentMethod === 'online'
+                ? 'bg-[#332822] text-[#F7F5F0] border-[#332822]'
+                : 'bg-transparent text-[#332822] border-[#C9C0B5] hover:bg-[#EFEBE3]'
+            }`}
+          >
+            Online
+          </button>
+        </div>
+
         <label className="text-[11px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">
           Remarks / Notes
         </label>

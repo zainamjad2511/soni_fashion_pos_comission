@@ -33,6 +33,7 @@ export function POSSale() {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false)
   const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
   const [pendingCheckoutSalesperson, setPendingCheckoutSalesperson] = useState(null)
+  const [paymentMethod, setPaymentMethod] = useState('cash')
 
   const searchInputRef = useRef(null)
 
@@ -217,7 +218,7 @@ export function POSSale() {
             }
           }),
           order_discount: Number(orderDiscount) || 0,
-          payment_method: 'cash',
+          payment_method: paymentMethod,
           notes: notes
         }
 
@@ -518,6 +519,8 @@ export function POSSale() {
           onDeleteParkedCart={deleteParkedCart}
           notes={notes}
           onNotesChange={(e) => setNotes(e.target.value)}
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
         />
       </div>
 

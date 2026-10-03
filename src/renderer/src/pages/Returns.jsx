@@ -13,7 +13,7 @@ import {
   PrintIcon,
   AlertTriangleIcon,
 } from '../components/icons/TechnicalIcons.jsx'
-import { POSCheckoutIcon, POSDeleteIcon, NewDocumentIcon } from '../components/icons/POSActionIcons.jsx'
+import { POSCheckoutIcon, POSDeleteIcon, NewDocumentIcon, DiscountAmountIcon } from '../components/icons/POSActionIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
@@ -124,9 +124,11 @@ export function Returns() {
   const [selectedSale, setSelectedSale] = useState(null)
   const [returnQuantities, setReturnQuantities] = useState({}) // { [sale_item_id]: qty }
   const [returnRefundPrices, setReturnRefundPrices] = useState({}) // { [sale_item_id]: per-unit refund input }
-  const [returnNotes, setReturnNotes] = useState('')
   const [salespersons, setSalespersons] = useState([])
   const [selectedStaff, setSelectedStaff] = useState(null)
+  const [isCheckoutConfirmOpen, setIsCheckoutConfirmOpen] = useState(false)
+  const [pendingCheckoutSalesperson, setPendingCheckoutSalesperson] = useState(null)
+  const [paymentMethod, setPaymentMethod] = useState('cash')
   const [processingReturn, setProcessingReturn] = useState(false)
   const [processResult, setProcessResult] = useState(null)
 
@@ -141,8 +143,6 @@ export function Returns() {
   const [manualQuery, setManualQuery] = useState('')
   const [manualSearchResults, setManualSearchResults] = useState([])
   const [manualCart, setManualCart] = useState([])
-  const [manualReason, setManualReason] = useState('Customer Receipt Lost')
-  const [manualCustomNote, setManualCustomNote] = useState('')
   const [processingManual, setProcessingManual] = useState(false)
   const [manualResult, setManualResult] = useState(null)
 
@@ -212,16 +212,14 @@ export function Returns() {
     resumingRef.current = true
     setActiveTab(target.tabId)
     setSelectedStaff(target.selectedStaff ?? null)
+    setPaymentMethod(target.paymentMethod || 'cash')
     setReplacementCart(target.replacementCart || [])
     setOrderDiscount(target.orderDiscount || 0)
     setSelectedSale(target.selectedSale || null)
     setReturnQuantities(target.returnQuantities || {})
     setReturnRefundPrices(target.returnRefundPrices || {})
-    setReturnNotes(target.returnNotes || '')
     setInvoiceQuery(target.invoiceQuery || '')
     setManualCart(target.manualCart || [])
-    setManualReason(target.manualReason || 'Customer Receipt Lost')
-    setManualCustomNote(target.manualCustomNote || '')
     setManualQuery(target.manualQuery || '')
     showToast('success', 'Return resumed.')
   }
@@ -240,8 +238,8 @@ export function Returns() {
         return
       }
       parkCurrent(activeTab, {
-        selectedStaff, replacementCart, orderDiscount,
-        manualCart, manualReason, manualCustomNote, manualQuery,
+        selectedStaff, replacementCart, orderDiscount, paymentMethod,
+        manualCart, manualQuery,
       })
       setManualCart([])
       setManualQuery('')
@@ -253,15 +251,14 @@ export function Returns() {
         return
       }
       parkCurrent(activeTab, {
-        selectedStaff, replacementCart, orderDiscount,
-        selectedSale, returnQuantities, returnRefundPrices, returnNotes, invoiceQuery,
+        selectedStaff, replacementCart, orderDiscount, paymentMethod,
+        selectedSale, returnQuantities, returnRefundPrices, invoiceQuery,
         manualCart: [],
       })
       setSelectedSale(null)
       setInvoiceQuery(''); setInvoiceSuggestions([])
       setReturnQuantities({})
       setReturnRefundPrices({})
-      setReturnNotes('')
       setLookupError('')
       setProcessResult(null)
     }
@@ -291,8 +288,8 @@ export function Returns() {
     if (isManualFamily) {
       if (!wasManual && selectedSale) {
         parkCurrent(leavingTab, {
-          selectedStaff, replacementCart, orderDiscount,
-          selectedSale, returnQuantities, returnRefundPrices, returnNotes, invoiceQuery,
+          selectedStaff, replacementCart, orderDiscount, paymentMethod,
+          selectedSale, returnQuantities, returnRefundPrices, invoiceQuery,
           manualCart: [],
         })
       }
@@ -300,14 +297,13 @@ export function Returns() {
       setInvoiceQuery(''); setInvoiceSuggestions([])
       setReturnQuantities({})
       setReturnRefundPrices({})
-      setReturnNotes('')
       setLookupError('')
       setProcessResult(null)
     } else {
       if (wasManual && manualCart.length > 0) {
         parkCurrent(leavingTab, {
-          selectedStaff, replacementCart, orderDiscount,
-          manualCart, manualReason, manualCustomNote, manualQuery,
+          selectedStaff, replacementCart, orderDiscount, paymentMethod,
+          manualCart, manualQuery,
         })
       }
       setManualCart([])
@@ -369,7 +365,6 @@ export function Returns() {
     setReturnRefundPrices({})
     setReplacementCart([])
     setOrderDiscount(0)
-    setReturnNotes('')
 
     try {
       if (customInvoiceNo) {
@@ -530,11 +525,26 @@ export function Returns() {
     setArticleSearchResults([])
   }
 
-  const updateReplacementQty = (articleId, delta) => {
+  const updateReplacementQty = (articleId, newQtyStr) => {
     setReplacementCart(replacementCart.map((item) => {
       if (item.article_id === articleId) {
-        const nextQty = Math.max(1, Math.min(item.max_quantity, item.quantity + delta))
-        return withRecalculatedReplacementItem({ ...item, quantity: nextQty })
+        if (newQtyStr === '' || newQtyStr === null || newQtyStr === undefined) return withRecalculatedReplacementItem({ ...item, quantity: '' })
+        const nextQty = parseInt(newQtyStr, 10)
+        if (isNaN(nextQty) || nextQty <= 0) return withRecalculatedReplacementItem({ ...item, quantity: '' })
+        const clampedQty = Math.min(item.max_quantity, nextQty)
+        return withRecalculatedReplacementItem({ ...item, quantity: clampedQty })
+      }
+      return item
+    }))
+  }
+
+  const commitReplacementQty = (articleId) => {
+    setReplacementCart(replacementCart.map((item) => {
+      if (item.article_id === articleId) {
+        let qty = parseInt(item.quantity, 10)
+        if (isNaN(qty) || qty <= 0) qty = 1
+        const clampedQty = Math.min(item.max_quantity, qty)
+        return withRecalculatedReplacementItem({ ...item, quantity: Math.max(1, clampedQty) })
       }
       return item
     }))
@@ -570,7 +580,7 @@ export function Returns() {
   const netSettlement = replacementGrandTotal - refundCredit
 
   // Execute invoice-family transaction (Invoice Return / Invoice Exchange)
-  const handleProcessTransaction = async () => {
+  const handleProcessTransaction = async (salespersonIdOverride) => {
     const isExchange = activeTab === 'invoice-exchange'
     const selectedReturnedCount = Object.values(returnQuantities).reduce((a, b) => a + b, 0)
     if (selectedReturnedCount === 0 && !isExchange) {
@@ -608,12 +618,12 @@ export function Returns() {
       const payload = {
         original_sale_id: selectedSale.id,
         return_type: returnTypeValue,
-        processed_by: selectedStaff || 1,
+        processed_by: salespersonIdOverride || selectedStaff || 1,
         items: itemsPayload,
-        notes: returnNotes.trim() || `Customer ${returnTypeValue} processed against invoice ${selectedSale.invoice_number}`,
+        notes: `Customer ${returnTypeValue} processed against invoice ${selectedSale.invoice_number}`,
         replacement_items: isExchange ? mapReplacementItemsForPayload(replacementCart) : [],
         order_discount: isExchange ? normalizeOrderDiscount(orderDiscount) : 0,
-        payment_method: 'cash',
+        payment_method: paymentMethod,
         salesperson_id: selectedStaff || 1
       }
 
@@ -632,32 +642,7 @@ export function Returns() {
     }
   }
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'F12') {
-        e.preventDefault()
-        if (selectedSale && !processingReturn && !isManualFamily) {
-          handleProcessTransaction()
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedSale, processingReturn, isManualFamily, activeTab, returnQuantities, returnRefundPrices, replacementCart])
-
-  const getManualReturnNotes = () => {
-    if (manualReason === 'Other (Custom Note)') {
-      return manualCustomNote.trim()
-    }
-    return manualReason
-  }
-
-  const isManualReasonValid = () => {
-    if (manualReason === 'Other (Custom Note)') {
-      return manualCustomNote.trim().length > 0
-    }
-    return Boolean(manualReason)
-  }
+  // Removed getManualReturnNotes and isManualReasonValid as we keep it constant
 
   // Manual return article search — one field, finds by name, SKU, or vendor + article
   // number (the backend's search parser already understands all three formats).
@@ -746,11 +731,24 @@ export function Returns() {
     setManualSearchResults([])
   }
 
-  const updateManualQty = (articleId, delta) => {
+  const updateManualQty = (articleId, newQtyStr) => {
     setManualCart(manualCart.map((item) => {
       if (item.article_id === articleId) {
-        const nextQty = Math.max(1, item.quantity + delta)
+        if (newQtyStr === '' || newQtyStr === null || newQtyStr === undefined) return { ...item, quantity: '', line_total: 0 }
+        const nextQty = parseInt(newQtyStr, 10)
+        if (isNaN(nextQty) || nextQty <= 0) return { ...item, quantity: '', line_total: 0 }
         return { ...item, quantity: nextQty, line_total: nextQty * item.refund_per_unit }
+      }
+      return item
+    }))
+  }
+
+  const commitManualQty = (articleId) => {
+    setManualCart(manualCart.map((item) => {
+      if (item.article_id === articleId) {
+        let qty = parseInt(item.quantity, 10)
+        if (isNaN(qty) || qty <= 0) qty = 1
+        return { ...item, quantity: qty, line_total: qty * item.refund_per_unit }
       }
       return item
     }))
@@ -776,7 +774,7 @@ export function Returns() {
   const manualTotal = calculateManualTotal()
   const manualNetSettlement = replacementGrandTotal - manualTotal
 
-  const handleProcessManualReturn = async () => {
+  const handleProcessManualReturn = async (salespersonIdOverride) => {
     const isExchange = activeTab === 'manual-exchange'
     if (manualCart.length === 0) {
       showToast('error', 'Please add at least one article to process a manual return.')
@@ -784,12 +782,6 @@ export function Returns() {
     }
     if (isExchange && replacementCart.length === 0) {
       showToast('error', 'Please add at least one replacement article for the exchange.')
-      return
-    }
-    if (!isManualReasonValid()) {
-      showToast('error', manualReason === 'Other (Custom Note)'
-        ? 'Please enter a custom explanation for this manual return.'
-        : 'Please select a return reason.')
       return
     }
 
@@ -801,7 +793,7 @@ export function Returns() {
       }
     }
 
-    const composedNotes = getManualReturnNotes()
+    const composedNotes = 'Customer Receipt Lost'
 
     const itemsPayload = manualCart.map((item) => ({
       article_id: item.article_id,
@@ -819,7 +811,7 @@ export function Returns() {
         notes: composedNotes,
         replacement_items: isExchange ? mapReplacementItemsForPayload(replacementCart) : [],
         order_discount: isExchange ? normalizeOrderDiscount(orderDiscount) : 0,
-        payment_method: 'cash',
+        payment_method: paymentMethod,
         salesperson_id: selectedStaff || 1,
       }
 
@@ -834,8 +826,6 @@ export function Returns() {
       setOrderDiscount(0)
       setArticleSearchQuery('')
       setArticleSearchResults([])
-      setManualReason('Customer Receipt Lost')
-      setManualCustomNote('')
       setManualQuery('')
       showToast('success', isExchange
         ? 'Manual exchange completed successfully!'
@@ -863,13 +853,53 @@ export function Returns() {
     : (isExchangeTab ? { label: netLabel, amount: Math.abs(netSettlement) } : { label: 'Refund Total', amount: refundCredit })
 
   const ctaLabel = isManualFamily
-    ? (isExchangeTab ? 'Confirm & Complete Exchange' : 'Confirm & Issue Credit Voucher')
-    : (isExchangeTab ? 'Confirm & Complete Exchange [F12]' : 'Confirm & Complete Refund [F12]')
+    ? (isExchangeTab ? 'Complete Exchange' : 'Issue Credit Voucher')
+    : (isExchangeTab ? 'Complete Exchange' : 'Complete Refund')
   const ctaDisabled = isManualFamily
-    ? (processingManual || manualCart.length === 0 || !isManualReasonValid() || (isExchangeTab && replacementCart.length === 0))
+    ? (processingManual || manualCart.length === 0 || (isExchangeTab && replacementCart.length === 0))
     : (processingReturn || (!isExchangeTab && refundCredit === 0))
   const ctaProcessing = isManualFamily ? processingManual : processingReturn
   const ctaHandler = isManualFamily ? handleProcessManualReturn : handleProcessTransaction
+
+  const handleInitiateCheckout = () => {
+    if (ctaDisabled) return
+    setIsCheckoutConfirmOpen(true)
+    const prevId = localStorage.getItem('pos_last_salesperson_id')
+    if (prevId) {
+      const match = salespersons.find((s) => s.id === parseInt(prevId, 10))
+      setPendingCheckoutSalesperson(match || salespersons[0] || null)
+    } else {
+      setPendingCheckoutSalesperson(salespersons[0] || null)
+    }
+  }
+
+  const handleConfirmCheckout = async () => {
+    if (!pendingCheckoutSalesperson) {
+      showToast('error', 'Please select a salesman.')
+      return
+    }
+    setSelectedStaff(pendingCheckoutSalesperson.id)
+    localStorage.setItem('pos_last_salesperson_id', pendingCheckoutSalesperson.id)
+    setIsCheckoutConfirmOpen(false)
+    if (isManualFamily) {
+      handleProcessManualReturn(pendingCheckoutSalesperson.id)
+    } else {
+      handleProcessTransaction(pendingCheckoutSalesperson.id)
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F12') {
+        e.preventDefault()
+        if (!ctaDisabled && !isCheckoutConfirmOpen) {
+          handleInitiateCheckout()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [ctaDisabled, isCheckoutConfirmOpen, handleInitiateCheckout])
 
   return (
     <div className="flex-1 flex flex-col w-full h-full min-h-[calc(100vh-100px)] bg-[#FAF6EE] text-[#332822] select-none">
@@ -979,15 +1009,15 @@ export function Returns() {
                             </td>
                             <td className="py-3.5 px-4 text-right font-mono text-[#332822]">{formatCurrency(retail)}</td>
                             <td className="p-0 h-px text-center w-28">
-                              <div className="flex items-center justify-center gap-2 h-full">
-                                <button type="button" onClick={() => updateManualQty(item.article_id, -1)} className="p-1 border border-[#332822] text-[#332822] hover:bg-[#332822] hover:text-[#F7F5F0] rounded-[2px] transition-all">
-                                  <MinusIcon className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="w-6 text-center font-mono font-semibold">{item.quantity}</span>
-                                <button type="button" onClick={() => updateManualQty(item.article_id, 1)} className="p-1 border border-[#332822] text-[#332822] hover:bg-[#332822] hover:text-[#F7F5F0] rounded-[2px] transition-all">
-                                  <PlusIcon className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) => updateManualQty(item.article_id, e.target.value)}
+                                onBlur={() => commitManualQty(item.article_id)}
+                                className="w-full h-full min-h-[46px] px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
+                              />
                             </td>
                             <td className="p-0 h-px text-right w-36">
                               <input
@@ -998,7 +1028,7 @@ export function Returns() {
                                 onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                                 onChange={(e) => updateManualPrice(item.article_id, e.target.value)}
-                                className="w-full h-full min-h-[46px] px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm font-semibold focus:outline-none focus:bg-white border-0"
+                                className="w-full h-full min-h-[46px] px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                               />
                             </td>
                             <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">
@@ -1027,6 +1057,7 @@ export function Returns() {
                     <ReplacementCartTable
                       replacementCart={replacementCart}
                       onQtyChange={updateReplacementQty}
+                      onQtyBlur={commitReplacementQty}
                       onPriceChange={updateReplacementUnitPrice}
                       onRemoveItem={removeReplacementItem}
                       formatCurrency={formatCurrency}
@@ -1133,6 +1164,7 @@ export function Returns() {
                     <ReplacementCartTable
                       replacementCart={replacementCart}
                       onQtyChange={updateReplacementQty}
+                      onQtyBlur={commitReplacementQty}
                       onPriceChange={updateReplacementUnitPrice}
                       onRemoveItem={removeReplacementItem}
                       formatCurrency={formatCurrency}
@@ -1145,15 +1177,6 @@ export function Returns() {
 
           {/* RIGHT: action rail — search, staff/payment/reason, breakdown, big CTA */}
           <div className="w-full lg:w-[21rem] bg-[#FCFBFA] p-5 flex flex-col gap-4 shrink-0 overflow-y-auto">
-            <button
-              type="button"
-              onClick={handleNewDocument}
-              className="shrink-0 flex items-center justify-center gap-2 py-2.5 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-bold text-[10px] uppercase tracking-[0.12em] transition-colors"
-            >
-              <NewDocumentIcon className="w-4 h-4" />
-              <span>New Document</span>
-            </button>
-
             {/* Invoice lookup (invoice family only) */}
             {!isManualFamily && (
               selectedSale ? (
@@ -1294,58 +1317,28 @@ export function Returns() {
             {hasActiveDocument && (
               <div className="flex flex-col gap-4 mt-auto pt-2">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">Staff</label>
-                  <select
-                    value={selectedStaff || ''}
-                    onChange={(e) => setSelectedStaff(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs focus:outline-none border-b border-[#C9C0B5] focus:border-[#332822] transition-colors"
-                  >
-                    {(Array.isArray(salespersons) ? salespersons : []).map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-
-                {isManualFamily ? (
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#332822] flex items-center gap-1.5 mb-1">
-                      <span>Return Reason *</span>
-                      {!isManualReasonValid() && (
-                        <AlertTriangleIcon className="w-3.5 h-3.5 text-amber-700" />
-                      )}
-                    </label>
-                    <select
-                      value={manualReason}
-                      onChange={(e) => setManualReason(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs focus:outline-none border-b border-[#C9C0B5] focus:border-[#332822] transition-colors"
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">Payment Mode</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('cash')}
+                      className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors border ${
+                        paymentMethod === 'cash' ? 'bg-[#332822] text-[#F7F5F0] border-[#332822]' : 'bg-transparent text-[#332822] border-[#C9C0B5] hover:bg-[#EFEBE3]'
+                      }`}
                     >
-                      {MANUAL_RETURN_REASONS.map((reason) => (
-                        <option key={reason} value={reason}>{reason}</option>
-                      ))}
-                    </select>
-                    {manualReason === 'Other (Custom Note)' && (
-                      <input
-                        type="text"
-                        value={manualCustomNote}
-                        onChange={(e) => setManualCustomNote(e.target.value)}
-                        placeholder="Explain the reason..."
-                        className="w-full mt-2 px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs placeholder-[#7A6F69] focus:outline-none border-b border-[#C9C0B5] focus:border-[#332822] transition-colors"
-                      />
-                    )}
+                      Cash
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('online')}
+                      className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-colors border ${
+                        paymentMethod === 'online' ? 'bg-[#332822] text-[#F7F5F0] border-[#332822]' : 'bg-transparent text-[#332822] border-[#C9C0B5] hover:bg-[#EFEBE3]'
+                      }`}
+                    >
+                      Online
+                    </button>
                   </div>
-                ) : (
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">Notes (optional)</label>
-                    <input
-                      type="text"
-                      value={returnNotes}
-                      onChange={(e) => setReturnNotes(e.target.value)}
-                      placeholder="Size exchange, defective stitching..."
-                      className="w-full px-3 py-2.5 bg-[#F7F5F0] text-[#332822] font-medium text-xs placeholder-[#7A6F69] focus:outline-none border-b border-[#C9C0B5] focus:border-[#332822] transition-colors"
-                    />
-                  </div>
-                )}
+                </div>
 
                 {/* Breakdown */}
                 <div className="bg-[#F7F5F0] px-4 py-3 text-xs space-y-1.5">
@@ -1365,42 +1358,43 @@ export function Returns() {
                           <span className="font-mono text-[#332822]">-{formatCurrency(orderDiscount)}</span>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setIsDiscountModalOpen(true)}
-                        className="text-[10px] uppercase tracking-wider text-[#7A6F69] underline hover:text-[#332822] transition-colors"
-                      >
-                        Set order discount
-                      </button>
                     </>
                   )}
                 </div>
 
-                {/* CTA */}
-                <button
-                  type="button"
-                  onClick={ctaHandler}
-                  disabled={ctaDisabled}
-                  className="py-5 px-4 bg-[#1E2832] hover:bg-[#2C3A47] text-[#F7F5F0] font-display font-bold text-base sm:text-lg uppercase tracking-[0.1em] flex items-center justify-center gap-3 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-                >
-                  {ctaProcessing ? (
-                    <RefreshIcon className="w-5 h-5 animate-spin text-[#C9B99A]" />
-                  ) : (
-                    <POSCheckoutIcon className="w-5 h-5 text-[#C9B99A]" />
-                  )}
-                  <span>{ctaLabel}</span>
-                </button>
-                {isManualFamily && ctaDisabled && !processingManual && (
-                  <p className="text-[11px] text-center text-[#7A6F69] italic -mt-2">
-                    {manualCart.length === 0
-                      ? 'Add at least one return item'
-                      : isExchangeTab && replacementCart.length === 0
-                        ? 'Add replacement items for exchange'
-                        : manualReason === 'Other (Custom Note)'
-                          ? 'Enter a custom reason note'
-                          : 'Select a return reason'} to continue.
-                  </p>
-                )}
+                {/* CTA / Action Grid */}
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={handleInitiateCheckout}
+                    disabled={ctaDisabled}
+                    className="col-span-2 py-5 px-4 bg-[#1E2832] hover:bg-[#2C3A47] text-[#F7F5F0] font-display font-bold text-xl uppercase tracking-[0.12em] flex items-center justify-center gap-3 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed border-0 shadow-md rounded-none"
+                  >
+                    {ctaProcessing ? (
+                      <RefreshIcon className="w-6 h-6 animate-spin text-[#C9B99A]" />
+                    ) : (
+                      <POSCheckoutIcon className="w-6 h-6 text-[#C9B99A]" />
+                    )}
+                    <span>{ctaLabel} [F12]</span>
+                  </button>
+
+                  <button
+                    onClick={handleNewDocument}
+                    className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
+                  >
+                    <NewDocumentIcon className="w-6 h-6 text-[#332822]" />
+                    <span>New Document</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsDiscountModalOpen(true)}
+                    disabled={!isExchangeTab}
+                    className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] disabled:opacity-40 text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
+                  >
+                    <DiscountAmountIcon className="w-6 h-6 text-[#332822]" />
+                    <span>Set Discount</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1465,6 +1459,75 @@ export function Returns() {
         <p className="text-[11px] text-[#7A6F69] mt-3">
           Applied to replacement articles total after per-item discounts, same as POS order discount.
         </p>
+      </StandardModal>
+
+      <StandardModal
+        isOpen={isCheckoutConfirmOpen}
+        onClose={() => {
+          if (ctaProcessing) return
+          setIsCheckoutConfirmOpen(false)
+          setPendingCheckoutSalesperson(null)
+        }}
+        title="Confirm Salesman for This Return"
+        titleId="checkout-confirm-modal-title"
+        subtitle={
+          pendingCheckoutSalesperson
+            ? `Select the salesman for this transaction. ${pendingCheckoutSalesperson.name} is selected.`
+            : `Select the salesman for this transaction, then press Enter to confirm.`
+        }
+        maxWidth="md"
+        closeOnBackdrop={!ctaProcessing}
+        bodyClassName="p-0 overflow-y-auto max-h-72"
+        footer={
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCheckoutConfirmOpen(false)
+                setPendingCheckoutSalesperson(null)
+              }}
+              disabled={ctaProcessing}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction
+              onClick={() => handleConfirmCheckout()}
+              disabled={ctaProcessing || !pendingCheckoutSalesperson}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {ctaProcessing ? 'Processing...' : 'Confirm & Complete [Enter]'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        {salespersons.length === 0 ? (
+          <div className="px-6 py-8 text-sm text-[#7A6F69] text-center">
+            No active salespersons available.
+          </div>
+        ) : (
+          salespersons.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setPendingCheckoutSalesperson(s)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pendingCheckoutSalesperson?.id === s.id && !ctaProcessing) {
+                  e.preventDefault()
+                  handleConfirmCheckout()
+                }
+              }}
+              className={`w-full px-6 py-4 flex items-center justify-between gap-4 text-left border-b border-[#C9C0B5]/50 last:border-b-0 transition-colors hover:bg-[#EFEBE3] ${
+                pendingCheckoutSalesperson?.id === s.id ? 'bg-[#EFEBE3]/60 ring-1 ring-inset ring-[#2E2822]/20' : ''
+              }`}
+            >
+              <span className="font-sans font-medium text-sm text-[#2E2822]">{s.name}</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#7A6F69] shrink-0">
+                {pendingCheckoutSalesperson?.id === s.id ? 'Selected' : `ID ${s.id}`}
+              </span>
+            </button>
+          ))
+        )}
       </StandardModal>
     </div>
   )

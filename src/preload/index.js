@@ -96,6 +96,9 @@ const customElectronAPI = {
     listCashEntries: (filters) => ipcRenderer.invoke('drawer:listCashEntries', filters),
     deleteCashEntry: (id) => ipcRenderer.invoke('drawer:deleteCashEntry', id),
     getReconciliation: (filters) => ipcRenderer.invoke('drawer:getReconciliation', filters),
+    moveHistory: () => ipcRenderer.invoke('drawer:moveHistory'),
+    getUnifiedHistory: (filters) => ipcRenderer.invoke('drawer:getUnifiedHistory', filters),
+    getBalances: () => ipcRenderer.invoke('drawer:getBalances'),
     // Legacy aliases
     getOpeningBalance: (filters) => ipcRenderer.invoke('drawer:getOpeningBalance', filters),
     setOpeningBalance: (data) => ipcRenderer.invoke('drawer:setOpeningBalance', data)

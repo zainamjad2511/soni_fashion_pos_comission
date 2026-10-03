@@ -38,12 +38,12 @@ function formatDateTime(value) {
 }
 
 export function Expenses() {
-  const [activeTab, setActiveTab] = useState('expenses')
-  const [expenses, setExpenses] = useState([])
-  const [cashEntries, setCashEntries] = useState([])
+  const [activeTab, setActiveTab] = useState('active') // 'active' = Todays Balance, 'archived' = Previous Balance
+  const [unifiedHistory, setUnifiedHistory] = useState([])
+  const [balances, setBalances] = useState({ active: {}, archived: {} })
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedType, setSelectedType] = useState('All')
 
   const initialRange = getDefaultDateRange()
   const [datePreset, setDatePreset] = useState(initialRange.preset)
@@ -56,7 +56,8 @@ export function Expenses() {
     setEndDate(nextEnd)
   }
 
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isExpenseDrawerOpen, setIsExpenseDrawerOpen] = useState(false)
+  const [isDepositDrawerOpen, setIsDepositDrawerOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [deletingExpense, setDeletingExpense] = useState(null)
   const [deletingDeposit, setDeletingDeposit] = useState(null)
@@ -79,94 +80,64 @@ export function Expenses() {
     note: ''
   })
 
-  const isExpensesTab = activeTab === 'expenses'
-
   useEffect(() => {
-    if (isExpensesTab) {
-      fetchExpenses()
-    } else {
-      fetchCashEntries()
-    }
-  }, [activeTab, searchTerm, selectedCategory, startDate, endDate])
+    fetchHistory()
+  }, [activeTab, searchTerm, selectedType, startDate, endDate])
 
   const showToast = (type, message) => {
     setToast({ type, message })
     setTimeout(() => setToast(null), 4500)
   }
 
-  const fetchExpenses = async () => {
+  const fetchHistory = async () => {
     setLoading(true)
     try {
-      if (!window.electronAPI?.expenses) {
-        showToast('error', 'Application API unavailable.')
-        setExpenses([])
+      if (!window.electronAPI?.drawer?.getUnifiedHistory) {
+        showToast('error', 'Drawer API unavailable.')
         return
       }
 
       const filters = {
+        session_status: activeTab,
+        type: selectedType,
         search: searchTerm,
-        category: selectedCategory,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined
       }
-      const res = await window.electronAPI.expenses.list(filters)
-      if (res.success) {
-        setExpenses(Array.isArray(res.data) ? res.data : [])
-      } else {
-        showToast('error', res.error || 'Could not load expenses.')
-        setExpenses([])
-      }
-    } catch (err) {
-      console.error('Failed to fetch expenses:', err)
-      showToast('error', 'Could not load expenses.')
-      setExpenses([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchCashEntries = async () => {
-    setLoading(true)
-    try {
-      if (!window.electronAPI?.drawer?.listCashEntries) {
-        showToast('error', 'Drawer API unavailable.')
-        setCashEntries([])
-        return
+      
+      if (activeTab === 'archived') {
+        filters.startDate = startDate || undefined
+        filters.endDate = endDate || undefined
       }
 
-      const res = await window.electronAPI.drawer.listCashEntries({
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-        limit: 200
-      })
-      if (res.success) {
-        const rows = Array.isArray(res.data) ? res.data : []
-        const q = searchTerm.trim().toLowerCase()
-        setCashEntries(
-          q
-            ? rows.filter((row) => {
-                const note = String(row.note || '').toLowerCase()
-                const by = String(row.recorded_by || '').toLowerCase()
-                return note.includes(q) || by.includes(q)
-              })
-            : rows
-        )
-      } else {
-        showToast('error', res.error || 'Could not load cash deposits.')
-        setCashEntries([])
-      }
+      const res = await window.electronAPI.drawer.getUnifiedHistory(filters)
+      setUnifiedHistory(Array.isArray(res?.data) ? res.data : [])
+
+      const balRes = await window.electronAPI.drawer.getBalances()
+      setBalances(balRes?.data || { active: {}, archived: {} })
     } catch (err) {
-      console.error('Failed to fetch cash entries:', err)
-      showToast('error', 'Could not load cash deposits.')
-      setCashEntries([])
+      console.error('Failed to fetch history:', err)
+      showToast('error', 'Could not load data.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleRefresh = () => {
-    if (isExpensesTab) fetchExpenses()
-    else fetchCashEntries()
+    fetchHistory()
+  }
+
+  const handleMoveHistory = async () => {
+    if (!window.confirm('Are you sure you want to move all active transactions to Previous Balance?')) return
+    setLoading(true)
+    try {
+      await window.electronAPI.drawer.moveHistory()
+      showToast('success', 'History moved to Previous Balance.')
+      fetchHistory()
+    } catch (err) {
+      console.error('Failed to move history:', err)
+      showToast('error', 'Failed to move history.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleOpenExpenseDrawer = (expense = null) => {
@@ -176,9 +147,9 @@ export function Expenses() {
       setFormData({
         category: expense.category || EXPENSE_CATEGORIES[0],
         amount: expense.amount || '',
-        expense_date: expense.expense_date || businessToday,
+        expense_date: expense.created_at ? expense.created_at.split(' ')[0] : businessToday,
         recorded_by: expense.recorded_by || 'Manager',
-        description: expense.description || '',
+        description: expense.reference || expense.notes || '',
         notes: expense.notes || ''
       })
     } else {
@@ -192,7 +163,7 @@ export function Expenses() {
         notes: ''
       })
     }
-    setIsDrawerOpen(true)
+    setIsExpenseDrawerOpen(true)
   }
 
   const handleOpenDepositDrawer = () => {
@@ -202,16 +173,12 @@ export function Expenses() {
       recorded_by: 'Manager',
       note: ''
     })
-    setIsDrawerOpen(true)
-  }
-
-  const handleOpenDrawer = () => {
-    if (isExpensesTab) handleOpenExpenseDrawer()
-    else handleOpenDepositDrawer()
+    setIsDepositDrawerOpen(true)
   }
 
   const handleCloseDrawer = () => {
-    setIsDrawerOpen(false)
+    setIsExpenseDrawerOpen(false)
+    setIsDepositDrawerOpen(false)
     setEditingExpense(null)
   }
 
@@ -219,12 +186,12 @@ export function Expenses() {
     if (tab === activeTab) return
     setActiveTab(tab)
     setSearchTerm('')
-    setIsDrawerOpen(false)
-    setEditingExpense(null)
+    setSelectedType('All')
+    handleCloseDrawer()
     setDeletingExpense(null)
   }
 
-  useDismissOnEscape(isDrawerOpen, handleCloseDrawer, submitting)
+  useDismissOnEscape(isExpenseDrawerOpen || isDepositDrawerOpen, handleCloseDrawer, submitting)
   useDismissOnEscape(Boolean(deletingExpense), () => setDeletingExpense(null), submitting)
   useDismissOnEscape(Boolean(deletingDeposit), () => setDeletingDeposit(null), submitting)
 
@@ -247,20 +214,15 @@ export function Expenses() {
 
     setSubmitting(true)
     try {
-      if (!window.electronAPI?.expenses) {
-        showToast('error', 'Application API unavailable.')
-        return
-      }
-
       let res
       if (editingExpense) {
         res = await window.electronAPI.expenses.update(editingExpense.id, formData)
       } else {
-        res = await window.electronAPI.expenses.create(formData)
+        res = await window.electronAPI.expenses.create({ ...formData, session_status: activeTab })
       }
-      if (res && res.success) {
+      if (res && (res.success || res.id)) {
         showToast('success', editingExpense ? 'Expense updated successfully!' : 'New expense recorded successfully!')
-        fetchExpenses()
+        fetchHistory()
         handleCloseDrawer()
       } else {
         showToast('error', (res && res.error) || 'Failed to save expense.')
@@ -287,22 +249,18 @@ export function Expenses() {
 
     setSubmitting(true)
     try {
-      if (!window.electronAPI?.drawer?.addCashEntry) {
-        showToast('error', 'Drawer API unavailable.')
-        return
-      }
-
       const res = await window.electronAPI.drawer.addCashEntry({
         amount,
         note: depositForm.note.trim() || null,
         businessDate: depositForm.date,
         recordedBy: depositForm.recorded_by.trim() || 'Manager',
-        created_at: `${depositForm.date} 12:00:00`
+        created_at: `${depositForm.date} 12:00:00`,
+        session_status: activeTab
       })
 
-      if (res && res.success) {
+      if (res && (res.success || res.exists)) {
         showToast('success', `Rs. ${amount.toLocaleString()} added to drawer.`)
-        fetchCashEntries()
+        fetchHistory()
         handleCloseDrawer()
       } else {
         showToast('error', (res && res.error) || 'Failed to add cash deposit.')
@@ -319,15 +277,10 @@ export function Expenses() {
     if (!deletingExpense) return
     setSubmitting(true)
     try {
-      if (!window.electronAPI?.expenses) {
-        showToast('error', 'Application API unavailable.')
-        return
-      }
-
       const res = await window.electronAPI.expenses.delete(deletingExpense.id)
       if (res && res.success) {
         showToast('success', 'Expense deleted successfully.')
-        fetchExpenses()
+        fetchHistory()
         setDeletingExpense(null)
       } else {
         showToast('error', (res && res.error) || 'Failed to delete expense.')
@@ -344,15 +297,10 @@ export function Expenses() {
     if (!deletingDeposit) return
     setSubmitting(true)
     try {
-      if (!window.electronAPI?.drawer?.deleteCashEntry) {
-        showToast('error', 'Drawer API unavailable.')
-        return
-      }
-
       const res = await window.electronAPI.drawer.deleteCashEntry(deletingDeposit.id)
       if (res && res.success) {
         showToast('success', 'Cash deposit deleted successfully.')
-        fetchCashEntries()
+        fetchHistory()
         setDeletingDeposit(null)
       } else {
         showToast('error', (res && res.error) || 'Failed to delete cash deposit.')
@@ -365,22 +313,8 @@ export function Expenses() {
     }
   }
 
-  const expenseList = Array.isArray(expenses) ? expenses : []
-  const depositList = Array.isArray(cashEntries) ? cashEntries : []
-
-  const totalExpenditure = expenseList.reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
-  const totalTransactions = expenseList.length
-
-  const categoryTotals = expenseList.reduce((acc, curr) => {
-    acc[curr.category] = (acc[curr.category] || 0) + Number(curr.amount || 0)
-    return acc
-  }, {})
-  const topCategoryEntry = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0]
-  const topCategoryName = topCategoryEntry ? topCategoryEntry[0] : 'None'
-  const topCategoryAmount = topCategoryEntry ? topCategoryEntry[1] : 0
-
-  const totalCashAdded = depositList.reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
-  const depositCount = depositList.length
+  const currentStats = balances[activeTab] || {}
+  const netBalance = currentStats.net || 0
 
   return (
     <div className="space-y-8 pb-16 relative animate-fade-in text-[#2E2822]">
@@ -393,92 +327,99 @@ export function Expenses() {
             Ledger & Cash Accounting
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2E2822] tracking-tight">
-            Cash & Expenses
+            Drawer Balance
           </h1>
           <p className="text-[#7A6F69] font-sans text-sm mt-2">
-            Track store overheads and cash put into the drawer.
+            Track store overheads, sales, and cash put into the drawer.
           </p>
         </div>
 
-        <button
-          onClick={handleOpenDrawer}
-          className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all shrink-0"
-        >
-          <PlusIcon className="w-4 h-4" />
-          <span>{isExpensesTab ? 'Record Expense' : 'Add Cash to Drawer'}</span>
-        </button>
+        <div className="flex items-center gap-4 shrink-0">
+          <button
+            onClick={() => handleOpenExpenseDrawer()}
+            className="px-6 py-3 rounded-[2px] bg-transparent border border-[#2E2822] text-[#2E2822] hover:bg-[#2E2822] hover:text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span>Add Expense</span>
+          </button>
+          <button
+            onClick={handleOpenDepositDrawer}
+            className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs tracking-[0.14em] uppercase flex items-center gap-2.5 transition-all"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span>Add Cash</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-8 border-b border-[#C9C0B5]">
-        <button
-          type="button"
-          onClick={() => handleTabChange('expenses')}
-          className={`pb-4 font-sans text-xs font-bold uppercase tracking-[0.14em] transition-all relative ${
-            isExpensesTab
-              ? 'text-[#2E2822] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#2E2822]'
-              : 'text-[#7A6F69] hover:text-[#2E2822]'
-          }`}
-        >
-          Expenses
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTabChange('deposits')}
-          className={`pb-4 font-sans text-xs font-bold uppercase tracking-[0.14em] transition-all relative ${
-            !isExpensesTab
-              ? 'text-[#2E2822] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#2E2822]'
-              : 'text-[#7A6F69] hover:text-[#2E2822]'
-          }`}
-        >
-          Cash Deposits
-        </button>
+      <div className="flex items-center justify-between border-b border-[#C9C0B5]">
+        <div className="flex items-center gap-8">
+          <button
+            type="button"
+            onClick={() => handleTabChange('active')}
+            className={`pb-4 font-sans text-xs font-bold uppercase tracking-[0.14em] transition-all relative ${
+              activeTab === 'active'
+                ? 'text-[#2E2822] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#2E2822]'
+                : 'text-[#7A6F69] hover:text-[#2E2822]'
+            }`}
+          >
+            Todays Balance
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange('archived')}
+            className={`pb-4 font-sans text-xs font-bold uppercase tracking-[0.14em] transition-all relative ${
+              activeTab === 'archived'
+                ? 'text-[#2E2822] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#2E2822]'
+                : 'text-[#7A6F69] hover:text-[#2E2822]'
+            }`}
+          >
+            Previous Balance
+          </button>
+        </div>
+        {activeTab === 'active' && (
+          <button
+            onClick={handleMoveHistory}
+            className="pb-4 text-xs font-sans font-bold text-[#E53E3E] hover:text-[#C53030] uppercase tracking-[0.14em] transition-colors"
+          >
+            Move History to Previous Balance
+          </button>
+        )}
       </div>
 
       {/* KPI strip */}
-      {isExpensesTab ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-8 border-b border-[#C9C0B5]">
-          <div className="space-y-1">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Selected Period Total</span>
-            <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
-              Rs. {totalExpenditure.toLocaleString()}
-            </h3>
-          </div>
-
-          <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Total Transactions</span>
-            <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
-              {totalTransactions} <span className="text-sm font-sans font-normal text-[#7A6F69]">records</span>
-            </h3>
-          </div>
-
-          <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Top Expense Category</span>
-            <h3 className="text-2xl font-display font-bold text-[#2E2822] truncate">
-              {topCategoryName}
-            </h3>
-            {topCategoryAmount > 0 && (
-              <span className="text-xs font-mono text-[#7A6F69] block">Rs. {topCategoryAmount.toLocaleString()}</span>
-            )}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-[#C9C0B5]">
+        <div className="space-y-1">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">
+            {activeTab === 'active' ? 'Net Drawer Amount' : 'Opening Balance'}
+          </span>
+          <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
+            Rs. {netBalance.toLocaleString()}
+          </h3>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-8 border-b border-[#C9C0B5]">
-          <div className="space-y-1">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Period Total Cash Added</span>
-            <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
-              Rs. {totalCashAdded.toLocaleString()}
-            </h3>
-          </div>
 
-          <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
-            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Entry Count</span>
-            <h3 className="text-4xl font-display font-bold text-[#2E2822] tracking-tight">
-              {depositCount} <span className="text-sm font-sans font-normal text-[#7A6F69]">entries</span>
-            </h3>
-          </div>
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Sales</span>
+          <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight">
+            Rs. {(currentStats.sales || 0).toLocaleString()}
+          </h3>
         </div>
-      )}
+
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Cash Deposits</span>
+          <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight">
+            Rs. {(currentStats.deposits || 0).toLocaleString()}
+          </h3>
+        </div>
+
+        <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
+          <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Expenses</span>
+          <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight">
+            Rs. {(currentStats.expenses || 0).toLocaleString()}
+          </h3>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6 py-4 border-b border-[#C9C0B5]">
@@ -487,11 +428,7 @@ export function Expenses() {
             <SearchIcon className="w-4 h-4 absolute left-0 top-3 text-[#7A6F69]" />
             <input
               type="text"
-              placeholder={
-                isExpensesTab
-                  ? 'Search description, category or notes...'
-                  : 'Search note or recorded by...'
-              }
+              placeholder="Search reference, notes or staff..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-7 pr-4 py-2 bg-transparent border-b border-[#C9C0B5] text-sm text-[#2E2822] placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822] transition-colors font-sans"
@@ -506,25 +443,25 @@ export function Expenses() {
             )}
           </div>
 
-          {isExpensesTab && (
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="py-2 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-semibold uppercase tracking-[0.1em] text-[#2E2822] focus:outline-none focus:border-[#2E2822] cursor-pointer"
-            >
-              <option value="All">All Categories</option>
-              {EXPENSE_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          )}
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="py-2 bg-transparent border-b border-[#C9C0B5] text-xs font-sans font-semibold uppercase tracking-[0.1em] text-[#2E2822] focus:outline-none focus:border-[#2E2822] cursor-pointer"
+          >
+            <option value="All">All Types</option>
+            <option value="Sales">Sales</option>
+            <option value="Expense">Expenses</option>
+            <option value="Deposits">Deposits</option>
+          </select>
 
-          <DateRangePresets
-            preset={datePreset}
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handleDateRangeChange}
-          />
+          {activeTab === 'archived' && (
+            <DateRangePresets
+              preset={datePreset}
+              startDate={startDate}
+              endDate={endDate}
+              onChange={handleDateRangeChange}
+            />
+          )}
         </div>
 
         <button
@@ -536,158 +473,118 @@ export function Expenses() {
         </button>
       </div>
 
-      {/* Tables */}
-      {isExpensesTab ? (
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
-                <th className="py-4 pr-4">Date</th>
-                <th className="py-4 px-4">Category</th>
-                <th className="py-4 px-4">Description</th>
-                <th className="py-4 px-4">Recorded By</th>
-                <th className="py-4 px-4 text-right">Amount (Rs.)</th>
-                <th className="py-4 pl-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-5 pr-4"><div className="h-4 w-24 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-32 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-48 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-20 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-24 bg-[#EFEBE3] ml-auto"></div></td>
-                    <td className="py-5 pl-4"><div className="h-4 w-16 bg-[#EFEBE3] ml-auto"></div></td>
-                  </tr>
-                ))
-              ) : expenseList.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-20 text-center">
-                    <div className="flex flex-col items-center justify-center text-[#7A6F69]">
-                      <ReceiptIcon className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
-                      <p className="text-base font-display font-bold text-[#2E2822]">No expenses recorded for this period</p>
-                      <p className="text-sm font-sans text-[#7A6F69] mt-1">Try adjusting your filters or click "Record Expense"</p>
-                    </div>
-                  </td>
+      {/* Unified Table */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
+              <th className="py-4 pr-4">Date / Time</th>
+              <th className="py-4 px-4">Type</th>
+              <th className="py-4 px-4">Details</th>
+              <th className="py-4 px-4">Recorded By</th>
+              <th className="py-4 px-4 text-right">Amount (Rs.)</th>
+              <th className="py-4 pl-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="py-5 pr-4"><div className="h-4 w-32 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-20 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-48 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-20 bg-[#EFEBE3]"></div></td>
+                  <td className="py-5 px-4"><div className="h-4 w-24 bg-[#EFEBE3] ml-auto"></div></td>
+                  <td className="py-5 pl-4"><div className="h-4 w-16 bg-[#EFEBE3] ml-auto"></div></td>
                 </tr>
-              ) : (
-                expenseList.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
-                    <td className="py-5 pr-4 font-mono text-[#2E2822] text-sm font-semibold">
-                      {item.expense_date}
-                    </td>
-                    <td className="py-5 px-4">
-                      <span className="font-sans text-sm font-bold uppercase tracking-wider text-[#2E2822]">
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className="py-5 px-4">
-                      <div className="font-bold text-[#2E2822] text-lg font-display">{item.description || '—'}</div>
-                      {item.notes && (
-                        <div className="text-sm font-sans text-[#7A6F69] mt-0.5 max-w-md">{item.notes}</div>
-                      )}
-                    </td>
-                    <td className="py-5 px-4 text-[#7A6F69] text-sm font-sans uppercase tracking-wider">
-                      <span className="font-semibold text-[#2E2822]">
-                        {item.recorded_by || 'Staff'}
-                      </span>
-                    </td>
-                    <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-lg">
-                      Rs. {Number(item.amount).toLocaleString()}
-                    </td>
-                    <td className="py-5 pl-4 text-right space-x-3 whitespace-nowrap">
-                      <button
-                        onClick={() => handleOpenExpenseDrawer(item)}
-                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-                        title="Edit Expense"
-                      >
-                        <EditIcon className="w-4 h-4 inline" />
-                      </button>
-                      <button
-                        onClick={() => setDeletingExpense(item)}
-                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
-                        title="Delete Expense"
-                      >
-                        <TrashIcon className="w-4 h-4 inline" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[#2E2822] text-xs md:text-sm font-bold text-[#7A6F69] uppercase tracking-[0.14em] font-sans">
-                <th className="py-4 pr-4">Date / Time</th>
-                <th className="py-4 px-4">Note</th>
-                <th className="py-4 px-4">Recorded By</th>
-                <th className="py-4 px-4 text-right">Amount (Rs.)</th>
-                <th className="py-4 pl-4 text-right">Actions</th>
+              ))
+            ) : unifiedHistory.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-20 text-center">
+                  <div className="flex flex-col items-center justify-center text-[#7A6F69]">
+                    <ReceiptIcon className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
+                    <p className="text-base font-display font-bold text-[#2E2822]">No records found</p>
+                    <p className="text-sm font-sans text-[#7A6F69] mt-1">Try adjusting your filters or add a new transaction</p>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-[#C9C0B5] text-base font-sans">
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-5 pr-4"><div className="h-4 w-32 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-48 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-24 bg-[#EFEBE3]"></div></td>
-                    <td className="py-5 px-4"><div className="h-4 w-24 bg-[#EFEBE3] ml-auto"></div></td>
-                    <td className="py-5 pl-4"><div className="h-4 w-10 bg-[#EFEBE3] ml-auto"></div></td>
-                  </tr>
-                ))
-              ) : depositList.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-20 text-center">
-                    <div className="flex flex-col items-center justify-center text-[#7A6F69]">
-                      <BanknoteIcon className="w-8 h-8 stroke-1 mb-3 text-[#2E2822]" />
-                      <p className="text-base font-display font-bold text-[#2E2822]">No cash deposits for this period</p>
-                      <p className="text-sm font-sans text-[#7A6F69] mt-1">Try adjusting your date range or click "Add Cash to Drawer"</p>
-                    </div>
+            ) : (
+              unifiedHistory.map((item, idx) => (
+                <tr key={`${item.record_type}-${item.id}-${idx}`} className="hover:bg-[#EFEBE3] transition-colors">
+                  <td className="py-5 pr-4 font-mono text-[#2E2822] text-sm font-semibold">
+                    {formatDateTime(item.created_at)}
                   </td>
-                </tr>
-              ) : (
-                depositList.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#EFEBE3] transition-colors">
-                    <td className="py-5 pr-4 font-mono text-[#2E2822] text-sm font-semibold">
-                      {formatDateTime(item.created_at)}
-                    </td>
-                    <td className="py-5 px-4">
-                      <div className="font-bold text-[#2E2822] text-lg font-display">{item.note || '—'}</div>
-                    </td>
-                    <td className="py-5 px-4 text-[#7A6F69] text-sm font-sans uppercase tracking-wider">
-                      <span className="font-semibold text-[#2E2822]">
-                        {item.recorded_by || 'Staff'}
-                      </span>
-                    </td>
-                    <td className="py-5 px-4 text-right font-mono font-bold text-[#2E2822] text-lg">
-                      Rs. {Number(item.amount).toLocaleString()}
-                    </td>
-                    <td className="py-5 pl-4 text-right whitespace-nowrap">
+                  <td className="py-5 px-4">
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase tracking-wider ${
+                      item.record_type === 'sale' ? 'bg-[#D1E7DD] text-[#0F5132]' :
+                      item.record_type === 'expense' ? 'bg-[#F8D7DA] text-[#842029]' :
+                      'bg-[#CFF4FC] text-[#055160]'
+                    }`}>
+                      {item.record_type}
+                    </span>
+                  </td>
+                  <td className="py-5 px-4">
+                    <div className="font-bold text-[#2E2822] text-base font-display">
+                      {item.record_type === 'sale' ? item.reference :
+                       item.record_type === 'expense' ? item.category :
+                       'Cash Deposit'}
+                    </div>
+                    {item.notes && (
+                      <div className="text-sm font-sans text-[#7A6F69] mt-0.5 max-w-sm truncate">{item.notes}</div>
+                    )}
+                  </td>
+                  <td className="py-5 px-4 text-[#7A6F69] text-sm font-sans uppercase tracking-wider">
+                    <span className="font-semibold text-[#2E2822]">
+                      {item.recorded_by || 'Staff'}
+                    </span>
+                  </td>
+                  <td className={`py-5 px-4 text-right font-mono font-bold text-lg ${
+                    item.record_type === 'expense' ? 'text-[#E53E3E]' : 'text-[#2E2822]'
+                  }`}>
+                    {item.record_type === 'expense' ? '- ' : '+ '}
+                    Rs. {Number(item.amount).toLocaleString()}
+                  </td>
+                  <td className="py-5 pl-4 text-right space-x-3 whitespace-nowrap">
+                    {item.record_type === 'expense' && (
+                      <>
+                        <button
+                          onClick={() => handleOpenExpenseDrawer(item)}
+                          className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                          title="Edit Expense"
+                        >
+                          <EditIcon className="w-4 h-4 inline" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingExpense(item)}
+                          className="text-[#7A6F69] hover:text-[#E53E3E] transition-colors"
+                          title="Delete Expense"
+                        >
+                          <TrashIcon className="w-4 h-4 inline" />
+                        </button>
+                      </>
+                    )}
+                    {item.record_type === 'deposit' && (
                       <button
                         onClick={() => setDeletingDeposit(item)}
-                        className="text-[#7A6F69] hover:text-[#2E2822] transition-colors"
+                        className="text-[#7A6F69] hover:text-[#E53E3E] transition-colors"
                         title="Delete Deposit"
                       >
                         <TrashIcon className="w-4 h-4 inline" />
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    )}
+                    {item.record_type === 'sale' && (
+                      <span className="text-xs text-[#7A6F69] italic">Managed in Sales</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Expense drawer */}
-      {isDrawerOpen && isExpensesTab && createPortal(
+      {isExpenseDrawerOpen && createPortal(
         <div
           className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in"
           {...getOverlayDismissProps(handleCloseDrawer, submitting)}
@@ -780,20 +677,6 @@ export function Expenses() {
 
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
-                  Brief Description
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleFormChange}
-                  placeholder="Electricity bill for shop #1"
-                  className="w-full py-2 bg-transparent border-b border-[#C9C0B5] text-[#2E2822] text-base font-display font-bold placeholder-[#7A6F69] focus:outline-none focus:border-[#2E2822]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#7A6F69] uppercase tracking-[0.14em] block">
                   Additional Notes / Vendor Details
                 </label>
                 <textarea
@@ -832,7 +715,7 @@ export function Expenses() {
       )}
 
       {/* Cash deposit drawer */}
-      {isDrawerOpen && !isExpensesTab && createPortal(
+      {isDepositDrawerOpen && createPortal(
         <div
           className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex justify-end animate-fade-in"
           {...getOverlayDismissProps(handleCloseDrawer, submitting)}
@@ -945,7 +828,7 @@ export function Expenses() {
         document.body
       )}
 
-      {/* Delete confirmation — expenses only */}
+      {/* Delete confirmations */}
       {deletingExpense && createPortal(
         <div
           className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
@@ -964,24 +847,6 @@ export function Expenses() {
                 Are you sure you want to remove this expense? This action cannot be undone.
               </p>
             </div>
-
-            <div className="p-6 bg-[#EFEBE3] space-y-3 text-sm font-sans">
-              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
-                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Category:</span>
-                <span className="font-bold text-[#2E2822]">{deletingExpense.category}</span>
-              </div>
-              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
-                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Amount:</span>
-                <span className="font-mono font-bold text-[#2E2822]">Rs. {Number(deletingExpense.amount).toLocaleString()}</span>
-              </div>
-              {deletingExpense.description && (
-                <div className="flex justify-between">
-                  <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Description:</span>
-                  <span className="text-[#2E2822] font-semibold truncate max-w-[200px]">{deletingExpense.description}</span>
-                </div>
-              )}
-            </div>
-
             <div className="flex items-center justify-end gap-4 pt-2">
               <button
                 type="button"
@@ -995,7 +860,7 @@ export function Expenses() {
                 type="button"
                 onClick={handleDeleteConfirm}
                 disabled={submitting}
-                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-3 rounded-[2px] bg-[#E53E3E] hover:bg-[#C53030] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2"
               >
                 {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>Delete Permanently</span>
@@ -1006,7 +871,6 @@ export function Expenses() {
         document.body
       )}
 
-      {/* Delete confirmation — cash deposits */}
       {deletingDeposit && createPortal(
         <div
           className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
@@ -1025,24 +889,6 @@ export function Expenses() {
                 This removes the deposit from the drawer balance. This action cannot be undone.
               </p>
             </div>
-
-            <div className="p-6 bg-[#EFEBE3] space-y-3 text-sm font-sans">
-              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
-                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">When:</span>
-                <span className="font-mono font-semibold text-[#2E2822]">{formatDateTime(deletingDeposit.created_at)}</span>
-              </div>
-              <div className="flex justify-between border-b border-[#C9C0B5] pb-2">
-                <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Amount:</span>
-                <span className="font-mono font-bold text-[#2E2822]">Rs. {Number(deletingDeposit.amount).toLocaleString()}</span>
-              </div>
-              {deletingDeposit.note && (
-                <div className="flex justify-between">
-                  <span className="text-[#7A6F69] text-xs uppercase tracking-wider font-bold">Note:</span>
-                  <span className="text-[#2E2822] font-semibold truncate max-w-[200px]">{deletingDeposit.note}</span>
-                </div>
-              )}
-            </div>
-
             <div className="flex items-center justify-end gap-4 pt-2">
               <button
                 type="button"
@@ -1056,7 +902,7 @@ export function Expenses() {
                 type="button"
                 onClick={handleDeleteDepositConfirm}
                 disabled={submitting}
-                className="px-6 py-3 rounded-[2px] bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-3 rounded-[2px] bg-[#E53E3E] hover:bg-[#C53030] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2"
               >
                 {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>Delete Permanently</span>

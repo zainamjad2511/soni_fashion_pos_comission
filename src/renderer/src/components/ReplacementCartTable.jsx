@@ -1,5 +1,5 @@
 import React from 'react'
-import { MinusIcon, PlusIcon, TrashIcon } from './icons/TechnicalIcons.jsx'
+import { TrashIcon } from './icons/TechnicalIcons.jsx'
 import { computeItemLineTotals } from '../store/cartStore.js'
 
 /**
@@ -10,6 +10,7 @@ import { computeItemLineTotals } from '../store/cartStore.js'
 export function ReplacementCartTable({
   replacementCart,
   onQtyChange,
+  onQtyBlur,
   onPriceChange,
   onRemoveItem,
   formatCurrency,
@@ -48,23 +49,16 @@ export function ReplacementCartTable({
                 </td>
                 <td className="py-3.5 px-4 text-right font-mono text-[#332822]">{formatCurrency(item.retail_price_snapshot)}</td>
                 <td className="p-0 h-px text-center w-28">
-                  <div className="flex items-center justify-center gap-2 h-full">
-                    <button
-                      type="button"
-                      onClick={() => onQtyChange(item.article_id, -1)}
-                      className="p-1 border border-[#332822] text-[#332822] hover:bg-[#332822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
-                    >
-                      <MinusIcon className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="w-6 text-center font-mono font-semibold">{item.quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => onQtyChange(item.article_id, 1)}
-                      className="p-1 border border-[#332822] text-[#332822] hover:bg-[#332822] hover:text-[#F7F5F0] rounded-[2px] transition-all"
-                    >
-                      <PlusIcon className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max={item.max_quantity}
+                    value={item.quantity}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => onQtyChange(item.article_id, e.target.value)}
+                    onBlur={() => onQtyBlur && onQtyBlur(item.article_id)}
+                    className="w-full h-full min-h-[46px] px-2 text-center bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
+                  />
                 </td>
                 <td className="p-0 h-px text-right w-36">
                   <input
@@ -75,7 +69,7 @@ export function ReplacementCartTable({
                     onFocus={(e) => e.target.select()}
                     onKeyDown={(e) => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.preventDefault()}
                     onChange={(e) => onPriceChange(item.article_id, e.target.value)}
-                    className="w-full h-full min-h-[46px] px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm font-semibold focus:outline-none focus:bg-white border-0"
+                    className="w-full h-full min-h-[46px] px-2 text-right bg-[#F7F5F0] text-[#332822] font-mono text-sm md:text-base font-normal focus:outline-none focus:bg-white border-0"
                   />
                 </td>
                 <td className="py-3.5 px-4 text-right font-mono text-[#7A6F69]">

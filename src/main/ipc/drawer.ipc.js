@@ -234,11 +234,12 @@ export function registerDrawerHandlers() {
       ? String(payload.note).trim() || null
       : (payload.notes != null ? String(payload.notes).trim() || null : null)
     const createdAt = payload.created_at || localDateTimeString()
+    const sessionStatus = payload.session_status || 'active'
 
     const info = db.prepare(`
-      INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(amount, note, recordedBy, businessDate, createdAt)
+      INSERT INTO drawer_cash_entries (amount, note, recorded_by, business_date, session_status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(amount, note, recordedBy, businessDate, sessionStatus, createdAt)
 
     const row = db.prepare('SELECT * FROM drawer_cash_entries WHERE id = ?').get(info.lastInsertRowid)
 
@@ -340,5 +341,135 @@ export function registerDrawerHandlers() {
       row
     )
     return { business_date: businessDate, amount, exists: true, entry: row }
+  })
+
+  handleIpc('drawer:moveHistory', () => {
+    const db = getDb()
+    db.transaction(() => {
+      db.prepare("UPDATE sales SET session_status = 'archived' WHERE session_status = 'active'").run()
+      db.prepare("UPDATE expenses SET session_status = 'archived' WHERE session_status = 'active'").run()
+      db.prepare("UPDATE drawer_cash_entries SET session_status = 'archived' WHERE session_status = 'active'").run()
+    })()
+    
+    auditLog(
+      db,
+      'DRAWER_MOVE_HISTORY',
+      'system',
+      0,
+      `Moved Today's Balance to Previous Balance`,
+      null,
+      null
+    )
+    return { success: true }
+  })
+
+  handleIpc('drawer:getUnifiedHistory', (_, filters) => {
+    const db = getDb()
+    const { session_status, type, search, startDate, endDate } = filters || {}
+    let params = []
+
+    let finalQuery = `
+      WITH unified AS (
+        SELECT 
+          id, 'sale' as record_type, invoice_number as reference, NULL as category, 
+          (SELECT name FROM salespersons WHERE id = salesperson_id) as recorded_by, 
+          grand_total as amount, sale_date as created_at, notes, session_status 
+        FROM sales 
+        WHERE status = 'completed'
+        
+        UNION ALL
+        
+        SELECT 
+          id, 'expense' as record_type, NULL as reference, category, 
+          recorded_by, amount, expense_date || SUBSTR(created_at, 11) as created_at, notes, session_status 
+        FROM expenses
+        
+        UNION ALL
+        
+        SELECT 
+          id, 'deposit' as record_type, NULL as reference, NULL as category, 
+          recorded_by, amount, created_at, note as notes, session_status 
+        FROM drawer_cash_entries
+      )
+      SELECT * FROM unified WHERE 1=1
+    `
+
+    if (session_status) {
+      finalQuery += ` AND session_status = ?`
+      params.push(session_status)
+    }
+
+    if (type && type !== 'All') {
+      if (type === 'Sales') finalQuery += ` AND record_type = 'sale'`
+      if (type === 'Expense') finalQuery += ` AND record_type = 'expense'`
+      if (type === 'Deposits') finalQuery += ` AND record_type = 'deposit'`
+    }
+
+    if (startDate && endDate) {
+      finalQuery += ` AND created_at >= ? AND created_at <= ?`
+      // Append hours to ensure full day coverage if they just pass YYYY-MM-DD
+      const startParam = startDate.length === 10 ? `${startDate} 00:00:00` : startDate
+      const endParam = endDate.length === 10 ? `${endDate} 23:59:59` : endDate
+      params.push(startParam, endParam)
+    }
+
+    if (search && search.trim() !== '') {
+      finalQuery += ` AND (reference LIKE ? OR notes LIKE ? OR recorded_by LIKE ? OR category LIKE ?)`
+      const term = `%${search.trim()}%`
+      params.push(term, term, term, term)
+    }
+
+    finalQuery += ` ORDER BY created_at DESC LIMIT 500`
+
+    return db.prepare(finalQuery).all(...params)
+  })
+
+  handleIpc('drawer:getBalances', () => {
+    const db = getDb()
+    
+    // Active Balance
+    const activeRes = db.prepare(`
+      SELECT 
+        SUM(CASE WHEN type = 'sale' THEN amount ELSE 0 END) as sales,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses,
+        SUM(CASE WHEN type = 'deposit' THEN amount ELSE 0 END) as deposits
+      FROM (
+        SELECT 'sale' as type, grand_total as amount FROM sales WHERE status = 'completed' AND session_status = 'active'
+        UNION ALL
+        SELECT 'expense' as type, amount FROM expenses WHERE session_status = 'active'
+        UNION ALL
+        SELECT 'deposit' as type, amount FROM drawer_cash_entries WHERE session_status = 'active'
+      )
+    `).get()
+
+    // Archived Balance
+    const archivedRes = db.prepare(`
+      SELECT 
+        SUM(CASE WHEN type = 'sale' THEN amount ELSE 0 END) as sales,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses,
+        SUM(CASE WHEN type = 'deposit' THEN amount ELSE 0 END) as deposits
+      FROM (
+        SELECT 'sale' as type, grand_total as amount FROM sales WHERE status = 'completed' AND session_status = 'archived'
+        UNION ALL
+        SELECT 'expense' as type, amount FROM expenses WHERE session_status = 'archived'
+        UNION ALL
+        SELECT 'deposit' as type, amount FROM drawer_cash_entries WHERE session_status = 'archived'
+      )
+    `).get()
+
+    return {
+      active: {
+        sales: activeRes.sales || 0,
+        expenses: activeRes.expenses || 0,
+        deposits: activeRes.deposits || 0,
+        net: (activeRes.sales || 0) + (activeRes.deposits || 0) - (activeRes.expenses || 0)
+      },
+      archived: {
+        sales: archivedRes.sales || 0,
+        expenses: archivedRes.expenses || 0,
+        deposits: archivedRes.deposits || 0,
+        net: (archivedRes.sales || 0) + (archivedRes.deposits || 0) - (archivedRes.expenses || 0)
+      }
+    }
   })
 }

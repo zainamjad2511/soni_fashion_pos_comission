@@ -612,4 +612,34 @@ export function runMigrations(db) {
     migrateV13()
     console.log('[Migrations] Successfully applied V13 Migration.')
   }
+
+  if (currentVersion < 14) {
+    console.log('[Migrations] Applying V14 Migration (session status)...')
+    const migrateV14 = db.transaction(() => {
+      // Add session_status column to sales, expenses, drawer_cash_entries
+      const salesCols = db.prepare('PRAGMA table_info(sales)').all()
+      if (!salesCols.some(c => c.name === 'session_status')) {
+        db.exec("ALTER TABLE sales ADD COLUMN session_status TEXT NOT NULL DEFAULT 'active'")
+      }
+
+      const expensesCols = db.prepare('PRAGMA table_info(expenses)').all()
+      if (!expensesCols.some(c => c.name === 'session_status')) {
+        db.exec("ALTER TABLE expenses ADD COLUMN session_status TEXT NOT NULL DEFAULT 'active'")
+      }
+
+      const drawerCols = db.prepare('PRAGMA table_info(drawer_cash_entries)').all()
+      if (!drawerCols.some(c => c.name === 'session_status')) {
+        db.exec("ALTER TABLE drawer_cash_entries ADD COLUMN session_status TEXT NOT NULL DEFAULT 'active'")
+      }
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '14', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '14', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV14()
+    console.log('[Migrations] Successfully applied V14 Migration.')
+  }
 }
