@@ -272,17 +272,18 @@ export function registerReturnsHandlers() {
           const wholesale = Number(rItem.wholesale_price_snapshot ?? art.wholesale_price)
           const disc = Number(rItem.discount_amount ?? 0)
           const lineSubtotal = retail * q
-          const lineTotal = rItem.line_total != null ? Number(rItem.line_total) : lineSubtotal - disc
+          const lineTotal = rItem.line_total != null
+            ? Number(rItem.line_total)
+            : Math.max(0, lineSubtotal - Math.max(0, disc))
 
-          if (lineTotal <= 0) {
-            throw new Error(`Final amount for "${art.name}" must be greater than zero.`)
-          }
-          if (lineTotal > lineSubtotal) {
-            throw new Error(`Final amount for "${art.name}" cannot exceed retail subtotal (Rs. ${lineSubtotal.toLocaleString()}).`)
+          if (isNaN(lineTotal) || lineTotal < 0) {
+            throw new Error(`Invalid final amount for "${art.name}".`)
           }
 
-          const resolvedDiscount = lineSubtotal - lineTotal
-          subtotal += lineSubtotal
+          // A markup (lineTotal > lineSubtotal) is allowed — it's not a discount,
+          // so it's never recorded as one, matching the sales/POS pricing rules.
+          const resolvedDiscount = Math.max(0, lineSubtotal - lineTotal)
+          subtotal += Math.max(lineSubtotal, lineTotal)
           itemsTotalDiscount += resolvedDiscount
           return {
             article_id: art.id,
@@ -414,9 +415,10 @@ export function registerReturnsHandlers() {
     if (!idOrNumber) throw new Error('Return ID or number required.')
 
     const ret = db.prepare(`
-      SELECT r.*, 
+      SELECT r.*,
              s1.invoice_number AS original_invoice_number,
              s2.invoice_number AS exchange_new_invoice_number,
+             s2.grand_total AS exchange_new_grand_total,
              sp.name AS processed_by_name
       FROM returns r
       LEFT JOIN sales s1 ON r.original_sale_id = s1.id

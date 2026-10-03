@@ -13,7 +13,7 @@ import {
   PrintIcon,
   AlertTriangleIcon,
 } from '../components/icons/TechnicalIcons.jsx'
-import { POSCheckoutIcon, POSDeleteIcon } from '../components/icons/POSActionIcons.jsx'
+import { POSCheckoutIcon, POSDeleteIcon, NewDocumentIcon } from '../components/icons/POSActionIcons.jsx'
 import { formatCode } from '../utils/formatCode.js'
 import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
@@ -228,6 +228,48 @@ export function Returns() {
 
   const deleteParked = (id) => {
     saveParkedReturns(parkedReturns.filter((p) => p.id !== id))
+  }
+
+  // "New Document" — same pattern as POS: park whatever's in progress on the
+  // current tab (no family switch needed) and clear the slate so staff can
+  // start the next customer's return/exchange right away.
+  const handleNewDocument = () => {
+    if (isManualFamily) {
+      if (manualCart.length === 0) {
+        showToast('error', 'Nothing to park — cart is empty.')
+        return
+      }
+      parkCurrent(activeTab, {
+        selectedStaff, replacementCart, orderDiscount,
+        manualCart, manualReason, manualCustomNote, manualQuery,
+      })
+      setManualCart([])
+      setManualQuery('')
+      setManualSearchResults([])
+      setManualResult(null)
+    } else {
+      if (!selectedSale) {
+        showToast('error', 'Nothing to park — no invoice loaded.')
+        return
+      }
+      parkCurrent(activeTab, {
+        selectedStaff, replacementCart, orderDiscount,
+        selectedSale, returnQuantities, returnRefundPrices, returnNotes, invoiceQuery,
+        manualCart: [],
+      })
+      setSelectedSale(null)
+      setInvoiceQuery(''); setInvoiceSuggestions([])
+      setReturnQuantities({})
+      setReturnRefundPrices({})
+      setReturnNotes('')
+      setLookupError('')
+      setProcessResult(null)
+    }
+    setReplacementCart([])
+    setOrderDiscount(0)
+    setArticleSearchQuery('')
+    setArticleSearchResults([])
+    showToast('success', 'Document parked automatically.')
   }
 
   // Crossing the manual/invoice family boundary auto-parks the OTHER family's
@@ -1103,6 +1145,15 @@ export function Returns() {
 
           {/* RIGHT: action rail — search, staff/payment/reason, breakdown, big CTA */}
           <div className="w-full lg:w-[21rem] bg-[#FCFBFA] p-5 flex flex-col gap-4 shrink-0 overflow-y-auto">
+            <button
+              type="button"
+              onClick={handleNewDocument}
+              className="shrink-0 flex items-center justify-center gap-2 py-2.5 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-bold text-[10px] uppercase tracking-[0.12em] transition-colors"
+            >
+              <NewDocumentIcon className="w-4 h-4" />
+              <span>New Document</span>
+            </button>
+
             {/* Invoice lookup (invoice family only) */}
             {!isManualFamily && (
               selectedSale ? (
