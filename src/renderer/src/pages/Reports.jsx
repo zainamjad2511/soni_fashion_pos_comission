@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BarChartIcon,
   TrendingUpIcon,
@@ -14,10 +15,21 @@ import {
   CheckIcon,
   LayersIcon,
   ArrowRightIcon,
+  SearchIcon,
+  EyeIcon,
+  TrashIcon,
+  CloseIcon,
 } from '../components/icons/TechnicalIcons.jsx'
 import { Toast } from '../components/Toast.jsx'
+import {
+  StandardModal,
+  StandardModalAction,
+  StandardModalInput,
+  StandardModalLabel,
+} from '../components/StandardModal.jsx'
 import { DateRangePresets, getDefaultDateRange, DATE_PRESETS } from '../components/DateRangePresets.jsx'
 import { formatSaleDateTimeShort } from '../utils/localDateTime.js'
+import { buildReturnReceiptPayload } from '../utils/returnReceipt.js'
 
 export function Reports() {
   const [activeTab, setActiveTab] = useState('sales')
@@ -54,9 +66,19 @@ export function Reports() {
   const [topArticlesData, setTopArticlesData] = useState([])
   const [expenseData, setExpenseData] = useState({ categories: [], summary: { grand_total: 0 } })
 
+  // Returns tab state
+  const [returnsData, setReturnsData] = useState([])
+  const [returnsFilterType, setReturnsFilterType] = useState('')
+  const [returnsSearch, setReturnsSearch] = useState('')
+  const [selectedReturnDetail, setSelectedReturnDetail] = useState(null)
+  const [loadingReturnDetail, setLoadingReturnDetail] = useState(false)
+  const [voidTarget, setVoidTarget] = useState(null)
+  const [voidReason, setVoidReason] = useState('')
+  const [voiding, setVoiding] = useState(false)
+
   useEffect(() => {
     fetchReportData()
-  }, [activeTab, startDate, endDate, topLimit])
+  }, [activeTab, startDate, endDate, topLimit, returnsFilterType])
 
   const showToast = (type, message) => {
     setToast({ type, message })
@@ -115,6 +137,15 @@ export function Reports() {
             summary: res.data.summary || { grand_total: 0 }
           })
         }
+      } else if (activeTab === 'returns') {
+        const returnsFilters = {}
+        if (returnsFilterType) returnsFilters.return_type = returnsFilterType
+        if (returnsSearch.trim()) returnsFilters.search = returnsSearch.trim()
+        if (startDate) returnsFilters.start_date = startDate
+        if (endDate) returnsFilters.end_date = endDate
+        const res = await window.electronAPI.returns.list(returnsFilters)
+        const list = (res && res.data) ? res.data : res
+        setReturnsData(Array.isArray(list) ? list : [])
       }
     } catch (err) {
       console.error('[Reports] Fetch error:', err)
@@ -126,6 +157,80 @@ export function Reports() {
 
   const handlePrint = () => {
     window.print()
+  }
+
+  // Thermal voucher reprint — same as Returns & Exchanges page
+  const handlePrintReturnVoucher = async (retObj) => {
+    try {
+      let fullRet = retObj
+      if (!fullRet.items) {
+        const res = await window.electronAPI.returns.get(retObj.returnId || retObj.id || retObj.returnNumber || retObj.return_number)
+        fullRet = (res && res.data) ? res.data : res
+      }
+
+      if (!fullRet) {
+        showToast('error', 'Could not retrieve full return voucher details for printing.')
+        return
+      }
+
+      const receiptData = buildReturnReceiptPayload(fullRet)
+      const printRes = await window.electronAPI.print.receipt(receiptData)
+      if (printRes && printRes.success) {
+        showToast('success', 'Return voucher sent to thermal printer.')
+      } else if (printRes && printRes.error) {
+        showToast('error', `Thermal Printer Notification: ${printRes.error}`)
+      }
+    } catch (e) {
+      console.error('Failed to print thermal voucher:', e)
+      showToast('error', `Print Error: ${e.message}`)
+    }
+  }
+
+  const handleViewReturnDetail = async (retId) => {
+    setLoadingReturnDetail(true)
+    setSelectedReturnDetail(null)
+    try {
+      const res = await window.electronAPI.returns.get(retId)
+      const detail = (res && res.data) ? res.data : res
+      setSelectedReturnDetail(detail)
+    } catch (e) {
+      console.error('Failed to get return details:', e)
+      showToast('error', `Error fetching return details: ${e.message}`)
+    } finally {
+      setLoadingReturnDetail(false)
+    }
+  }
+
+  const openVoidReturn = (ret) => {
+    if (!ret?.id || String(ret.status || 'completed') === 'voided') return
+    setVoidReason('')
+    setVoidTarget(ret)
+  }
+
+  const handleVoidReturn = async () => {
+    if (!voidTarget?.id) return
+    setVoiding(true)
+    try {
+      if (!window.electronAPI?.returns?.void) {
+        throw new Error('Void return API unavailable.')
+      }
+      const res = await window.electronAPI.returns.void(voidTarget.id, voidReason.trim() || null)
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Failed to void return.')
+      }
+      showToast('success', `Return #${voidTarget.return_number} voided. Stock and commissions updated.`)
+      setVoidTarget(null)
+      setVoidReason('')
+      if (selectedReturnDetail?.id === voidTarget.id) {
+        setSelectedReturnDetail(null)
+      }
+      fetchReportData()
+    } catch (e) {
+      console.error('Failed to void return:', e)
+      showToast('error', e.message || 'Failed to void return.')
+    } finally {
+      setVoiding(false)
+    }
   }
 
   return (
@@ -200,7 +305,8 @@ export function Reports() {
             { id: 'profit', label: 'Profit & Loss' },
             { id: 'inventory', label: 'Stock Valuation' },
             { id: 'top', label: 'Top Articles' },
-            { id: 'expenses', label: 'Expense Breakdown' }
+            { id: 'expenses', label: 'Expense Breakdown' },
+            { id: 'returns', label: 'Returns' }
           ].map(tab => {
             const isActive = activeTab === tab.id
             return (
@@ -672,8 +778,324 @@ export function Reports() {
               </div>
             </div>
           )}
+
+          {/* TAB 6: RETURNS & EXCHANGES AUDIT LOG */}
+          {activeTab === 'returns' && (
+            <div className="space-y-8 animate-fade-in font-sans">
+              {/* Filters Section */}
+              <div className="flex flex-wrap items-center gap-4 pb-6 border-b border-[#C9C0B5]">
+                <div className="relative">
+                  <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A6F69]" />
+                  <input
+                    type="text"
+                    value={returnsSearch}
+                    onChange={(e) => setReturnsSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') fetchReportData() }}
+                    placeholder="Search Return # or Invoice #..."
+                    className="w-64 bg-transparent border-b border-[#2E2822] pl-10 pr-4 py-2 text-xs font-bold text-[#2E2822] placeholder-[#7A6F69] focus:outline-none font-mono"
+                  />
+                </div>
+                <select
+                  value={returnsFilterType}
+                  onChange={(e) => setReturnsFilterType(e.target.value)}
+                  className="bg-transparent border-b border-[#2E2822] py-2 text-xs font-bold text-[#2E2822] focus:outline-none capitalize"
+                >
+                  <option value="">All Return Types</option>
+                  <option value="refund">Refunds Only</option>
+                  <option value="exchange">Exchanges Only</option>
+                  <option value="manual">Manual Returns</option>
+                </select>
+              </div>
+
+              {/* Returns Results Table */}
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold font-sans">
+                      <th className="py-3 pr-4">Return Ref #</th>
+                      <th className="py-3 px-4">Date &amp; Time</th>
+                      <th className="py-3 px-4 text-center">Type</th>
+                      <th className="py-3 px-4">Original Invoice</th>
+                      <th className="py-3 px-4">Processed By</th>
+                      <th className="py-3 px-4 text-right">Refund Credit</th>
+                      <th className="py-3 pl-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C9C0B5]">
+                    {returnsData.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center text-xs text-[#7A6F69] italic font-sans">
+                          No return or exchange audit logs match the current filter criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      returnsData.map((ret) => {
+                        const isVoided = String(ret.status || 'completed') === 'voided'
+                        return (
+                          <tr key={ret.id} className={isVoided ? 'opacity-55' : ''}>
+                            <td className="py-3.5 pr-4 font-mono font-bold text-[#2E2822]">
+                              {ret.return_number}
+                              {isVoided && (
+                                <span className="ml-2 text-[10px] uppercase tracking-wider text-[#7A6F69]">[Voided]</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-[#7A6F69] font-mono text-xs">{new Date(ret.return_date).toLocaleString()}</td>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="font-bold text-[10px] uppercase tracking-[0.14em] text-[#2E2822]">
+                                [{ret.return_type}]
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-mono font-bold text-[#2E2822] text-xs">
+                              {ret.original_invoice_number || <span className="text-[#7A6F69] italic font-sans">Manual</span>}
+                              {ret.exchange_new_invoice_number && <div className="text-[10px] text-[#7A6F69] mt-0.5">Exch: {ret.exchange_new_invoice_number}</div>}
+                            </td>
+                            <td className="py-3.5 px-4 text-[#2E2822] font-bold text-xs">{ret.processed_by_name || 'Staff'}</td>
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(ret.refund_credit || 0).toLocaleString()}</td>
+                            <td className="py-3.5 pl-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleViewReturnDetail(ret.id)}
+                                  title="Inspect Details"
+                                  className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
+                                >
+                                  <EyeIcon className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handlePrintReturnVoucher(ret)}
+                                  title="Reprint Thermal Voucher"
+                                  className="p-1.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] transition-colors"
+                                >
+                                  <PrintIcon className="w-4 h-4" />
+                                </button>
+                                {!isVoided && (
+                                  <button
+                                    onClick={() => openVoidReturn(ret)}
+                                    title="Void / delete return"
+                                    className="p-1.5 hover:bg-[#EFEBE3] text-[#7A6F69] hover:text-[#9A4A4A] rounded-[2px] transition-colors"
+                                  >
+                                    <TrashIcon className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
+
+      {/* Return Detail Modal */}
+      {selectedReturnDetail && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#F7F5F0] rounded-[2px] max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col font-sans shadow-none">
+            <div className="p-6 border-b border-[#C9C0B5] flex items-center justify-between sticky top-0 bg-[#F7F5F0] z-10">
+              <div className="flex items-center gap-3">
+                <DocumentIcon className="w-6 h-6 text-[#2E2822]" />
+                <div>
+                  <h3 className="text-lg font-bold text-[#2E2822] font-mono">{selectedReturnDetail.return_number}</h3>
+                  <p className="text-xs text-[#7A6F69] font-mono">{new Date(selectedReturnDetail.return_date).toLocaleString()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedReturnDetail(null)}
+                className="p-2 text-[#7A6F69] hover:text-[#2E2822] rounded-[2px] hover:bg-[#EFEBE3] transition-colors"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#EFEBE3] p-4 rounded-[2px] text-xs">
+                <div>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Transaction Type</span>
+                  <span className="font-bold text-[#2E2822] uppercase mt-0.5 block">{selectedReturnDetail.return_type}</span>
+                </div>
+                <div>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Status</span>
+                  <span className="font-bold text-[#2E2822] uppercase mt-0.5 block">
+                    {String(selectedReturnDetail.status || 'completed') === 'voided' ? 'Voided' : 'Completed'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Original Invoice</span>
+                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">{selectedReturnDetail.original_invoice_number || 'None (Manual)'}</span>
+                </div>
+                <div>
+                  <span className="text-[#7A6F69] block font-bold uppercase tracking-wider">Total Refund Credit</span>
+                  <span className="font-mono font-bold text-[#2E2822] mt-0.5 block">Rs. {Number(selectedReturnDetail.refund_credit || 0).toLocaleString()}</span>
+                </div>
+              </div>
+
+              {selectedReturnDetail.notes && (
+                <div className="bg-[#EFEBE3] p-4 rounded-[2px] text-xs text-[#2E2822]">
+                  <span className="font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">Audit / Reason Note:</span>
+                  <p className="italic">{selectedReturnDetail.notes}</p>
+                </div>
+              )}
+
+              {/* Returned Items Table */}
+              <div>
+                <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
+                  Returned Items Restored to Inventory
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold">
+                        <th className="py-2.5 px-3">Article &amp; SKU</th>
+                        <th className="py-2.5 px-3 text-center">Returned Qty</th>
+                        <th className="py-2.5 px-3 text-right">Refund Price</th>
+                        <th className="py-2.5 px-3 text-right">Line Credit</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#C9C0B5]">
+                      {(selectedReturnDetail.items || []).map((item) => (
+                        <tr key={item.id}>
+                          <td className="py-3 px-3 font-bold text-[#2E2822]">
+                            {item.article_name || 'Article'}
+                            <div className="text-[10px] text-[#7A6F69] font-mono mt-0.5">{item.sku}</div>
+                          </td>
+                          <td className="py-3 px-3 text-center font-mono font-bold text-[#2E2822]">+{item.quantity_returned}</td>
+                          <td className="py-3 px-3 text-right font-mono text-[#2E2822]">Rs. {Number(item.refund_per_unit || 0).toLocaleString()}</td>
+                          <td className="py-3 px-3 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(item.quantity_returned * item.refund_per_unit || 0).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Replacement Items if exchange */}
+              {(selectedReturnDetail.replacement_items || []).length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-[#2E2822] uppercase tracking-[0.14em] mb-3 flex items-center gap-1.5">
+                    Issued Replacement Articles (Exchange Sale #{selectedReturnDetail.exchange_new_sale_id})
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-[#2E2822] text-[11px] uppercase tracking-[0.16em] text-[#7A6F69] font-bold">
+                          <th className="py-2.5 px-3">Article &amp; SKU</th>
+                          <th className="py-2.5 px-3 text-center">Issued Qty</th>
+                          <th className="py-2.5 px-3 text-right">Unit Price</th>
+                          <th className="py-2.5 px-3 text-right">Line Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#C9C0B5]">
+                        {selectedReturnDetail.replacement_items.map((rep) => (
+                          <tr key={rep.id}>
+                            <td className="py-3 px-3 font-bold text-[#2E2822]">
+                              {rep.article_name || 'Article'}
+                              <div className="text-[10px] text-[#7A6F69] font-mono mt-0.5">{rep.sku}</div>
+                            </td>
+                            <td className="py-3 px-3 text-center font-mono font-bold text-[#2E2822]">{rep.quantity}</td>
+                            <td className="py-3 px-3 text-right font-mono text-[#2E2822]">Rs. {Number(rep.retail_price_snapshot || 0).toLocaleString()}</td>
+                            <td className="py-3 px-3 text-right font-mono font-bold text-[#2E2822]">Rs. {Number(rep.line_total || 0).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-[#C9C0B5] bg-[#F7F5F0] flex justify-end gap-3 sticky bottom-0">
+              <button
+                onClick={() => setSelectedReturnDetail(null)}
+                className="px-5 py-2.5 hover:bg-[#EFEBE3] text-[#2E2822] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-colors"
+              >
+                Close Window
+              </button>
+              {String(selectedReturnDetail.status || 'completed') !== 'voided' && (
+                <button
+                  onClick={() => openVoidReturn(selectedReturnDetail)}
+                  className="px-5 py-2.5 border border-[#C9C0B5] hover:border-[#9A4A4A] hover:text-[#9A4A4A] text-[#7A6F69] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+                >
+                  <TrashIcon className="w-4 h-4" /> Void Return
+                </button>
+              )}
+              <button
+                onClick={() => handlePrintReturnVoucher(selectedReturnDetail)}
+                className="px-6 py-2.5 bg-[#2E2822] hover:bg-[#4A423A] text-[#F7F5F0] rounded-[2px] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+              >
+                <PrintIcon className="w-4 h-4" /> Print Thermal Voucher
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Void Confirmation Modal */}
+      <StandardModal
+        isOpen={!!voidTarget}
+        onClose={() => {
+          if (voiding) return
+          setVoidTarget(null)
+          setVoidReason('')
+        }}
+        title="Void Return Voucher"
+        titleId="void-return-modal-title"
+        subtitle={voidTarget ? `Voucher ${voidTarget.return_number}` : ''}
+        maxWidth="sm"
+        footer={
+          <div className="flex gap-3 justify-end w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (voiding) return
+                setVoidTarget(null)
+                setVoidReason('')
+              }}
+              disabled={voiding}
+              className="w-full py-3.5 bg-transparent border border-[#C9C0B5] text-[#2E2822] font-sans font-bold text-[11px] uppercase tracking-[0.2em] transition-colors rounded-none disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <StandardModalAction onClick={handleVoidReturn} disabled={voiding}>
+              {voiding ? 'Voiding...' : 'Confirm Void'}
+            </StandardModalAction>
+          </div>
+        }
+      >
+        <p className="text-sm text-[#2E2822] mb-4">
+          This voids the return voucher. Returned stock is removed from inventory again, any linked
+          exchange invoice is voided, drawer/refund credit is undone, and commission clawbacks are
+          reversed (paid exchange commission may create a negative balance).
+        </p>
+        {voidTarget && (
+          <div className="bg-[#EFEBE3] p-3 rounded-[2px] text-xs space-y-1 mb-4">
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Voucher</span>
+              <span className="font-mono font-bold">{voidTarget.return_number}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Type</span>
+              <span className="font-bold uppercase">{voidTarget.return_type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7A6F69]">Refund Credit</span>
+              <span className="font-mono font-bold">Rs. {Number(voidTarget.refund_credit || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+        <StandardModalLabel htmlFor="void-return-reason">Reason (optional)</StandardModalLabel>
+        <StandardModalInput
+          id="void-return-reason"
+          type="text"
+          value={voidReason}
+          onChange={(e) => setVoidReason(e.target.value)}
+          disabled={voiding}
+          placeholder="Mistaken entry, wrong items, etc."
+        />
+      </StandardModal>
     </div>
   )
 }

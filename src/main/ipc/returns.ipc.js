@@ -80,6 +80,20 @@ export function registerReturnsHandlers() {
     }
   })
 
+  handleIpc('returns:searchInvoices', (_, term) => {
+    const db = getDb()
+    const queryStr = String(term || '').trim()
+    if (!queryStr) return []
+
+    return db.prepare(`
+      SELECT s.id, s.invoice_number, s.sale_date, s.grand_total, s.status
+      FROM sales s
+      WHERE s.invoice_number LIKE ? OR s.id = ?
+      ORDER BY s.id DESC
+      LIMIT 8
+    `).all(`%${queryStr}%`, /^\d+$/.test(queryStr) ? Number(queryStr) : -1)
+  })
+
   handleIpc('returns:lookupBySku', (_, term) => {
     const db = getDb()
     if (!term || !term.trim()) return []
