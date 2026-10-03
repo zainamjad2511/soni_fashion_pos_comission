@@ -1,6 +1,6 @@
 {
   "name": "soni-fashion-pos",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Soni Fashion POS — Windows desktop point-of-sale for offline shop use",
   "main": "./out/main/index.js",
   "author": "Zain Amjad",

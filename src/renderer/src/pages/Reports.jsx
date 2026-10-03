@@ -867,15 +867,7 @@ export function Reports() {
                                 >
                                   <PrintIcon className="w-4 h-4" />
                                 </button>
-                                {!isVoided && (
-                                  <button
-                                    onClick={() => openVoidReturn(ret)}
-                                    title="Void / delete return"
-                                    className="p-1.5 hover:bg-[#EFEBE3] text-[#7A6F69] hover:text-[#9A4A4A] rounded-[2px] transition-colors"
-                                  >
-                                    <TrashIcon className="w-4 h-4" />
-                                  </button>
-                                )}
+                                
                               </div>
                             </td>
                           </tr>

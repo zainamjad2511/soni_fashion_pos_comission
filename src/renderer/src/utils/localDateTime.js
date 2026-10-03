@@ -5,6 +5,19 @@ function pad2(n) {
 }
 
 /**
+ * Local wall-clock datetime for SQLite storage (matches shop PC / TopBar).
+ * @param {Date} [date]
+ * @returns {string} YYYY-MM-DD HH:mm:ss
+ */
+export function localDateTimeString(date = new Date()) {
+  return [
+    date.getFullYear(),
+    pad2(date.getMonth() + 1),
+    pad2(date.getDate()),
+  ].join('-') + ` ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`
+}
+
+/**
  * Local calendar date for report/dashboard date filters.
  * @param {Date} [date]
  * @returns {string} YYYY-MM-DD

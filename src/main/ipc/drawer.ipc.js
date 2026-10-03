@@ -113,8 +113,8 @@ function sumDrawerActivity(db, {
   const salesRes = db.prepare(`
     SELECT 
       COALESCE(SUM(grand_total), 0) AS sales_in,
-      COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN grand_total ELSE 0 END), 0) AS cash_sales,
-      COALESCE(SUM(CASE WHEN payment_method = 'online' THEN grand_total ELSE 0 END), 0) AS online_sales
+      COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'cash' THEN grand_total ELSE 0 END), 0) AS cash_sales,
+      COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'online' THEN grand_total ELSE 0 END), 0) AS online_sales
     FROM sales
     WHERE status = 'completed'
       AND sale_date >= ?
@@ -124,12 +124,20 @@ function sumDrawerActivity(db, {
   // Stock purchases are tracked manually (via Expenses/Cash Deposit) — they no
   // longer deduct from the drawer automatically.
   const returnsRes = db.prepare(`
-    SELECT COALESCE(SUM(refund_amount), 0) AS returns_out
-    FROM returns
-    WHERE return_type IN ('refund', 'exchange', 'manual')
-      AND COALESCE(status, 'completed') != 'voided'
-      AND return_date >= ?
-      AND return_date < ? ${statusFilter}
+    SELECT 
+      COALESCE(SUM(refund_amount), 0) AS returns_out,
+      COALESCE(SUM(
+        CASE WHEN s.id IS NOT NULL AND LOWER(s.payment_method) = 'online' THEN r.refund_amount ELSE 0 END
+      ), 0) AS online_returns_out,
+      COALESCE(SUM(
+        CASE WHEN s.id IS NULL OR LOWER(COALESCE(s.payment_method,'cash')) != 'online' THEN r.refund_amount ELSE 0 END
+      ), 0) AS cash_returns_out
+    FROM returns r
+    LEFT JOIN sales s ON r.original_sale_id = s.id
+    WHERE r.return_type IN ('refund', 'exchange', 'manual')
+      AND COALESCE(r.status, 'completed') != 'voided'
+      AND r.return_date >= ?
+      AND r.return_date < ? ${statusFilter}
   `).get(start, end)
 
   const expensesRes = db.prepare(`
@@ -145,8 +153,14 @@ function sumDrawerActivity(db, {
   const expenses_out = Number(expensesRes?.expenses_out || 0)
   const net = cash_in + sales_in - returns_out - expenses_out
 
-  const cash_sales = Number(salesRes?.cash_sales || 0)
-  const online_sales = Number(salesRes?.online_sales || 0)
+  const cash_sales_gross = Number(salesRes?.cash_sales || 0)
+  const online_sales_gross = Number(salesRes?.online_sales || 0)
+  const cash_returns_out = Number(returnsRes?.cash_returns_out || 0)
+  const online_returns_out = Number(returnsRes?.online_returns_out || 0)
+
+  // Net sales per payment method (gross sales minus returns for that method)
+  const cash_sales = Math.max(0, cash_sales_gross - cash_returns_out)
+  const online_sales = Math.max(0, online_sales_gross - online_returns_out)
 
   return {
     cash_in,

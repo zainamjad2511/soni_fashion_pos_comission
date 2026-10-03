@@ -94,9 +94,11 @@ export function registerReportsHandlers() {
           JOIN articles a ON ri.article_id = a.id
           WHERE ri.return_id = r.id
         ), 0) - r.refund_credit AS gross_profit,
-        'return' AS record_type
+        'return' AS record_type,
+        COALESCE(s.payment_method, 'cash') AS original_payment_method
       FROM returns r
       LEFT JOIN salespersons sp ON r.processed_by = sp.id
+      LEFT JOIN sales s ON r.original_sale_id = s.id
       WHERE r.return_date >= ? AND r.return_date < ?
         AND COALESCE(r.status, 'completed') != 'voided'
       ORDER BY r.return_date DESC
@@ -119,8 +121,12 @@ export function registerReportsHandlers() {
     for (const row of rows) {
       const amount = Number(row.grand_total || 0)
       if (row.record_type === 'return') {
-        // Refunds are paid from the physical drawer unless tracked otherwise.
-        cash_total += amount
+        const originalMethod = String(row.original_payment_method || 'cash').toLowerCase()
+        if (originalMethod === 'online') {
+          online_total += amount
+        } else {
+          cash_total += amount
+        }
         continue
       }
       const method = String(row.payment_method || 'cash').toLowerCase()
@@ -138,7 +144,6 @@ export function registerReportsHandlers() {
     `).get(startDate, endDate)
     const cash_expenses = Number(expensesRes?.total_expenses || 0)
     cash_total = Math.max(0, cash_total - cash_expenses)
-    total_revenue = total_revenue - cash_expenses
 
     return {
       sales: rows,

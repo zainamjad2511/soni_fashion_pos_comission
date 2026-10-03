@@ -13,6 +13,7 @@ import { createPortal } from 'react-dom'
 import { Toast } from '../components/Toast.jsx'
 import { DateRangePresets, getDefaultDateRange } from '../components/DateRangePresets.jsx'
 import { getCurrentBusinessDate } from '../utils/businessDay.js'
+import { localDateTimeString } from '../utils/localDateTime.js'
 import {
   getOverlayDismissProps,
   getOverlayPanelProps,
@@ -259,7 +260,7 @@ export function Expenses() {
         note: depositForm.note.trim() || null,
         businessDate: depositForm.date,
         recordedBy: depositForm.recorded_by.trim() || 'Manager',
-        created_at: `${depositForm.date} 12:00:00`,
+        created_at: localDateTimeString(),
         session_status: activeTab
       })
 
@@ -383,14 +384,6 @@ export function Expenses() {
             Previous Balance
           </button>
         </div>
-        {activeTab === 'active' && (
-          <button
-            onClick={handleMoveHistory}
-            className="px-4 py-2 mb-2 text-xs font-sans font-bold text-white bg-[#E53E3E] hover:bg-[#C53030] rounded-[2px] uppercase tracking-[0.14em] transition-colors shadow-sm"
-          >
-            Move History to Previous Balance
-          </button>
-        )}
       </div>
 
       {/* KPI strip */}
