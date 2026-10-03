@@ -38,6 +38,7 @@ export function registerReportsHandlers() {
     const db = getDb()
     const { startDate, endDate, windowStart, windowEnd } = unpackDates(arg1, arg2)
     const salespersonId = (arg1 && typeof arg1 === 'object') ? arg1.salespersonId : arg3
+    const session_status = (arg1 && typeof arg1 === 'object') ? arg1.session_status : null
 
     let query = `
       SELECT
@@ -51,6 +52,11 @@ export function registerReportsHandlers() {
       WHERE s.status = 'completed' AND s.sale_date >= ? AND s.sale_date < ?
     `
     const params = [windowStart, windowEnd]
+
+    if (session_status) {
+      query += " AND s.session_status = ?"
+      params.push(session_status)
+    }
 
     if (salespersonId && salespersonId !== 'All') {
       query += ' AND s.salesperson_id = ?'

@@ -156,6 +156,7 @@ export function runMigrations(db) {
           refund_credit        REAL    NOT NULL DEFAULT 0,
           exchange_new_sale_id INTEGER REFERENCES sales(id),
           notes                TEXT,
+          session_status       TEXT    NOT NULL DEFAULT 'active',
           created_at           DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `)
@@ -641,5 +642,24 @@ export function runMigrations(db) {
 
     migrateV14()
     console.log('[Migrations] Successfully applied V14 Migration.')
+  }
+
+  if (currentVersion < 15) {
+    console.log('[Migrations] Applying V15 Migration (session status for returns)...')
+    const migrateV15 = db.transaction(() => {
+      const returnsCols = db.prepare('PRAGMA table_info(returns)').all()
+      if (!returnsCols.some(c => c.name === 'session_status')) {
+        db.exec("ALTER TABLE returns ADD COLUMN session_status TEXT NOT NULL DEFAULT 'active'")
+      }
+
+      db.prepare(`
+        INSERT INTO settings (key, value, updated_at)
+        VALUES ('schema_version', '15', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = '15', updated_at = CURRENT_TIMESTAMP
+      `).run()
+    })
+
+    migrateV15()
+    console.log('[Migrations] Successfully applied V15 Migration.')
   }
 }

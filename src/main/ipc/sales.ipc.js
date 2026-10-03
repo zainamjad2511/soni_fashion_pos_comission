@@ -178,6 +178,10 @@ export function registerSalesHandlers() {
         query += ' AND s.status = ?'
         params.push(filters.status.trim())
       }
+      if (filters.session_status) {
+        query += ' AND s.session_status = ?'
+        params.push(filters.session_status)
+      }
     }
 
     query += ' ORDER BY s.sale_date DESC LIMIT 200'

@@ -60,6 +60,7 @@ export function Expenses() {
   const [isDepositDrawerOpen, setIsDepositDrawerOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [deletingExpense, setDeletingExpense] = useState(null)
+  const [isMoveHistoryConfirmOpen, setIsMoveHistoryConfirmOpen] = useState(false)
   const [deletingDeposit, setDeletingDeposit] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -125,12 +126,16 @@ export function Expenses() {
     fetchHistory()
   }
 
-  const handleMoveHistory = async () => {
-    if (!window.confirm('Are you sure you want to move all active transactions to Previous Balance?')) return
+  const handleMoveHistory = () => {
+    setIsMoveHistoryConfirmOpen(true)
+  }
+
+  const confirmMoveHistory = async () => {
     setLoading(true)
     try {
       await window.electronAPI.drawer.moveHistory()
       showToast('success', 'History moved to Previous Balance.')
+      setIsMoveHistoryConfirmOpen(false)
       fetchHistory()
     } catch (err) {
       console.error('Failed to move history:', err)
@@ -381,7 +386,7 @@ export function Expenses() {
         {activeTab === 'active' && (
           <button
             onClick={handleMoveHistory}
-            className="pb-4 text-xs font-sans font-bold text-[#E53E3E] hover:text-[#C53030] uppercase tracking-[0.14em] transition-colors"
+            className="px-4 py-2 mb-2 text-xs font-sans font-bold text-white bg-[#E53E3E] hover:bg-[#C53030] rounded-[2px] uppercase tracking-[0.14em] transition-colors shadow-sm"
           >
             Move History to Previous Balance
           </button>
@@ -402,7 +407,7 @@ export function Expenses() {
         <div className="space-y-1 md:border-l md:border-[#C9C0B5] md:pl-8">
           <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-[#7A6F69]">Sales</span>
           <h3 className="text-3xl font-display font-bold text-[#2E2822] tracking-tight">
-            Rs. {(currentStats.sales || 0).toLocaleString()}
+            Rs. {((currentStats.sales || 0) - (currentStats.returns || 0)).toLocaleString()}
           </h3>
         </div>
 
@@ -450,6 +455,7 @@ export function Expenses() {
           >
             <option value="All">All Types</option>
             <option value="Sales">Sales</option>
+            <option value="Returns">Returns</option>
             <option value="Expense">Expenses</option>
             <option value="Deposits">Deposits</option>
           </select>
@@ -518,6 +524,7 @@ export function Expenses() {
                     <span className={`inline-flex items-center justify-center px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase tracking-wider ${
                       item.record_type === 'sale' ? 'bg-[#D1E7DD] text-[#0F5132]' :
                       item.record_type === 'expense' ? 'bg-[#F8D7DA] text-[#842029]' :
+                      item.record_type === 'return' ? 'bg-[#FFF3CD] text-[#664D03]' :
                       'bg-[#CFF4FC] text-[#055160]'
                     }`}>
                       {item.record_type}
@@ -525,7 +532,7 @@ export function Expenses() {
                   </td>
                   <td className="py-5 px-4">
                     <div className="font-bold text-[#2E2822] text-base font-display">
-                      {item.record_type === 'sale' ? item.reference :
+                      {(item.record_type === 'sale' || item.record_type === 'return') ? item.reference :
                        item.record_type === 'expense' ? item.category :
                        'Cash Deposit'}
                     </div>
@@ -539,9 +546,9 @@ export function Expenses() {
                     </span>
                   </td>
                   <td className={`py-5 px-4 text-right font-mono font-bold text-lg ${
-                    item.record_type === 'expense' ? 'text-[#E53E3E]' : 'text-[#2E2822]'
+                    (item.record_type === 'expense' || item.record_type === 'return') ? 'text-[#E53E3E]' : 'text-[#2E2822]'
                   }`}>
-                    {item.record_type === 'expense' ? '- ' : '+ '}
+                    {(item.record_type === 'expense' || item.record_type === 'return') ? '- ' : '+ '}
                     Rs. {Number(item.amount).toLocaleString()}
                   </td>
                   <td className="py-5 pl-4 text-right space-x-3 whitespace-nowrap">
@@ -572,8 +579,10 @@ export function Expenses() {
                         <TrashIcon className="w-4 h-4 inline" />
                       </button>
                     )}
-                    {item.record_type === 'sale' && (
-                      <span className="text-xs text-[#7A6F69] italic">Managed in Sales</span>
+                    {(item.record_type === 'sale' || item.record_type === 'return') && (
+                      <span className="text-xs text-[#7A6F69] italic">
+                        {item.record_type === 'sale' ? 'Managed in Sales' : 'Managed in Returns'}
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -906,6 +915,49 @@ export function Expenses() {
               >
                 {submitting && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
                 <span>Delete Permanently</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Move History confirmation */}
+      {isMoveHistoryConfirmOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[100] overflow-hidden bg-[#2E2822]/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          {...getOverlayDismissProps(() => setIsMoveHistoryConfirmOpen(false), loading)}
+        >
+          <div
+            className="w-full max-w-md bg-[#F7F5F0] border border-[#2E2822] rounded-[2px] p-8 shadow-none space-y-6 text-[#2E2822]"
+            {...getOverlayPanelProps()}
+          >
+            <div>
+              <span className="font-sans text-[10px] tracking-[0.18em] uppercase text-[#7A6F69] font-bold block mb-1">
+                Confirm Action
+              </span>
+              <h3 className="font-display font-bold text-2xl text-[#2E2822]">Archive Active Transactions?</h3>
+              <p className="text-sm font-sans text-[#7A6F69] mt-2">
+                Are you sure you want to move all active transactions to Previous Balance?
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-4 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsMoveHistoryConfirmOpen(false)}
+                disabled={loading}
+                className="px-6 py-2.5 rounded-[2px] bg-transparent text-[#7A6F69] hover:text-[#2E2822] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmMoveHistory}
+                disabled={loading}
+                className="px-6 py-2.5 rounded-[2px] bg-[#332822] hover:bg-[#4A423A] text-[#F7F5F0] font-sans font-bold text-xs uppercase tracking-[0.14em] transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {loading && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
+                Confirm
               </button>
             </div>
           </div>

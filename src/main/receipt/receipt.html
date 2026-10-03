@@ -492,9 +492,11 @@
       });
 
       const totalDiscount = Number(data.total_discount || 0);
-      document.getElementById('subtotal').textContent = formatMoney(data.subtotal || 0);
-      document.getElementById('discount').textContent = totalDiscount > 0
-        ? '- Rs. ' + totalDiscount.toLocaleString()
+      const itemsTotalDiscount = items.reduce((sum, item) => sum + Number(item.discount_amount || 0), 0);
+      const orderDiscount = Math.max(0, totalDiscount - itemsTotalDiscount);
+      document.getElementById('subtotal').textContent = formatMoney((data.subtotal || 0) - itemsTotalDiscount);
+      document.getElementById('discount').textContent = orderDiscount > 0
+        ? '- Rs. ' + orderDiscount.toLocaleString()
         : 'Rs. 0';
       document.getElementById('grand-total').textContent = formatMoney(data.grand_total || 0);
 

@@ -75,6 +75,7 @@ export function buildReturnReceiptPayload(fullRet) {
     : replacementItemsSum
   const orderDiscount = Math.max(0, replacementItemsSum - replacementNet)
   const netAmount = returnLinesTotal + replacementNet
+  const itemsTotalDiscount = [...returnLines, ...replacementLines].reduce((sum, item) => sum + Number(item.discount_amount || 0), 0)
 
   return {
     invoice_number: returnRef,
@@ -83,7 +84,7 @@ export function buildReturnReceiptPayload(fullRet) {
     salesperson_name: staffName,
     items: [...returnLines, ...replacementLines],
     subtotal: returnLinesTotal + replacementItemsSum,
-    total_discount: orderDiscount,
+    total_discount: orderDiscount + itemsTotalDiscount,
     grand_total: netAmount,
     payment_method: netAmount > 0 ? 'CUSTOMER PAYS DIFFERENCE' : netAmount < 0 ? 'STORE CREDIT BALANCE' : 'EVEN EXCHANGE',
   }

@@ -22,6 +22,8 @@ export function ReceiptPreview({ receipt, shop = {} }) {
   const items = Array.isArray(receipt.items) ? receipt.items : []
   const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   const totalDiscount = Number(receipt.total_discount || 0)
+  const itemsTotalDiscount = items.reduce((sum, item) => sum + Number(item.discount_amount || 0), 0)
+  const orderDiscount = Math.max(0, totalDiscount - itemsTotalDiscount)
   const isVoucher = Boolean(receipt.receipt_title)
   const docNumber = splitReceiptDocNumber(receipt.invoice_number)
 
@@ -114,11 +116,11 @@ export function ReceiptPreview({ receipt, shop = {} }) {
 
       <div className="receipt-preview-totals-row">
         <span>Subtotal:</span>
-        <span>{formatReceiptMoney(receipt.subtotal || 0)}</span>
+        <span>{formatReceiptMoney((receipt.subtotal || 0) - itemsTotalDiscount)}</span>
       </div>
       <div className="receipt-preview-totals-row">
         <span>Discount:</span>
-        <span>{totalDiscount > 0 ? `- Rs. ${totalDiscount.toLocaleString()}` : 'Rs. 0'}</span>
+        <span>{orderDiscount > 0 ? `- Rs. ${orderDiscount.toLocaleString()}` : 'Rs. 0'}</span>
       </div>
       <div className="receipt-preview-totals-row receipt-preview-grand-total">
         <span>TOTAL PAYABLE:</span>

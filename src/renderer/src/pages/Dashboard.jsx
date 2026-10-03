@@ -9,6 +9,8 @@ import { getBusinessDayBounds } from '../utils/businessDay.js'
 const EMPTY_DRAWER = {
   opening_balance: 0,
   cash_in: 0,
+  cash_sales: 0,
+  online_sales: 0,
   sales_in: 0,
   returns_out: 0,
   expenses_out: 0,
@@ -61,13 +63,16 @@ export function Dashboard() {
       }
 
       if (window.electronAPI.reports) {
+        const isToday = datePreset === DATE_PRESETS.TODAY
+        const session_status = isToday ? 'active' : undefined
+
         const salesRes = await window.electronAPI.reports.salesSummary({
           startDate,
           endDate,
+          session_status
         })
         if (salesRes?.success && salesRes.data?.summary) {
-          const { total_revenue } = salesRes.data.summary
-          setPeriodRevenue(Number(total_revenue || 0))
+          // Total Revenue now driven by drawer period_net
         }
 
         if (window.electronAPI.reports.inventoryValuation) {
@@ -83,21 +88,35 @@ export function Dashboard() {
       }
 
       if (window.electronAPI.drawer?.getReconciliation) {
-        const cfRes = await window.electronAPI.drawer.getReconciliation({ startDate, endDate })
+        let archivedNet = 0
+        if (window.electronAPI.drawer.getBalances) {
+          const balancesRes = await window.electronAPI.drawer.getBalances()
+          if (balancesRes?.success && balancesRes.data?.archived) {
+            archivedNet = Number(balancesRes.data.archived.net || 0)
+          }
+        }
+
+        const isToday = datePreset === DATE_PRESETS.TODAY
+        const session_status = isToday ? 'active' : undefined
+        const cfRes = await window.electronAPI.drawer.getReconciliation({ startDate, endDate, session_status })
         if (cfRes?.success && cfRes.data) {
           setDrawer({
-            opening_balance: Number(cfRes.data.opening_balance || 0),
+            opening_balance: archivedNet,
             cash_in: Number(cfRes.data.cash_in || 0),
             sales_in: Number(cfRes.data.sales_in || 0),
+            cash_sales: Number(cfRes.data.cash_sales || 0),
+            online_sales: Number(cfRes.data.online_sales || 0),
             returns_out: Number(cfRes.data.returns_out || 0),
             expenses_out: Number(cfRes.data.expenses_out || 0),
-            expected_balance: Number(cfRes.data.expected_balance || 0),
+            expected_balance: archivedNet + Number(cfRes.data.period_net || 0),
             current_balance: Number(
               cfRes.data.current_balance ?? cfRes.data.expected_balance ?? 0
             ),
             window_start: cfRes.data.window_start || null,
             window_end: cfRes.data.window_end || null,
           })
+          
+          setPeriodRevenue(Number(cfRes.data.period_net || 0))
         }
       }
     } catch (err) {
@@ -182,14 +201,14 @@ export function Dashboard() {
         <div className="flex flex-col justify-between">
           <div>
             <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-semibold mb-3">
-              Total Sales
+              Daily Total
             </div>
             <div className="text-4xl lg:text-5xl font-display font-bold text-[#2E2822] tracking-tight font-mono mb-2 leading-none">
               {loading ? '...' : `Rs. ${formatMoney(periodRevenue)}`}
             </div>
           </div>
           <div className="text-xs font-sans text-[#7A6F69] mt-3">
-            {periodLabel} aggregate revenue
+            Sales + Deposits − Returns − Expenses
           </div>
         </div>
 
@@ -249,7 +268,7 @@ export function Dashboard() {
               Cash Drawer Reconciliation
             </h3>
             <p className="font-sans text-xs text-[#7A6F69] mt-1">
-              Opening (carry-forward) + deposits + sales − stock − returns − expenses
+              Previous Balance + Cash Added + Cash/Online Sales − Expenses (Returns are subtracted internally)
             </p>
           </div>
           <div className="text-right">
@@ -270,9 +289,14 @@ export function Dashboard() {
         <div className="divide-y divide-[#C9C0B5]">
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Opening Balance</span>
+              <span 
+                onClick={() => navigate('/expenses')}
+                className="font-sans text-sm font-bold text-[#2E2822] block cursor-pointer hover:underline underline-offset-2"
+              >
+                Opening Balance
+              </span>
               <span className="font-sans text-xs text-[#7A6F69]">
-                Cash left in drawer from previous days (carry-forward)
+                Previous balance (archived drawer sessions)
               </span>
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
@@ -282,16 +306,14 @@ export function Dashboard() {
 
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Cash Added</span>
+              <span 
+                onClick={() => navigate('/expenses')}
+                className="font-sans text-sm font-bold text-[#2E2822] block cursor-pointer hover:underline underline-offset-2"
+              >
+                Cash Added
+              </span>
               <span className="font-sans text-xs text-[#7A6F69]">
-                Deposits in this period ·{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/expenses')}
-                  className="underline underline-offset-2 hover:text-[#2E2822]"
-                >
-                  Add deposit
-                </button>
+                Deposits in this period
               </span>
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
@@ -301,27 +323,42 @@ export function Dashboard() {
 
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Sales In</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Completed POS sales in this period</span>
+              <span 
+                onClick={() => navigate('/sales')}
+                className="font-sans text-sm font-bold text-[#2E2822] block cursor-pointer hover:underline underline-offset-2"
+              >
+                Cash Sales
+              </span>
+              <span className="font-sans text-xs text-[#7A6F69]">Completed POS sales in cash in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#2E2822]">
-              + Rs. {formatMoney(drawer.sales_in)}
+              + Rs. {formatMoney(drawer.cash_sales)}
             </span>
           </div>
 
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Returns Out</span>
-              <span className="font-sans text-xs text-[#7A6F69]">Customer refunds in this period</span>
+              <span 
+                onClick={() => navigate('/sales')}
+                className="font-sans text-sm font-bold text-[#2E2822] block cursor-pointer hover:underline underline-offset-2"
+              >
+                Online Sales
+              </span>
+              <span className="font-sans text-xs text-[#7A6F69]">Completed POS sales online in this period</span>
             </div>
-            <span className="font-mono font-bold text-base text-[#7A6F69]">
-              − Rs. {formatMoney(drawer.returns_out)}
+            <span className="font-mono font-bold text-base text-[#2E2822]">
+              + Rs. {formatMoney(drawer.online_sales)}
             </span>
           </div>
 
           <div className="py-5 flex items-center justify-between gap-4">
             <div>
-              <span className="font-sans text-sm font-bold text-[#2E2822] block">Expenses</span>
+              <span 
+                onClick={() => navigate('/expenses')}
+                className="font-sans text-sm font-bold text-[#2E2822] block cursor-pointer hover:underline underline-offset-2"
+              >
+                Expenses
+              </span>
               <span className="font-sans text-xs text-[#7A6F69]">Operating expenses in this period</span>
             </div>
             <span className="font-mono font-bold text-base text-[#7A6F69]">
@@ -330,30 +367,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="pt-6 border-t border-[#2E2822] grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
-              Closing (Selected Period)
-            </div>
-            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
-              {loading ? '...' : `Rs. ${formatMoney(drawer.expected_balance)}`}
-            </div>
-            <p className="text-xs font-sans text-[#7A6F69] mt-2 max-w-xl">
-              Opening + period activity. Yesterday&apos;s closing becomes tomorrow&apos;s opening.
-            </p>
-          </div>
-          <div>
-            <div className="font-sans text-xs tracking-[0.18em] uppercase text-[#7A6F69] font-bold mb-1">
-              Cash in Drawer Now
-            </div>
-            <div className="text-3xl md:text-4xl font-display font-bold text-[#2E2822] font-mono">
-              {loading ? '...' : `Rs. ${formatMoney(drawer.current_balance)}`}
-            </div>
-            <p className="text-xs font-sans text-[#7A6F69] mt-2 max-w-xl">
-              Full running balance from day one — not changed by the date filter above.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )

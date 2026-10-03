@@ -27,6 +27,10 @@ export function registerExpensesHandlers() {
         const term = `%${filters.search.trim()}%`
         params.push(term, term, term)
       }
+      if (filters.session_status) {
+        query += ' AND session_status = ?'
+        params.push(filters.session_status)
+      }
     }
 
     query += ' ORDER BY expense_date DESC, id DESC'
