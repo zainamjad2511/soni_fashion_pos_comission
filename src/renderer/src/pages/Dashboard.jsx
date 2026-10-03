@@ -34,8 +34,27 @@ export function Dashboard() {
   const [startDate, setStartDate] = useState(initialRange.startDate)
   const [endDate, setEndDate] = useState(initialRange.endDate)
   const [loading, setLoading] = useState(true)
+  const [closeDrawerLoading, setCloseDrawerLoading] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState(new Date())
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const navigate = useNavigate()
+
+  const handleCloseDrawer = async () => {
+    if (!showCloseConfirm) {
+      setShowCloseConfirm(true)
+      return
+    }
+    setCloseDrawerLoading(true)
+    setShowCloseConfirm(false)
+    try {
+      await window.electronAPI.drawer.moveHistory()
+      await loadDashboardMetrics()
+    } catch (err) {
+      console.error('Failed to close drawer:', err)
+    } finally {
+      setCloseDrawerLoading(false)
+    }
+  }
 
   const handleDateRangeChange = ({ preset, startDate: nextStart, endDate: nextEnd }) => {
     setDatePreset(preset)
@@ -193,6 +212,33 @@ export function Dashboard() {
               <RefreshIcon className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
+            {showCloseConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[#E53E3E] font-bold">Confirm close?</span>
+                <button
+                  onClick={handleCloseDrawer}
+                  disabled={closeDrawerLoading}
+                  className="px-4 py-3 rounded-[2px] bg-[#E53E3E] hover:bg-[#C53030] text-white text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
+                >
+                  Yes, Close
+                </button>
+                <button
+                  onClick={() => setShowCloseConfirm(false)}
+                  className="px-4 py-3 rounded-[2px] bg-[#EFEBE3] hover:bg-[#E4DBC8] text-[#2E2822] text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleCloseDrawer}
+                disabled={closeDrawerLoading || datePreset !== DATE_PRESETS.TODAY}
+                title={datePreset !== DATE_PRESETS.TODAY ? 'Switch to Today to close drawer' : 'Move today\'s activity to Previous Balance'}
+                className="px-5 py-3 rounded-[2px] bg-[#E53E3E] hover:bg-[#C53030] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center gap-2.5 text-xs font-sans font-bold tracking-[0.14em] uppercase transition-all"
+              >
+                <span>{closeDrawerLoading ? 'Closing...' : 'Close Drawer'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

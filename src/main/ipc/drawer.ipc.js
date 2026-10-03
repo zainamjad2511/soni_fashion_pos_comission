@@ -209,8 +209,6 @@ function computeCurrentBalance(db) {
 }
 
 function computeReconciliation(db, { startDate, endDate, start, end, session_status }) {
-  autoArchiveDrawer(db) // Ensure old active sessions are archived before reconciling
-
   const opening_balance = computeCarryForward(db, start, startDate)
   const period = sumDrawerActivity(db, {
     start,
@@ -474,8 +472,6 @@ export function registerDrawerHandlers() {
 
   handleIpc('drawer:getBalances', () => {
     const db = getDb()
-    
-    autoArchiveDrawer(db) // Ensure balances reflect correct active/archived state
     
     // Active Balance
     const activeRes = db.prepare(`
