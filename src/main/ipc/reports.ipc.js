@@ -105,7 +105,7 @@ export function registerReportsHandlers() {
     const total_sales = sales.length
     const total_returns = returns.length
     const total_items = rows.reduce((acc, r) => acc + Number(r.total_items || 0), 0)
-    const total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total || 0), 0)
+    let total_revenue = rows.reduce((acc, r) => acc + Number(r.grand_total || 0), 0)
     const total_gross_profit = rows.reduce((acc, r) => acc + Number(r.gross_profit || 0), 0)
 
     let cash_total = 0
@@ -132,6 +132,7 @@ export function registerReportsHandlers() {
     `).get(startDate, endDate)
     const cash_expenses = Number(expensesRes?.total_expenses || 0)
     cash_total = Math.max(0, cash_total - cash_expenses)
+    total_revenue = total_revenue - cash_expenses
 
     return {
       sales: rows,
