@@ -201,6 +201,77 @@ export const useCartStore = create((set, get) => ({
       exchangeReturnId: null,
     }),
 
+  // Parked Carts State
+  parkedCarts: [], // loaded from local storage on init or when modified
+
+  // Actions
+  initParkedCarts: () => {
+    try {
+      const stored = localStorage.getItem('pos_parked_carts')
+      if (stored) {
+        set({ parkedCarts: JSON.parse(stored) })
+      }
+    } catch (err) {
+      console.error('Failed to load parked carts', err)
+    }
+  },
+
+  parkCurrentCart: (name) => {
+    const state = get()
+    if (state.items.length === 0) throw new Error('Cart is empty, nothing to park.')
+
+    const newParked = {
+      id: Date.now().toString(),
+      name: name || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      firstItemName: state.items[0]?.name || '',
+      timestamp: Date.now(),
+      selectedSalesperson: state.selectedSalesperson,
+      items: state.items,
+      orderDiscount: state.orderDiscount,
+      paymentMethod: state.paymentMethod,
+      notes: state.notes,
+      exchangeReturnId: state.exchangeReturnId,
+    }
+
+    const updatedParked = [newParked, ...state.parkedCarts]
+    localStorage.setItem('pos_parked_carts', JSON.stringify(updatedParked))
+    set({ parkedCarts: updatedParked })
+    state.clearCart()
+  },
+
+  resumeParkedCart: (id) => {
+    const state = get()
+    
+    // Auto-park active cart if it's not empty
+    if (state.items.length > 0) {
+      state.parkCurrentCart()
+    }
+
+    const freshState = get()
+    const cartToResume = freshState.parkedCarts.find((c) => c.id === id)
+    if (!cartToResume) throw new Error('Parked cart not found.')
+
+    const updatedParked = freshState.parkedCarts.filter((c) => c.id !== id)
+    localStorage.setItem('pos_parked_carts', JSON.stringify(updatedParked))
+
+    set({
+      parkedCarts: updatedParked,
+      selectedSalesperson: cartToResume.selectedSalesperson || null,
+      items: cartToResume.items || [],
+      orderDiscount: cartToResume.orderDiscount || 0,
+      paymentMethod: cartToResume.paymentMethod || 'cash',
+      notes: cartToResume.notes || '',
+      exchangeReturnId: cartToResume.exchangeReturnId || null,
+    })
+  },
+
+  deleteParkedCart: (id) => {
+    const state = get()
+    const updatedParked = state.parkedCarts.filter((c) => c.id !== id)
+    localStorage.setItem('pos_parked_carts', JSON.stringify(updatedParked))
+    set({ parkedCarts: updatedParked })
+  },
+
   getSubtotal: () => {
     const { items } = get()
     return items.reduce((sum, item) => {

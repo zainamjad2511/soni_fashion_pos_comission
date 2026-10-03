@@ -13,6 +13,8 @@ import {
   DiscountAmountIcon,
   CreditSaleIcon,
   OfferTicketIcon,
+  ParkBillIcon,
+  ListParkedIcon,
 } from './icons/POSActionIcons.jsx'
 
 export function POSActionPanel({
@@ -28,12 +30,11 @@ export function POSActionPanel({
   itemsLength,
   onCompleteSale,
   onNewDocument,
-  onDeleteLines,
-  onPrintDocument,
-  lastCompletedSale,
-  onOpenCashierModal,
   onOpenDiscountModal,
   onOpenReprint,
+  parkedCarts,
+  onResumeParkedCart,
+  onDeleteParkedCart,
   notes,
   onNotesChange,
 }) {
@@ -138,23 +139,6 @@ export function POSActionPanel({
         </button>
 
         <button
-          onClick={onPrintDocument}
-          disabled={!lastCompletedSale}
-          className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 disabled:opacity-40 rounded-none"
-        >
-          <POSPrintIcon className="w-6 h-6 text-[#332822]" />
-          <span>Print Document</span>
-        </button>
-
-        <button
-          onClick={onOpenCashierModal}
-          className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
-        >
-          <SalesmanIcon className="w-6 h-6 text-[#332822]" />
-          <span>Set Salesman</span>
-        </button>
-
-        <button
           onClick={onOpenDiscountModal}
           className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
         >
@@ -163,32 +147,54 @@ export function POSActionPanel({
         </button>
 
         <button
-          type="button"
-          disabled
-          className="p-4 bg-[#F7F5F0] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 text-center h-24 border-0 rounded-none opacity-90 cursor-default"
-          title="Cash only"
-        >
-          <CreditSaleIcon className="w-6 h-6 text-[#332822]" />
-          <span>Mode: Cash</span>
-        </button>
-
-        <button
           onClick={onOpenReprint}
-          className="p-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex flex-col items-center justify-center gap-2 transition-all text-center h-24 border-0 rounded-none"
+          className="col-span-2 py-3.5 px-4 bg-[#F7F5F0] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all text-center border-0 rounded-none"
         >
-          <OfferTicketIcon className="w-6 h-6 text-[#332822]" />
+          <OfferTicketIcon className="w-5 h-5 text-[#332822]" />
           <span>Reprint Sale</span>
         </button>
-
-        <button
-          onClick={onDeleteLines}
-          disabled={itemsLength === 0}
-          className="col-span-2 py-3.5 px-4 bg-[#D8CBB6] hover:bg-[#EFEBE3] text-[#332822] font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all border-0 disabled:opacity-40 rounded-none"
-        >
-          <POSDeleteIcon className="w-5 h-5 text-[#332822]" />
-          <span>Delete Document Lines</span>
-        </button>
       </div>
+
+      {/* Inline Parked Bills List */}
+      {parkedCarts && parkedCarts.length > 0 && (
+        <div className="flex flex-col gap-2 mt-2">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-[#7A6F69] border-b border-[#C9C0B5] pb-1">
+            Parked Documents
+          </div>
+          <div className="flex flex-col gap-2 max-h-40 overflow-y-auto pr-1">
+            {parkedCarts.map((cart) => (
+              <div
+                key={cart.id}
+                className="bg-[#F7F5F0] border border-[#C9C0B5]/50 flex flex-col gap-1 p-2 cursor-pointer hover:bg-[#EFEBE3] transition-colors"
+                onClick={() => onResumeParkedCart(cart.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-sans font-bold text-xs text-[#2E2822]">{cart.name}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteParkedCart(cart.id);
+                    }}
+                    className="text-rose-600 hover:text-rose-800 p-0.5"
+                    title="Discard"
+                  >
+                    <POSDeleteIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {cart.firstItemName && (
+                  <div className="text-[10px] text-[#2E2822] font-medium truncate italic" title={cart.firstItemName}>
+                    {cart.firstItemName}
+                  </div>
+                )}
+                <div className="text-[9px] text-[#7A6F69]">
+                  Items: {cart.items?.length || 0}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-auto pt-3">
         <label className="text-[11px] font-bold uppercase tracking-wider text-[#7A6F69] block mb-1">

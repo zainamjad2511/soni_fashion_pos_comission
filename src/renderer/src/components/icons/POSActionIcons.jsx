@@ -182,3 +182,30 @@ export function POSGearIcon(props) {
     </svg>
   )
 }
+
+/** Park Bill — Pause button inside a circle. */
+export function ParkBillIcon(props) {
+  const svg = posIconDefaults(props)
+  return (
+    <svg {...svg} aria-hidden={props['aria-hidden'] ?? true}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="10" y1="9" x2="10" y2="15" />
+      <line x1="14" y1="9" x2="14" y2="15" />
+    </svg>
+  )
+}
+
+/** List Parked — Bulleted list icon. */
+export function ListParkedIcon(props) {
+  const svg = posIconDefaults(props)
+  return (
+    <svg {...svg} aria-hidden={props['aria-hidden'] ?? true}>
+      <line x1="8" y1="6" x2="20" y2="6" />
+      <line x1="8" y1="12" x2="20" y2="12" />
+      <line x1="8" y1="18" x2="20" y2="18" />
+      <circle cx="4" cy="6" r="1.5" />
+      <circle cx="4" cy="12" r="1.5" />
+      <circle cx="4" cy="18" r="1.5" />
+    </svg>
+  )
+}
